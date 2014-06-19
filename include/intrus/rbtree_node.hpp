@@ -1129,9 +1129,9 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::unique) noexcept(is_comparator_noexcept)
       {
-        auto *l = lower_bound(entry, node.internal_get_index());
-        auto *u = upper_bound(*l, node.internal_get_index());
-        auto *p = l->prev();
+        auto l = lower_bound(entry, node.internal_get_index());
+        auto u = upper_bound(*l, node.internal_get_index());
+        auto p = l->prev();
 
         while (l != u)
         {
@@ -1140,6 +1140,38 @@ namespace lanxc
           x->unlink();
         }
         insert_between(p, u, &node);
+        return &node;
+      }
+
+      static pointer insert(reference entry, reference node,
+          index_policy::replace) noexcept(is_comparator_noexcept)
+      {
+        auto p = search(entry, node.internal_get_index());
+        insert_replace(p.first, p.second, &node);
+        return node.is_linked() ? &node : p.first;
+      }
+
+      static pointer insert(reference entry, reference node,
+          index_policy::replace_frontmost) noexcept(is_comparator_noexcept)
+      {
+        auto p = boundry(entry, node.internal_get_index());
+        if (s_comparator(index_fetcher(p.second), node)
+            != s_rcomparator(index_fetcher(p.second), node))
+          insert_replace(p.first, p.second, &node);
+        else
+          insert_between(p.first, p.second, &node);
+        return &node;
+      }
+
+      static pointer insert(reference entry, reference node,
+          index_policy::replace_backmost) noexcept(is_comparator_noexcept)
+      {
+        auto p = boundry(entry, node.internal_get_index(), s_rcomparator);
+        if (s_comparator(index_fetcher(p.first), node)
+            != s_rcomparator(index_fetcher(p.first), node))
+          insert_replace(p.first, p.second, &node);
+        else
+          insert_between(p.first, p.second, &node);
         return &node;
       }
 
