@@ -111,6 +111,23 @@ namespace lanxc
       { return m_p != nullptr; }
 
 
+      /**
+       * @brief Unlink this node from a tree or destroy a tree if this is the
+       * container node
+       * @returns return value of next() before destroyed, or nullptr if this
+       * node is container node or a node already unlinked
+       **/
+      pointer unlink() noexcept
+      {
+        if (!is_linked())
+          return nullptr;
+
+        if (m_is_container)
+          return unlink_container();
+        else
+          return unlink_node();
+      }
+
 
     private:
 
@@ -326,17 +343,25 @@ namespace lanxc
       void unlink_cleanup() noexcept
       {
         m_l = m_r = m_p = nullptr;
-        m_is_red = m_has_l = m_has_r = false;
+        m_has_l = m_has_r = false;
+        m_is_red = m_is_container;
       }
 
-      pointer unlink() noexcept
+      pointer unlink_container() noexcept
       {
-        if (m_is_container)
-          return nullptr;
+        for (auto p = m_l; p != this; )
+        {
+          auto current = p;
+          p = p->next();
+          current->unlink_cleanup();
+        }
 
-        if (!is_linked())
-          return nullptr;
+        unlink_cleanup();
+        return nullptr;
+      }
 
+      pointer unlink_node() noexcept
+      {
         pointer y = next(), x;
 
         if (m_has_l && m_has_r)
@@ -419,6 +444,7 @@ namespace lanxc
           rebalance_for_unlink(x);
         unlink_cleanup();
         return y;
+
       }
 
       /**

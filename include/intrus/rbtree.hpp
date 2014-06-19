@@ -630,6 +630,19 @@ namespace lanxc
         erase(b, e);
       }
 
+      /** @brief Count the number of node has given index value */
+      size_type count(const Index &val) const noexcept
+      {
+        auto p = equals_range(val);
+        size_type ret = 0;
+        while (p.first != p.second)
+        {
+          ++p.first;
+          ++ret;
+        }
+        return ret;
+      }
+
       /** @brief Swap all elements with another tree @p t */
       void swap(rbtree &&t) noexcept
       { swap(t); }
@@ -639,7 +652,7 @@ namespace lanxc
       { node_type::swap_nodes(m_container_node, t.m_container_node); }
 
       void clear() noexcept
-      { erase(begin(), end()); }
+      { m_container_node.unlink(); }
 
     private:
       node_type m_container_node;
