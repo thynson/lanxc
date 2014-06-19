@@ -54,7 +54,7 @@ flags = [
 '-x',
 'c++',
 '-I',
-os.path.dirname(__file__) + '/'
+os.path.dirname(__file__) + '/include'
 ]
 
 
