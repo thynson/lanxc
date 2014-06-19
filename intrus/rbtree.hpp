@@ -38,9 +38,32 @@ namespace lanxc
     template<typename Index, typename Node, typename Config>
     class rbtree
     {
-      using detail = rbtree_node<void, void>;
-      using node_type = rbtree_node<Index, Node, Config, detail>;
-      using config = typename node_type::config;
+      using detail                  = rbtree_node<void, void>;
+      using node_type               = rbtree_node<Index, Node, Config, detail>;
+      using config                  = typename node_type::config;
+      using default_insert_policy   = typename config::default_insert_policy;
+      using default_lookup_policy   = typename config::default_lookup_policy;
+
+
+      /**
+       * @brief SFINAE check for lookup policy
+       * @tparam Policy Type of lookup policy
+       * @tparam Result SFINAE Result
+       */
+      template<typename Policy, typename Result = void>
+      using lookup_policy_sfinae    = typename std::enable_if<
+          index_policy::is_lookup_policy<Policy>::value,
+          Result>::type;
+
+      /**
+       * @brief SFINAE check for insert policy
+       * @tparam Policy Type of insert policy
+       * @tparam Result SFINAE Result
+       */
+      template<typename Policy, typename Result = void>
+      using insert_policy_sfinae    = typename std::enable_if<
+          index_policy::is_insert_policy<Policy>::value,
+          Result>::type;
 
     public:
 
@@ -206,20 +229,6 @@ namespace lanxc
       { return *rbegin(); }
 
       /**
-       * @brief Find an element its index is equals to @p val, with default
-       *        policy of index_policy::rbtree_nearest,
-       * @param val The value of index of the element want to find
-       * @returns
-       *        An iterator point to the element with same index value with
-       *        @p val, if there are more than one elements have same index,
-       *        the one element (first touched) will be return. if not found,
-       *        @a end() will be returned.
-       */
-      iterator find(const Index &val)
-          noexcept(node_type::is_comparator_noexcept)
-      { return find(end(), val, typename config::default_lookup_policy()); }
-
-      /**
        * @brief Find an element its index is equals to @p val
        * @tparam LookupPolicy Lookup policy
        * @param val The value of index of the element want to find
@@ -230,32 +239,13 @@ namespace lanxc
        *        the nearest one (first touched) will be return. if not found,
        *        @a end() will be returned.
        */
-      template<typename LookupPolicy>
-      typename std::enable_if<
-        index_policy::is_lookup_policy<LookupPolicy>::value, iterator>::type
-      find(const Index &val, index_policy::nearest p)
+      template<typename LookupPolicy = default_lookup_policy>
+      lookup_policy_sfinae<LookupPolicy, iterator>
+      find(const Index &val, LookupPolicy p = LookupPolicy())
           noexcept(node_type::is_comparator_noexcept)
       { return find(end(), val, p); }
 
       /**
-       * @brief Find an element its index is equals to @p val, with default
-       *        policy of index_policy::rbtree_nearest,
-       * @param val  The value of index of the element want to find
-       * @param hint Search is start from this position other than the root
-       *             of tree, may affects performance depends on the position
-       *             between search result and @p hint
-       *
-       * @returns
-       *        An iterator point to the element with same index value with
-       *        @p val, if there are more than one elements have same index,
-       *        the nearest one (first touched) will be return. if not found,
-       *        @a end() will be returned.
-       */
-      iterator find(iterator hint, const Index &val)
-          noexcept(node_type::is_comparator_noexcept)
-      { return find(hint, val, config::default_lookup_policy()); }
-
-      /**
        * @brief Find an element its index is equals to @p val
        * @tparam LookupPolicy Lookup policy
        * @param val  The value of index of the element want to find
@@ -270,10 +260,9 @@ namespace lanxc
        *        the nearest one (first touched) will be return. if not found,
        *        @a end() will be returned.
        */
-      template<typename LookupPolicy>
-      typename std::enable_if<
-        index_policy::is_lookup_policy<LookupPolicy>::value, iterator>::type
-      find(iterator hint, const Index &val, LookupPolicy p)
+      template<typename LookupPolicy = default_lookup_policy>
+      lookup_policy_sfinae<LookupPolicy, iterator>
+      find(iterator hint, const Index &val, LookupPolicy p = LookupPolicy())
           noexcept(node_type::is_comparator_noexcept)
       {
         node_type &ref = *hint;
@@ -283,20 +272,6 @@ namespace lanxc
       }
 
       /**
-       * @brief Find an element its index is equals to @p val, with default
-       *        policy of index_policy::rbtree_nearest,
-       * @param val The value of index of the element want to find
-       * @returns
-       *        A const iterator point to the element with same index value
-       *        with @p val, if there are more than one elements have same
-       *        index, the one element (first touched) will be return. if not
-       *        found, @a end() will be returned.
-       */
-      const_iterator find(const Index &val) const
-          noexcept(node_type::is_comparator_noexcept)
-      { return find(val, node_type::policy()); }
-
-      /**
        * @brief Find an element its index is equals to @p val
        * @tparam LookupPolicy Lookup policy
        * @param val The value of index of the element want to find
@@ -307,10 +282,9 @@ namespace lanxc
        *        index, the one element (first touched) will be return. if not
        *        found, @a end() will be returned.
        */
-      template<typename LookupPolicy>
-      typename std::enable_if<
-        index_policy::is_lookup_policy<LookupPolicy>::value, const_iterator>::type
-      find(const Index &val, LookupPolicy p) const
+      template<typename LookupPolicy = default_lookup_policy>
+      lookup_policy_sfinae<LookupPolicy, const_iterator>
+      find(const Index &val, LookupPolicy p = LookupPolicy()) const
           noexcept(node_type::is_comparator_noexcept)
       { return find(end(), val, p); }
 
@@ -328,10 +302,9 @@ namespace lanxc
        *        index, the nearest one (first touched) will be return. if not
        *        found, @a end() will be returned.
        */
-      template<typename LookupPolicy>
-      typename std::enable_if<
-        index_policy::is_lookup_policy<LookupPolicy>::value, const_iterator>::type
-      find(const_iterator hint, const Index &val, LookupPolicy p) const
+      template<typename LookupPolicy = default_lookup_policy>
+      lookup_policy_sfinae<LookupPolicy, const_iterator>
+      find(const_iterator hint, const Index &val, LookupPolicy p = LookupPolicy()) const
           noexcept(node_type::is_comparator_noexcept)
       {
         node_type &ref = *hint;
@@ -528,18 +501,6 @@ namespace lanxc
       }
 
       /**
-       * @brief Insert an element into this tree, with unique policy
-       * @param val The element will be inserted
-       * @returns If the element is successfuly inserted into this tree,
-       *          the iterator for @p e is returned, otherwise, the
-       *          iterator for the element which conflict with this element
-       *          is returned
-       */
-      iterator insert(value_type &val) noexcept(node_type::is_comparator_noexcept)
-      { return insert(end(), val, typename config::default_insert_policy()); }
-
-
-      /**
        * @brief Insert an element into this tree
        * @tparam InsertPolicy Insert policy
        * @param val The element will be inserted
@@ -549,30 +510,13 @@ namespace lanxc
        *          iterator for the element which conflict with this element
        *          is returned
        */
-      template<typename InsertPolicy>
-      typename std::enable_if<
-        index_policy::is_insert_policy<InsertPolicy>::value, iterator>::type
-      insert(value_type &val, InsertPolicy p)
+      template<typename InsertPolicy = default_insert_policy>
+      insert_policy_sfinae<InsertPolicy, iterator>
+      insert(value_type &val, InsertPolicy p = InsertPolicy())
           noexcept(node_type::is_comparator_noexcept)
       { return insert(end(), val, p); }
 
       /**
-       * @brief Insert an element into this tree, with unique policy
-       * @param val The element will be inserted
-       * @param hint Search is start from this position other than the root
-       *             of tree, may affects performance depends on the position
-       *             between search result and @p hint
-       * @returns If the element is successfuly inserted into this tree,
-       *          the iterator for @p e is returned, otherwise, the
-       *          iterator for the element which conflict with this element
-       *          is returned
-       */
-      iterator insert(iterator hint, value_type &val)
-          noexcept(node_type::is_comparator_noexcept)
-      { return insert(hint, val, typename config::default_insert_policy()); }
-
-
-      /**
        * @brief Insert an element into this tree
        * @tparam InsertPolicy Insert policy
        * @param val The element will be inserted
@@ -585,10 +529,9 @@ namespace lanxc
        *          iterator for the element which conflict with this element
        *          is returned
        */
-      template<typename InsertPolicy>
-      typename std::enable_if<
-        index_policy::is_insert_policy<InsertPolicy>::value, iterator>::type
-      insert(iterator hint, value_type &val, InsertPolicy p)
+      template<typename InsertPolicy = default_insert_policy>
+      insert_policy_sfinae<InsertPolicy, iterator>
+      insert(iterator hint, value_type &val, InsertPolicy p = InsertPolicy())
           noexcept(node_type::is_comparator_noexcept)
       {
         node_type &ref = *hint;
@@ -599,30 +542,14 @@ namespace lanxc
        * @brief Insert all elements from iterator range [\p b, \p e) into this
        *        tree, with unique policy
        * @tparam InputIterator the type of the iterator
-       * @param b The begin of the range
-       * @param e The end of the range
-       */
-      template<typename InputIterator>
-      void insert(InputIterator b, InputIterator e)
-          noexcept(node_type::is_comparator_noexcept)
-      {
-        while (b != e)
-          insert(*b++);
-      }
-
-      /**
-       * @brief Insert all elements from iterator range [\p b, \p e) into this
-       *        tree, with unique policy
-       * @tparam InputIterator the type of the iterator
        * @tparam InsertPolicy Insert policy
        * @param b The begin of the range
        * @param e The end of the range
        * @param p policy
        */
-      template<typename InputIterator, typename InsertPolicy>
-      typename std::enable_if<
-        index_policy::is_insert_policy<InsertPolicy>::value>::type
-      insert(InputIterator b, InputIterator e, InsertPolicy p)
+      template<typename InputIterator, typename InsertPolicy = default_insert_policy>
+      insert_policy_sfinae<InsertPolicy, iterator>
+      insert(InputIterator b, InputIterator e, InsertPolicy p = InsertPolicy())
           noexcept(node_type::is_comparator_noexcept)
       {
         while (b != e)
@@ -633,24 +560,6 @@ namespace lanxc
        * @brief Insert all elements from iterator range [\p b, \p e) into this
        *        tree, with unique policy
        * @tparam InputIterator the type of the iterator
-       * @param b The begin of the range
-       * @param e The end of the range
-       * @param hint Search is start from this position other than the root
-       *             of tree, may affects performance depends on the position
-       *             between search result and @p hint
-       */
-      template<typename InputIterator>
-      void insert(InputIterator b, InputIterator e, iterator hint)
-          noexcept(node_type::is_comparator_noexcept)
-      {
-        while (b != e)
-          insert(hint, *b++);
-      }
-
-      /**
-       * @brief Insert all elements from iterator range [\p b, \p e) into this
-       *        tree, with unique policy
-       * @tparam InputIterator the type of the iterator
        * @tparam InsertPolicy Insert policy
        * @param b The begin of the range
        * @param e The end of the range
@@ -659,10 +568,11 @@ namespace lanxc
        *             between search result and @p hint
        * @param p policy
        */
-      template<typename InputIterator, typename InsertPolicy>
-      typename std::enable_if<
-        index_policy::is_insert_policy<InsertPolicy>::value, iterator>::type
-      insert(InputIterator b, InputIterator e, iterator hint, InsertPolicy p)
+      template<typename InputIterator,
+        typename InsertPolicy = default_insert_policy>
+      insert_policy_sfinae<InsertPolicy>
+      insert(InputIterator b, InputIterator e, iterator hint,
+          InsertPolicy p = InsertPolicy())
           noexcept(node_type::is_comparator_noexcept)
       {
         while (b != e)

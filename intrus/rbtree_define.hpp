@@ -58,6 +58,21 @@ namespace lanxc
        * despiting the position of other equivalent nodes, when doing insert*/
       struct nearest {};
 
+      /** @brief Policy for insert that will replace another one node if they
+       * have equivalent index value, if there are more than one node is
+       * equivalent, the one the found at first time will be replace */
+      struct replace {};
+
+      /** @brief Policy for insert that will replace another one node if they
+       * have equivalent index value, if there are more than one node is
+       * equivalent, the first one will be replaced */
+      struct replace_frontmost {};
+
+      /** @brief Policy for insert that will replace another one node if they
+       * have equivalent index value, if there are more than one node is
+       * equivalent, the last one will be */
+      struct replace_backmost {};
+
       /** @} */
 
 
@@ -88,6 +103,18 @@ namespace lanxc
 
       template<>
       struct is_insert_policy<nearest>
+      { static constexpr bool value = true; };
+
+      template<>
+      struct is_insert_policy<replace_frontmost>
+      { static constexpr bool value = true; };
+
+      template<>
+      struct is_insert_policy<replace_backmost>
+      { static constexpr bool value = true; };
+
+      template<>
+      struct is_insert_policy<replace>
       { static constexpr bool value = true; };
 
       template<>
