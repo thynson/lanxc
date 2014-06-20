@@ -31,12 +31,12 @@ namespace lanxc
      * @brief Iterator for rbtrree
      * @ingroup intrusive_rbtree
      */
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     class rbtree_iterator
       : public std::iterator<std::bidirectional_iterator_tag,
                              Node, std::ptrdiff_t, Node *, Node &>
     {
-      using node_type = rbtree_node<Index, Node, Config,
+      using node_type = rbtree_node<Index, Node, Tag,
                                     rbtree_node<void, void>>;
     public:
 
@@ -110,14 +110,16 @@ namespace lanxc
      * @brief Constant iterator for rbtrree
      * @ingroup intrusive_rbtree
      */
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     class rbtree_const_iterator
       : public std::iterator<std::bidirectional_iterator_tag, Node>
     {
-      using node_type = const rbtree_node<Index, Node, Config>;
-      using rbtree_iterator = rbtree_iterator<Index, Node, Config>;
+      using node_type = const rbtree_node<Index, Node, Tag>;
+      using rbtree_iterator = ::lanxc::intrus::rbtree_iterator<Index, Node, Tag>;
     public:
-      explicit rbtree_const_iterator(node_type *x) noexcept = default;
+      explicit rbtree_const_iterator(node_type *x) noexcept
+        : m_node(x)
+      { }
 
       rbtree_const_iterator(const rbtree_iterator &iter) noexcept
         : rbtree_const_iterator(iter.operator->())

@@ -61,8 +61,8 @@ namespace lanxc
     };
 
 
-    template<typename Index, typename Node, typename Config>
-    class rbtree_node<Index, Node, Config, rbtree_node<void, void>>
+    template<typename Index, typename Node, typename Tag>
+    class rbtree_node<Index, Node, Tag, rbtree_node<void, void>>
     {
     public:
       using pointer = rbtree_node *;
@@ -70,7 +70,7 @@ namespace lanxc
       using reference = rbtree_node &;
       using const_reference = const rbtree_node &;
 
-      using config = Config;
+      using config = rbtree_config<Tag>;
       using comparator_type = typename config::template comparator<Index>;
       using node_pointer = typename config::template node_pointer<rbtree_node>;
 
@@ -1248,25 +1248,25 @@ namespace lanxc
 
     };
 
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     typename
-    rbtree_node<Index, Node, Config, rbtree_node<void, void>>::comparator_type
-    rbtree_node<Index, Node, Config, rbtree_node<void, void>>::s_comparator;
+    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::comparator_type
+    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::s_comparator;
 
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     typename
-    rbtree_node<Index, Node, Config, rbtree_node<void, void>>::rcomparator_type
-    rbtree_node<Index, Node, Config, rbtree_node<void, void>>::s_rcomparator;
+    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::rcomparator_type
+    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::s_rcomparator;
 
 
-    template<typename Index, typename Node, typename Config>
-    class rbtree_node<Index, Node, Config>
+    template<typename Index, typename Node, typename Tag>
+    class rbtree_node<Index, Node, Tag>
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, Config, rbtree_node<void, void>>
+      , public rbtree_node<Index, Node, Tag, rbtree_node<void, void>>
     {
       using detail = rbtree_node<void, void>;
-      template<typename config>
-      using base_node = rbtree_node<Index, Node, config, rbtree_node<void, void>>;
+      template<typename tag>
+      using base_node = rbtree_node<Index, Node, tag, rbtree_node<void, void>>;
     public:
 
       template<typename ...Arguments>
@@ -1282,12 +1282,12 @@ namespace lanxc
       template<typename ...Arguments>
       void set_index(Arguments && ...arguments)
       {
-        auto hint = base_node<Config>::unlink();
+        auto hint = base_node<Tag>::unlink();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         if (hint)
-          base_node<Config>::insert(*hint, *this,
-              typename Config::default_insert_policy());
+          base_node<Tag>::insert(*hint, *this,
+              typename base_node<Tag>::config::default_insert_policy());
       }
 
       template<typename InsertPolicy, typename ...Arguments>
@@ -1295,13 +1295,13 @@ namespace lanxc
         index_policy::is_insert_policy<InsertPolicy>::value>::type
       set_index(index_policy::conflict policy, Arguments && ...arguments)
       {
-        auto hint = base_node<Config>::unlink();
+        auto hint = base_node<Tag>::unlink();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
-        base_node<Config>::insert(*hint, *this, policy);
+        base_node<Tag>::insert(*hint, *this, policy);
       }
 
-      template<typename config = Config>
+      template<typename config = Tag>
       typename std::enable_if<
         std::is_base_of<base_node<config>, rbtree_node>::value,
         base_node<config>>::type &get_node()
@@ -1310,15 +1310,15 @@ namespace lanxc
 
     };
 
-    template<typename Index, typename Node, typename ...Config>
+    template<typename Index, typename Node, typename ...Tag>
     class rbtree_node
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, Config, rbtree_node<void, void>>...
+      , public rbtree_node<Index, Node, Tag, rbtree_node<void, void>>...
     {
 
       using detail = rbtree_node<void, void>;
-      template<typename config>
-      using base_node = rbtree_node<Index, Node, config, rbtree_node<void, void>>;
+      template<typename tag>
+      using base_node = rbtree_node<Index, Node, tag, rbtree_node<void, void>>;
     public:
 
       template<typename ...Arguments>
@@ -1330,19 +1330,19 @@ namespace lanxc
       const Index &get_index() const
       { return rbtree_node<Index, void>::m_index; }
 
-      template<typename config>
+      template<typename tag>
       typename std::enable_if<
-        std::is_base_of<base_node<config>, rbtree_node>::value,
-        base_node<config>>::type &
+        std::is_base_of<base_node<tag>, rbtree_node>::value,
+        base_node<tag>>::type &
       get_node()
       { return *this; }
 
       template<typename ...Arguments>
       void set_index(Arguments && ...arguments) noexcept
       {
-        std::tuple<set_index_helper<Config>...> helpers
+        std::tuple<set_index_helper<Tag>...> helpers
           = std::make_tuple(
-              set_index_helper<Config>(*this, base_node<Config>::unlink())...);
+              set_index_helper<Tag>(*this, base_node<Tag>::unlink())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
@@ -1352,9 +1352,9 @@ namespace lanxc
         index_policy::is_insert_policy<InsertPolicy>::value>::type
       set_index(InsertPolicy policy, Arguments && ...arguments) noexcept
       {
-        std::tuple<set_index_helper<Config, decltype(policy)>...> helpers
-          = std::make_tuple(set_index_helper<Config, decltype(policy)>(
-                *this, base_node<Config>::unlink())...);
+        std::tuple<set_index_helper<Tag, decltype(policy)>...> helpers
+          = std::make_tuple(set_index_helper<Tag, decltype(policy)>(
+                *this, base_node<Tag>::unlink())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
@@ -1362,12 +1362,13 @@ namespace lanxc
 
     private:
 
-      template<typename config, typename Policy = typename config::default_insert_policy>
+      template<typename tag,
+        typename Policy = typename base_node<tag>::config::default_insert_policy>
       struct set_index_helper
       {
         rbtree_node &node;
-        typename base_node<config>::pointer hints;
-        set_index_helper(rbtree_node &node, typename base_node<config>::pointer hints)
+        typename base_node<tag>::pointer hints;
+        set_index_helper(rbtree_node &node, typename base_node<tag>::pointer hints)
           : node(node)
           , hints(hints)
         {  }
@@ -1392,21 +1393,22 @@ namespace lanxc
         ~set_index_helper()
         {
           if (hints != nullptr)
-            base_node<config>::insert(*hints, node, Policy());
+            base_node<tag>::insert(*hints, node, Policy());
         }
 
       };
 
-      template<typename config, typename Policy>
-      void reinsert(typename base_node<config>::pointer hint, Policy policy)
+      template<typename tag, typename Policy>
+      void reinsert(typename base_node<tag>::pointer hint, Policy policy)
       {
         reinsert(hint, *this, policy);
       }
 
-      template<typename config, typename Policy>
-      void reinsert(typename base_node<config>::pointer hint)
+      template<typename tag, typename Policy>
+      void reinsert(typename base_node<tag>::pointer hint)
       {
-        reinsert(hint, *this, typename config::default_insert_policy());
+        reinsert(hint, *this,
+            typename rbtree_config<tag>::default_insert_policy());
       }
 
     };

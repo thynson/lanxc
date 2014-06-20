@@ -77,11 +77,11 @@ namespace lanxc
 
 
       /** @brief policy varifier */
-      template<typename T>
+      template<typename InsertPolicy>
       struct is_insert_policy
       { static constexpr bool value = false; };
 
-      template<typename T>
+      template<typename LookupPolicy>
       struct is_lookup_policy
       { static constexpr bool value = false; };
 
@@ -133,16 +133,16 @@ namespace lanxc
     template<typename Tag=void>
     struct rbtree_config;
 
-    template<typename Index, typename Node, typename ...Config>
+    template<typename Index, typename Node, typename ...Tag>
     class rbtree_node;
 
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     class rbtree_iterator;
 
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     class rbtree_const_iterator;
 
-    template<typename Index, typename Node, typename Config = rbtree_config<>>
+    template<typename Index, typename Node, typename Tag = void>
     class rbtree;
 
 

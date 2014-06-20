@@ -35,11 +35,11 @@ namespace lanxc
      * @brief RBTree container
      * @ingroup intrusive_rbtree
      */
-    template<typename Index, typename Node, typename Config>
+    template<typename Index, typename Node, typename Tag>
     class rbtree
     {
       using detail                  = rbtree_node<void, void>;
-      using node_type               = rbtree_node<Index, Node, Config, detail>;
+      using node_type               = rbtree_node<Index, Node, Tag, detail>;
       using config                  = typename node_type::config;
       using default_insert_policy   = typename config::default_insert_policy;
       using default_lookup_policy   = typename config::default_lookup_policy;
@@ -67,8 +67,8 @@ namespace lanxc
 
     public:
 
-      using iterator               = rbtree_iterator<Index, Node, Config>;
-      using const_iterator         = rbtree_const_iterator<Index, Node, Config>;
+      using iterator               = rbtree_iterator<Index, Node, Tag>;
+      using const_iterator         = rbtree_const_iterator<Index, Node, Tag>;
       using reverse_iterator       = std::reverse_iterator<iterator>;
       using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
@@ -416,7 +416,7 @@ namespace lanxc
       iterator upper_bound(iterator hint, const Index &val)
           noexcept(node_type::is_comparator_noexcept)
       {
-        auto &ref = hint->template get_node<Config>();
+        auto &ref = hint->template get_node<Tag>();
         return iterator(node_type::upper_bound(ref, val));
       }
 
@@ -432,7 +432,7 @@ namespace lanxc
       const_iterator upper_bound(const_iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
       {
-        auto &ref = hint->template get_node<Config>();
+        auto &ref = hint->template get_node<Tag>();
         return const_iterator(node_type::upper_bound(ref, val));
       }
 
