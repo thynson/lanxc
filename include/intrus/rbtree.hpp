@@ -596,33 +596,12 @@ namespace lanxc
           erase(i++);
       }
 
-
-      /**
-       * @brief Remove all elements that accept by @p predicate from
-       *        this tree
-       * @param predicate Functor that test whether an element should be
-       *        removed
-       */
-      template<typename Predicate>
-      typename std::enable_if<!std::is_same<Index, Predicate>::value, void>::type
-      remove(Predicate &&predicate)
-          noexcept(noexcept(predicate(std::declval<Index>())))
-      {
-        auto b = begin(), e = end();
-        while (b != e)
-        {
-          auto x = b++;
-          if (predicate(get_index(*x)))
-            erase(x);
-        }
-      }
-
       /**
        * @brief Remove all elements that their index are equals to @p val from
        *        this tree
        * @param val The value of index for searching elements
        */
-      void remove(const Index &val)
+      void erase(const Index &val)
           noexcept(node_type::is_comparator_noexcept)
       {
         auto b = lower_bound(end(), val);
