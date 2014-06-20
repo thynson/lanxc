@@ -356,7 +356,10 @@ namespace lanxc
           current->unlink_cleanup();
         }
 
-        unlink_cleanup();
+
+        m_p = m_l = m_r = this;
+        m_has_l = m_has_r = false;
+        m_is_red = true;
         return nullptr;
       }
 

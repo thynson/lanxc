@@ -112,8 +112,66 @@ namespace lanxc
      */
     template<typename Index, typename Node, typename Config>
     class rbtree_const_iterator
-      : public rbtree_iterator<Index, const Node, Config>
-    { };
+      : public std::iterator<std::bidirectional_iterator_tag, Node>
+    {
+      using node_type = const rbtree_node<Index, Node, Config>;
+      using rbtree_iterator = rbtree_iterator<Index, Node, Config>;
+    public:
+      explicit rbtree_const_iterator(node_type *x) noexcept = default;
+
+      rbtree_const_iterator(const rbtree_iterator &iter) noexcept
+        : rbtree_const_iterator(iter.operator->())
+      { }
+
+      operator bool () const noexcept
+      { return !m_node->is_container_node; }
+
+      typename rbtree_const_iterator::reference
+      operator * () const noexcept { return *internal_cast(); }
+
+      typename rbtree_const_iterator::pointer
+      operator -> () const noexcept { return internal_cast(); }
+
+      rbtree_const_iterator &operator ++ () noexcept
+      {
+        m_node = m_node->next();
+        return *this;
+      }
+
+      rbtree_const_iterator operator ++ (int) noexcept
+      {
+        auto ret(*this);
+        ++(*this);
+        return ret;
+      }
+
+      rbtree_const_iterator &operator -- () noexcept
+      {
+        m_node = m_node->prev();
+        return *this;
+      }
+
+      rbtree_const_iterator operator -- (int) noexcept
+      {
+        auto ret(*this);
+        --(*this);
+        return ret;
+      }
+
+      friend bool operator == (const rbtree_const_iterator &l,
+          const rbtree_const_iterator &r) noexcept
+      { return l.m_node == r.m_node; }
+
+      friend bool operator != (const rbtree_const_iterator &l,
+          const rbtree_const_iterator &r) noexcept
+      { return !(l.m_node == r.m_node); }
+    private:
+
+      typename rbtree_const_iterator::pointer internal_cast() const noexcept
+      { return static_cast<typename rbtree_const_iterator::pointer>(m_node); }
+
+      node_type *m_node;
+    };
 
   }
 }
