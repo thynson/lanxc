@@ -1285,8 +1285,9 @@ namespace lanxc
         auto hint = base_node<Config>::unlink();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
-        base_node<Config>::insert(*hint, *this,
-            typename Config::default_insert_policy());
+        if (hint)
+          base_node<Config>::insert(*hint, *this,
+              typename Config::default_insert_policy());
       }
 
       template<typename InsertPolicy, typename ...Arguments>
