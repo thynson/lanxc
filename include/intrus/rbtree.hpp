@@ -631,7 +631,7 @@ namespace lanxc
       { node_type::swap_nodes(m_container_node, t.m_container_node); }
 
       void clear() noexcept
-      { m_container_node.unlink(); }
+      { m_container_node.unlink_container(); }
 
     private:
       node_type m_container_node;

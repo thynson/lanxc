@@ -92,7 +92,12 @@ namespace lanxc
       {}
 
       ~rbtree_node() noexcept
-      { unlink(); }
+      {
+        if (m_is_container)
+          unlink_container();
+        else
+          unlink();
+      }
 
       rbtree_node(rbtree_node &&n) noexcept
         : rbtree_node()
@@ -117,15 +122,9 @@ namespace lanxc
        * @returns return value of next() before destroyed, or nullptr if this
        * node is container node or a node already unlinked
        **/
-      pointer unlink() noexcept
+      bool unlink() noexcept
       {
-        if (!is_linked())
-          return nullptr;
-
-        if (m_is_container)
-          return unlink_container();
-        else
-          return unlink_node();
+        return unlink_and_get_next() != nullptr;
       }
 
 
@@ -347,7 +346,7 @@ namespace lanxc
         m_is_red = m_is_container;
       }
 
-      pointer unlink_container() noexcept
+      bool unlink_container() noexcept
       {
         for (auto p = m_l; p != this; )
         {
@@ -360,11 +359,13 @@ namespace lanxc
         m_p = m_l = m_r = this;
         m_has_l = m_has_r = false;
         m_is_red = true;
-        return nullptr;
+        return false;
       }
 
-      pointer unlink_node() noexcept
+      pointer unlink_and_get_next() noexcept
       {
+        if (!is_linked())
+          return nullptr;
         pointer y = next(), x;
 
         if (m_has_l && m_has_r)
@@ -1282,7 +1283,7 @@ namespace lanxc
       template<typename ...Arguments>
       void set_index(Arguments && ...arguments)
       {
-        auto hint = base_node<Tag>::unlink();
+        auto hint = base_node<Tag>::unlink_and_get_next();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         if (hint)
@@ -1295,7 +1296,7 @@ namespace lanxc
         index_policy::is_insert_policy<InsertPolicy>::value>::type
       set_index(index_policy::conflict policy, Arguments && ...arguments)
       {
-        auto hint = base_node<Tag>::unlink();
+        auto hint = base_node<Tag>::unlink_and_get_next();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         base_node<Tag>::insert(*hint, *this, policy);
@@ -1342,7 +1343,7 @@ namespace lanxc
       {
         std::tuple<set_index_helper<Tag>...> helpers
           = std::make_tuple(
-              set_index_helper<Tag>(*this, base_node<Tag>::unlink())...);
+              set_index_helper<Tag>(*this, base_node<Tag>::unlink_and_get_next())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
@@ -1354,7 +1355,7 @@ namespace lanxc
       {
         std::tuple<set_index_helper<Tag, decltype(policy)>...> helpers
           = std::make_tuple(set_index_helper<Tag, decltype(policy)>(
-                *this, base_node<Tag>::unlink())...);
+                *this, base_node<Tag>::unlink_and_get_next())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
@@ -1408,7 +1409,7 @@ namespace lanxc
       void reinsert(typename base_node<tag>::pointer hint)
       {
         reinsert(hint, *this,
-            typename rbtree_config<tag>::default_insert_policy());
+            typename base_node<tag>::config::default_insert_policy());
       }
 
     };
