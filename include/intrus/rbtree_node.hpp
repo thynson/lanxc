@@ -30,8 +30,32 @@ namespace lanxc
     template<>
     class rbtree_node<void, void>
     {
-    public:
 
+      template<typename, typename, typename...>
+      friend class rbtree_node;
+
+      template<typename, typename, typename>
+      friend class rbtree;
+
+      /**
+       * @brief SFINAE check for lookup policy
+       * @tparam Policy Type of lookup policy
+       * @tparam Result SFINAE Result
+       */
+      template<typename Policy, typename Result = void>
+      using lookup_policy_sfinae    = typename std::enable_if<
+          index_policy::is_lookup_policy<Policy>::value,
+          Result>::type;
+
+      /**
+       * @brief SFINAE check for insert policy
+       * @tparam Policy Type of insert policy
+       * @tparam Result SFINAE Result
+       */
+      template<typename Policy, typename Result = void>
+      using insert_policy_sfinae    = typename std::enable_if<
+          index_policy::is_insert_policy<Policy>::value,
+          Result>::type;
 
     };
 
@@ -1268,6 +1292,10 @@ namespace lanxc
       using detail = rbtree_node<void, void>;
       template<typename tag>
       using base_node = rbtree_node<Index, Node, tag, rbtree_node<void, void>>;
+
+      template<typename Policy, typename Result = void>
+      using insert_policy_sfinae
+          = typename detail::insert_policy_sfinae<Policy, Result>;
     public:
 
       template<typename ...Arguments>
@@ -1292,8 +1320,7 @@ namespace lanxc
       }
 
       template<typename InsertPolicy, typename ...Arguments>
-      typename std::enable_if<
-        index_policy::is_insert_policy<InsertPolicy>::value>::type
+      insert_policy_sfinae<InsertPolicy>
       set_index(index_policy::conflict policy, Arguments && ...arguments)
       {
         auto hint = base_node<Tag>::unlink_and_get_next();
@@ -1320,6 +1347,16 @@ namespace lanxc
       using detail = rbtree_node<void, void>;
       template<typename tag>
       using base_node = rbtree_node<Index, Node, tag, rbtree_node<void, void>>;
+
+      template<typename Policy, typename Result = void>
+      using insert_policy_sfinae
+          = typename detail::insert_policy_sfinae<Policy, Result>;
+
+      template<typename tag>
+      using tag_sfinae
+          = typename std::enable_if<std::is_base_of<
+              base_node<tag>, rbtree_node>::value, base_node<tag>>::type;
+
     public:
 
       template<typename ...Arguments>
@@ -1349,8 +1386,7 @@ namespace lanxc
       }
 
       template<typename InsertPolicy, typename ...Arguments>
-      typename std::enable_if<
-        index_policy::is_insert_policy<InsertPolicy>::value>::type
+      insert_policy_sfinae<InsertPolicy>
       set_index(InsertPolicy policy, Arguments && ...arguments) noexcept
       {
         std::tuple<set_index_helper<Tag, decltype(policy)>...> helpers

@@ -51,9 +51,8 @@ namespace lanxc
        * @tparam Result SFINAE Result
        */
       template<typename Policy, typename Result = void>
-      using lookup_policy_sfinae    = typename std::enable_if<
-          index_policy::is_lookup_policy<Policy>::value,
-          Result>::type;
+      using lookup_policy_sfinae
+          = typename detail::lookup_policy_sfinae<Policy, Result>;
 
       /**
        * @brief SFINAE check for insert policy
@@ -61,9 +60,8 @@ namespace lanxc
        * @tparam Result SFINAE Result
        */
       template<typename Policy, typename Result = void>
-      using insert_policy_sfinae    = typename std::enable_if<
-          index_policy::is_insert_policy<Policy>::value,
-          Result>::type;
+      using insert_policy_sfinae
+          = typename detail::insert_policy_sfinae<Policy, Result>;
 
     public:
 
