@@ -26,11 +26,88 @@ namespace lanxc
   namespace intrus
   {
 
+    template<>
+    class list<void>
+    {
+      template<typename, typename>
+      friend class list_node;
+
+      template<typename, typename>
+      friend class list_iterator;
+
+      template<typename, typename>
+      friend class list_const_iterator;
+
+      template<typename, typename>
+      friend class list;
+
+      // Implementation details here
+
+      template<typename List, bool>
+      class enable_counter
+      {
+        template<typename, typename>
+        friend class list;
+
+        using size_type = std::size_t;
+
+        void increase(size_type) noexcept {}
+
+        void decrease(size_type) noexcept {}
+
+        void swap_size(enable_counter &) { }
+
+      public:
+        size_type size() const
+        {
+          auto &l = static_cast<const List&>(*this);
+          size_type s = 0;
+          auto b = l.begin();
+          auto e = l.end();
+          while (b++ != e) s++;
+          return s;
+        }
+      };
+
+      template<typename List>
+      class enable_counter<List, true>
+      {
+        template<typename, typename>
+        friend class list;
+
+        using size_type = std::size_t;
+
+        size_type m_counter;
+        enable_counter()
+          : m_counter(0)
+        {}
+
+        void increase(size_type n) noexcept
+        { m_counter += n; }
+
+        void decrease(size_type n) noexcept
+        { m_counter -= n; }
+
+        void swap_size(enable_counter &n)
+        { std::swap(m_counter, n.m_counter); }
+
+      public:
+        size_type size() const
+        { return m_counter; }
+      };
+
+
+    };
+
     template<typename Node, typename Tag>
     class list
+      : public list<void>::enable_counter<list<Node, Tag>,
+          !list_config<Tag>::allow_constant_time_unlink>
     {
       using config                  = list_config<Tag>;
       using node_type               = list_node<Node, Tag>;
+      using enable_counter = list<void>::enable_counter<size_t,
+            !list_config<Tag>::allow_constant_time_unlink>;
     public:
       using iterator                = list_iterator<Node, Tag>;
       using const_iterator          = list_const_iterator<Node, Tag>;
@@ -39,7 +116,7 @@ namespace lanxc
       using value_type              = Node;
       using reference               = value_type &;
       using pointer                 = value_type *;
-      using size_type               = std::size_t;
+      using size_type               = typename enable_counter::size_type;
       using difference_type         = std::ptrdiff_t;
       using iterator_category       = std::bidirectional_iterator_tag;
 
@@ -70,9 +147,6 @@ namespace lanxc
       bool empty() const noexcept
       { return m_head.m_next == &m_tail; }
 
-      size_type size() const noexcept
-      { return get_size(); }
-
       iterator begin() noexcept
       { return iterator(m_head.m_next); }
 
@@ -83,7 +157,7 @@ namespace lanxc
       { return const_iterator(m_head.m_next); }
 
       const_iterator begin() const noexcept
-      { return const_iterator(m_head.m_nexgt); }
+      { return const_iterator(m_head.m_next); }
 
       const_reverse_iterator rbegin() const noexcept
       { return const_reverse_iterator(end()); }
@@ -124,7 +198,7 @@ namespace lanxc
         nref.m_prev->m_next = &nref;
         pos->m_prev = &nref;
         nref.m_next = &(*pos);
-        m_counter.increase(1);
+        this->increase(1);
       }
 
       /**
@@ -148,9 +222,14 @@ namespace lanxc
        */
       void erase(iterator pos) noexcept
       {
-        node_type &ref = *pos;
+        remove(*pos);
+      }
+
+      void remove(value_type &node) noexcept
+      {
+        node_type &ref = node;
         ref.unlink_internal();
-        m_counter.decrease(1);
+        this->decrease(1);
       }
 
       /**
@@ -166,10 +245,10 @@ namespace lanxc
 
       void clear()
       {
-        auto *ptr = m_head.m_next;
+        auto ptr = m_head.m_next;
         while (ptr != &m_tail)
         {
-          auto *tmp = ptr->m_next;
+          auto tmp = ptr->m_next;
           ptr->m_next = nullptr;
           ptr->m_prev = nullptr;
           ptr = tmp;
@@ -188,8 +267,8 @@ namespace lanxc
 
         auto b = l.begin(), e = l.end();
 
-        m_counter.increase(l.m_counter.m_counter);
-        l.m_coutner.decrease(l.m_coutner.m_counter);
+        this->increase(l.m_counter.m_counter);
+        l.decrease(l.m_coutner.m_counter);
 
         node_type &x = *(b->m_prev), &y = *(e->m_prev);
         x.m_next = &(*e);
@@ -221,8 +300,8 @@ namespace lanxc
         size_t s = 0;
         for (auto i = b; i != e; ++i) s++;
 
-        m_counter.increase(s);
-        l.m_coutner.decrease(s);
+        this->increase(s);
+        l.decrease(s);
 
         node_type &x = *(b->m_prev), &y = *(e->m_prev);
         x.m_next = &(*e);
@@ -269,29 +348,13 @@ namespace lanxc
           std::swap(lhs->m_head.m_next, rhs->m_head.m_next);
           std::swap(lhs->m_tail.m_prev, rhs->m_tail.m_prev);
         }
-        m_counter.swap(m_counter);
+        lhs->swap_size(*rhs);
       }
 
     private:
 
-      size_type get_size(
-          typename std::enable_if<config::allow_constant_time_unlink>::type)
-      {
-        size_type s = 0;
-        iterator i = begin();
-        while (i++ != end()) s++;
-        return s;
-      }
-
-      size_type get_size(
-          typename std::enable_if<!config::allow_constant_time_unlink>::type)
-      { return m_counter.m_counter; }
-
-      using size_container = list<void, void>::list_node_counter<size_type,
-            config::allow_constant_time_unlink>;
       node_type m_head;
       node_type m_tail;
-      size_container m_counter;
 
     };
 

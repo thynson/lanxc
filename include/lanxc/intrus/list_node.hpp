@@ -27,21 +27,54 @@ namespace lanxc
   namespace intrus
   {
 
+    template<>
+    class list_node<void>
+    {
+      template<typename, typename>
+      friend class list_node;
+    public:
+
+      template<typename Node, bool Enabled>
+      class enable_unlink
+      { };
+
+      template<typename Node>
+      class enable_unlink<Node, true>
+      {
+      public:
+        void unlink()
+        { static_cast<Node*>(this)->Node::unlink_internal(); }
+      };
+
+    };
+
     template<typename Node, typename Tag>
     class list_node
+      : public list_node<void>::enable_unlink<list_node<Node, Tag>,
+          list_config<Tag>::allow_constant_time_unlink>
     {
       using config = list_config<Tag>;
       using node_pointer = typename config::template pointer<list_node>;
+      using const_node_pointer = typename config::template pointer<list_node>;
+      friend class list<Node, Tag>;
+      template<typename, typename> friend class list_node;
+      template<typename, typename> friend class list_iterator;
+      template<typename, typename> friend class list_const_iterator;
+
     public:
 
-      list_node() noexcept;
+      list_node() noexcept
+        : m_prev(nullptr), m_next(nullptr)
+      {}
 
       ~list_node() noexcept
       {
         if (config::allow_constant_time_unlink)
           unlink_internal();
         else
-          assert(is_linked() && "Node should be erased from list before destroyed");
+          // When used as container node, either next link or prev link is
+          // null
+          assert(m_next == nullptr || m_prev == nullptr);
       }
 
       list_node(list_node &&other) noexcept
@@ -54,14 +87,14 @@ namespace lanxc
       list_node(const list_node &) = delete;
       list_node &operator = (const list_node &) = delete;
 
-      typename std::enable_if<config::allow_constant_time_unlink, bool>::type
-      unlink() noexcept
-      {
-        unlink_internal();
-      }
+      //typename std::enable_if<config::allow_constant_time_unlink, bool>::type
+      //unlink() noexcept
+      //{
+      //  unlink_internal();
+      //}
 
       bool is_linked() const noexcept
-      { return m_next != nullptr || m_prev != nullptr; }
+      { return m_next != nullptr && m_prev != nullptr; }
 
     private:
 
@@ -82,9 +115,6 @@ namespace lanxc
         m_next = nullptr;
         return ret;
       }
-
-      template<typename, typename> friend class list_node;
-      template<typename, typename> friend class list_iterator;
 
       list_node (list_node *prev, list_node *next) noexcept
         : m_prev(prev), m_next(next)

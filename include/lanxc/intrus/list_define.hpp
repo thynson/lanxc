@@ -36,53 +36,6 @@ namespace lanxc
     template<typename, typename=void>
     class list;
 
-    template<>
-    class list<void, void>
-    {
-      template<typename, typename>
-      friend class list_node;
-
-      template<typename, typename>
-      friend class list_iterator;
-
-      template<typename, typename>
-      friend class list_const_iterator;
-
-      template<typename, typename>
-      friend class list;
-
-      // Implementation details here
-
-      template<typename SizeType, bool>
-      struct list_node_counter
-      {
-        SizeType m_counter;
-        list_node_counter()
-          : m_counter(0)
-        {}
-
-        void increase(SizeType n) noexcept
-        { m_counter += n; }
-
-        void decrease(SizeType n) noexcept
-        { m_counter -= n; }
-
-        void swap(list_node_counter &n)
-        { std::swap(m_counter, n.m_counter); }
-      };
-
-      template<typename SizeType>
-      struct list<void, void>::list_node_counter<SizeType, false>
-      {
-        void increase(SizeType) noexcept {}
-
-        void decrease(SizeType) noexcept {}
-
-        void swap(list_node_counter &) { }
-      };
-
-    };
-
 
   }
 }

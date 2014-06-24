@@ -29,10 +29,8 @@ namespace lanxc
     template<typename Node, typename Tag>
     class list_iterator
       : public std::iterator<std::bidirectional_iterator_tag, Node>
-
     {
-      using node_type         = list_node<Node, Tag>;
-      using config            = list_config<Tag>;
+      using node_type = list_node<Node, Tag>;
 
     public:
 
@@ -43,6 +41,7 @@ namespace lanxc
       list_iterator(const list_iterator &iter) noexcept
         : m_node(iter.m_node)
       {}
+
       typename list_iterator::reference
       operator * () const noexcept { return *internal_cast(); }
 
@@ -85,17 +84,22 @@ namespace lanxc
     };
 
     template<typename Node, typename Tag>
-    class list_const_iterator : public list_iterator<const Node, Tag>
+    class list_const_iterator
+      : public std::iterator<std::bidirectional_iterator_tag, const Node>
     {
-      using node_type = typename list_iterator<const Node, Tag>::node_type;
+      using node_type = const list_node<Node, Tag>;
     public:
-      explicit list_const_iterator(node_type *p) = default;
+      explicit list_const_iterator(node_type *p) noexcept
+        : m_node(p)
+      {}
 
-      list_const_iterator(list_iterator<Node, Tag> &iter)
+      list_const_iterator(list_iterator<Node, Tag> &iter) noexcept
         : list_const_iterator(iter.operator->())
       {}
 
-      list_const_iterator(const list_const_iterator &) = default;
+      list_const_iterator(const list_const_iterator &i) noexcept
+        : m_node(i.m_node)
+      {}
 
       ~list_const_iterator() = default;
 
@@ -127,9 +131,7 @@ namespace lanxc
 
       friend bool operator ==
       (const list_const_iterator &l, const list_const_iterator &r) noexcept
-      {
-        return  l.m_node == r.m_node;
-      }
+      { return  l.m_node == r.m_node; }
 
       friend bool operator !=
       (const list_const_iterator &l, const list_const_iterator &r) noexcept
