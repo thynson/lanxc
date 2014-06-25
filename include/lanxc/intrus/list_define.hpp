@@ -18,8 +18,6 @@
 #ifndef LANXC_INTRUS_LIST_DEFINE_HPP_INCLUDED
 #define LANXC_INTRUS_LIST_DEFINE_HPP_INCLUDED
 
-#include <utility>
-
 /**
  * @defgroup intrusive_list Intrusive Bidirectional Linked List
  * @ingroup intrusive_data_structure

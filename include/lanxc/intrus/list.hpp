@@ -112,7 +112,7 @@ namespace lanxc
     {
       using config                  = list_config<Tag>;
       using node_type               = list_node<Node, Tag>;
-      using enable_counter = list<void>::enable_counter<size_t,
+      using enable_counter = list<void>::enable_counter<list,
             !list_config<Tag>::allow_constant_time_unlink>;
     public:
       using iterator                = list_iterator<Node, Tag>;
@@ -189,6 +189,14 @@ namespace lanxc
       const_reverse_iterator crend() const noexcept
       { return const_reverse_iterator(begin()); }
 
+      reference front() { return *begin(); }
+
+      const reference front() const { return *begin(); }
+
+      reference back() { return *rbegin(); }
+
+      const reference back() const { return *rbegin(); }
+
       /**
        * @brief Insert given value to specified position
        * @param pos The specified position
@@ -230,6 +238,33 @@ namespace lanxc
       {
         remove(*pos);
       }
+
+
+      /**
+       * @brief Insert a elements to the front of this list
+       * @param ref The refernce to the element to be inserted
+       */
+      void push_front(reference ref) noexcept
+      { insert(begin(), ref); }
+
+      /**
+       * @brief Insert a elements to the back of this list
+       * @param ref The refernce to the element to be inserted
+       */
+      void push_back(reference ref) noexcept
+      { insert(end(), ref); }
+
+      /**
+       * @brief Remove the first element from  the list
+       */
+      void pop_front() noexcept
+      { erase(begin()); }
+
+      /**
+       * @brief Remove the last element from the list
+       */
+      void pop_back() noexcept
+      { erase(iterator(m_tail->m_prev)); }
 
       /**
        * @brief Remove a node from this list
@@ -390,6 +425,18 @@ namespace lanxc
         lhs->swap_size(*rhs);
       }
 
+      void reverse()
+      {
+        list tmp;
+        while(!empty())
+        {
+          auto &n = front();
+          pop_front();
+          tmp.push_back(n);
+        }
+        swap(tmp);
+      }
+
       /**
        * @brief Merge a sorted part of from b to e of another list with
        * specified strict comparator
@@ -529,7 +576,6 @@ namespace lanxc
           n = b;
         }
       }
-
 
     private:
 
