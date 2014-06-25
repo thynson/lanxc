@@ -48,6 +48,10 @@ namespace lanxc
 
     };
 
+    /**
+     * @brief List node
+     * @ingroup intrusive_list
+     */
     template<typename Node, typename Tag>
     class list_node
       : public list_node<void>::enable_unlink<list_node<Node, Tag>,

@@ -20,10 +20,19 @@
 
 #include <utility>
 
+/**
+ * @defgroup intrusive_list Intrusive Bidirectional Linked List
+ * @ingroup intrusive_data_structure
+ */
+
 namespace lanxc
 {
   namespace intrus
   {
+
+    template<typename Tag = void>
+    struct list_config;
+
     template<typename, typename=void>
     class list_node;
 

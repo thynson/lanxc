@@ -19,7 +19,8 @@
 #define LANXC_INTRUS_RBTREE_DEFINE_HPP_INCLUDED
 
 /**
- *  @defgroup intrusive_rbtree Intrusive RBTree container
+ *  @defgroup intrusive_rbtree Intrusive Red-Black Tree
+ *  @ingroup intrusive_data_structure
  */
 
 namespace lanxc

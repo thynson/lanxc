@@ -101,6 +101,10 @@ namespace lanxc
 
     };
 
+    /**
+     * @brief Intrusive bidirectional linked list
+     * @ingroup intrusive_list
+     */
     template<typename Node, typename Tag>
     class list
       : public list<void>::enable_counter<list<Node, Tag>,

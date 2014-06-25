@@ -15,36 +15,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_INTRUS_LIST_CONFIG_HPP_INCLUDED
-#define LANXC_INTRUS_LIST_CONFIG_HPP_INCLUDED
+#ifndef LANXC_INTRUS_HPP_INCLUDED
+#define LANXC_INTRUS_HPP_INCLUDED
 
-#include "list_define.hpp"
+/**
+ * @defgroup intrusive_data_structure Intrusive Data Structure
+ */
 
-namespace lanxc
-{
-  namespace intrus
-  {
-
-
-    /**
-     * @brief Bidirectional linked list default configurationb
-     * @ingroup intrusive_list
-     */
-    template<>
-    struct list_config<void>
-    {
-      template<typename T>
-      using pointer  = T *;
-
-      constexpr static bool allow_constant_time_unlink = true;
-    };
-
-
-    template<typename Tag>
-    struct list_config : public list_config<void>
-    { };
-
-  }
-}
+#include "intrus/list.hpp"
+#include "intrus/rbtree.hpp"
 
 #endif

@@ -29,6 +29,10 @@ namespace lanxc
   namespace intrus
   {
 
+    /**
+     * @brief Red black tree default configuration
+     * @ingroup intrusive_rbtree
+     */
     template<>
     struct rbtree_config<void>
     {
