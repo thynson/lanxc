@@ -21,6 +21,8 @@
 #include "list_iterator.hpp"
 #include "list_node.hpp"
 
+#include "../functional.hpp"
+
 namespace lanxc
 {
   namespace intrus
@@ -225,11 +227,39 @@ namespace lanxc
         remove(*pos);
       }
 
+      /**
+       * @brief Remove a node from this list
+       *
+       * @note Unlink std::list::remove, this function doest not requires
+       * operator = for value_type be implemented. So this function removes
+       * exacly the node that passed as argument from the list.
+       * @see remove_if
+       */
       void remove(value_type &node) noexcept
       {
         node_type &ref = node;
-        ref.unlink_internal();
-        this->decrease(1);
+        if (node.is_linked())
+        {
+          ref.unlink_internal();
+          this->decrease(1);
+        }
+      }
+
+      /**
+       * @brief Remove nodes from element which was filtered by predicate
+       * @param predicate Functor to judge whether a node should be removed
+       */
+      template<typename Predicate>
+      void remove_if(Predicate &&predicate)
+        noexcept(noexcept(predicate(std::declval<Node*>())))
+      {
+        auto k = begin();
+        while (!k)
+        {
+          auto c = k++;
+          if (predicate(&*c))
+            erase(c);
+        }
       }
 
       /**
@@ -243,6 +273,9 @@ namespace lanxc
           erase(b++);
       }
 
+      /**
+       * @brief remove all nodes from this list
+       */
       void clear()
       {
         auto ptr = m_head.m_next;
@@ -313,9 +346,11 @@ namespace lanxc
         y.m_next->m_prev = &y;
       }
 
+      /** @brief Swap content with another list */
       void swap(list &&l) noexcept
       { return swap(l); }
 
+      /** @brief Swap content with another list */
       void swap(list &l) noexcept
       {
         list *lhs = this, *rhs = &l;
@@ -351,12 +386,195 @@ namespace lanxc
         lhs->swap_size(*rhs);
       }
 
+      /**
+       * @brief Merge a sorted part of from b to e of another list with
+       * specified strict comparator
+       * @param l The list which part of it will be merged @param b Begin of
+       * element to be merged
+       * @param e End of element to be merged
+       * @param comp The specified comparer
+       * @note both of this list and the part to be merged should be
+       * sorted with specified comparer, and b and e should be iterators of
+       * distinct list
+       */
+      template<typename Comparator=less<Node>>
+      void merge(list &l, iterator b, iterator e,
+          Comparator &&comp = Comparator()) noexcept(noexcept(comp(*b, *e)))
+      {
+        auto p = begin(), q = end();
+
+        while (p != q && b != e)
+        {
+          if (std::forward<Comparator>(comp)(*b, *p))
+          {
+            auto &n = *b++;
+            l.remove(n);
+            insert(p, n);
+          }
+          else
+            ++p;
+        }
+
+        if (b != e)
+          splice(q, l, b, e);
+      }
+
+      /**
+       * @brief Merge a another sorted list with specified strict comparator
+       * @param l The list to be merged
+       * @param comp The specified strict weak ordering comparer
+       * @note both of this list and the part to be merged should be sorted
+       * with specified comparer, and b and e should be iterators of distinct list
+       */
+      template<typename Comparator=less<Node>>
+      void merge(list &l, Comparator &&comp = Comparator())
+        noexcept(noexcept(merge(l, l.begin(), l.end(),
+                std::forward<Comparator>(comp))))
+      { merge(l, l.begin(), l.end(), std::forward<Comparator>(comp)); }
+
+      /**
+       * @brief Merge a another sorted list with specified strict comparator
+       * @param l The list to be merged
+       * @param comp The specified strict weak ordering comparer
+       * @note both of this list and the part to be merged should be sorted
+       * with specified comparer, and b and e should be iterators of distinct list
+       */
+      template<typename Comparator=less<Node>>
+      void merge(list &&l, Comparator &&comp = Comparator())
+        noexcept(noexcept(merge(l, l.begin(), l.end(),
+                std::forward<Comparator>(comp))))
+      { merge(l, l.begin(), l.end(), std::forward<Comparator>(comp)); }
+
+      /**
+       * @brief Erase duplicate elements with specified binary predicate
+       * @param binpred The specified binary predicate
+       */
+      template<typename BinaryPredicate=equals_to<Node>>
+      void unique(BinaryPredicate && binpred = BinaryPredicate())
+        noexcept(noexcept(std::declval<list>().unique
+              (std::declval<iterator>(), std::declval<iterator>(),
+               std::forward<BinaryPredicate>(binpred))))
+      {
+        unique(begin(), end(),
+            std::forward<BinaryPredicate>(binpred));
+      }
+
+
+      /**
+       * @brief Sort this list with specified comparator
+       * @param comp The comparator
+       */
+      template<typename Comparator=less<Node>>
+      void sort(Comparator &&comp = Comparator())
+        noexcept(noexcept(comp(std::declval<Node>(), std::declval<Node>())))
+      {
+
+        if (empty() || ++begin() == end()) return;
+
+        list carry;
+        list tmp[64];
+        list *fill = &tmp[0];
+        list *counter;
+
+        do
+        {
+          auto &n = *begin();
+          remove(n);
+          carry.insert(carry.begin(), n);
+
+          for (counter = &tmp[0];
+              counter != fill && !counter->empty();
+              ++counter)
+          {
+            counter->merge(carry, std::forward<Comparator>(comp));
+            counter->swap(carry);
+          }
+
+          carry.swap(*counter);
+          if (counter == fill)
+            ++fill;
+        }
+        while(!empty());
+
+        for (counter = &tmp[1]; counter != fill; ++counter)
+          counter->merge(*(counter-1), std::forward<Comparator>(comp));
+        swap(*(fill - 1));
+      }
+
+
+      /**
+       * @brief Erase duplicate elements with specified binary predicate in
+       * rnage [b, e)
+       * @param b Begin of the range
+       * @param e End of the range
+       * @param binpred The specified binary predicate
+       */
+      template<typename BinaryPredicate>
+      void unique(iterator b, iterator e,
+          BinaryPredicate &&binpred = BinaryPredicate())
+        noexcept(noexcept(binpred(*b, *e)))
+      {
+        if (b == e) return;
+        auto n = b;
+        while(++n != b)
+        {
+          if (binpred(*b, *n))
+            erase(n);
+          else
+            b = n;
+          n = b;
+        }
+      }
+
+
     private:
 
       node_type m_head;
       node_type m_tail;
 
     };
+
+    template<typename Node, typename Tag>
+      inline bool operator == (const list<Node, Tag> &x,
+          const list<Node, Tag> &y) noexcept
+      {
+        auto i = x.begin(), j = y.begin();
+        auto m = x.end(), n = y.end();
+
+        while (i != m && j != n && *i == *j)
+        { ++i; ++j; }
+
+        return i == m && j == n;
+      }
+
+    template<typename Node, typename Tag>
+      inline bool operator != (const list<Node, Tag> &x,
+          const list<Node, Tag> &y) noexcept
+      { return !(x == y); }
+
+    template<typename Node, typename Tag>
+      inline bool operator < (const list<Node, Tag> &x,
+          const list<Node, Tag> &y) noexcept
+      {
+        if (&x == &y) return false;
+        return std::lexicographical_compare(x.begin(), x.end(),
+            y.begin(), y.end());
+      }
+
+    template<typename Node, typename Tag>
+      inline bool operator <= (const list<Node, Tag> &x,
+          const list<Node, Tag> &y) noexcept
+      { return !(y < x); }
+
+    template<typename Node, typename Tag>
+      inline bool operator > (const list<Node, Tag> &x,
+          const list<Node, Tag> &y) noexcept
+      { return y < x; }
+
+    template<typename Node, typename Tag>
+      inline bool operator >= (const list<Node, Tag> &x,
+          const list<Node, Tag> &y) noexcept
+      { return !(y > x); }
 
   }
 }
