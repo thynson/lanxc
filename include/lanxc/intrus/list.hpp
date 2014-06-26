@@ -122,6 +122,8 @@ namespace lanxc
       using value_type              = Node;
       using reference               = value_type &;
       using pointer                 = value_type *;
+      using const_reference         = const value_type &;
+      using const_pointer           = const value_type *;
       using size_type               = typename enable_counter::size_type;
       using difference_type         = std::ptrdiff_t;
       using iterator_category       = std::bidirectional_iterator_tag;
@@ -236,7 +238,12 @@ namespace lanxc
        */
       void erase(iterator pos) noexcept
       {
-        remove(*pos);
+        node_type &ref = *pos;
+        if (pos->is_linked())
+        {
+          ref.unlink_internal();
+          this->decrease(1);
+        }
       }
 
 
@@ -274,13 +281,16 @@ namespace lanxc
        * exacly the node that passed as argument from the list.
        * @see remove_if
        */
-      void remove(value_type &node) noexcept
+      template<typename BinaryPredicate=equals_to<Node>>
+      void remove(const_reference val,
+          BinaryPredicate &&binpred = BinaryPredicate()) noexcept
       {
-        node_type &ref = node;
-        if (node.is_linked())
+        auto b = begin(), e = end();
+        while (b != e)
         {
-          ref.unlink_internal();
-          this->decrease(1);
+          auto c = b++;
+          if (binpred(val, *c))
+            erase(c);
         }
       }
 
@@ -432,7 +442,7 @@ namespace lanxc
         {
           auto &n = front();
           pop_front();
-          tmp.push_back(n);
+          tmp.push_front(n);
         }
         swap(tmp);
       }
@@ -459,7 +469,7 @@ namespace lanxc
           if (std::forward<Comparator>(comp)(*b, *p))
           {
             auto &n = *b++;
-            l.remove(n);
+            l.erase(iterator(&n));
             insert(p, n);
           }
           else
@@ -479,8 +489,7 @@ namespace lanxc
        */
       template<typename Comparator=less<Node>>
       void merge(list &l, Comparator &&comp = Comparator())
-        noexcept(noexcept(merge(l, l.begin(), l.end(),
-                std::forward<Comparator>(comp))))
+        noexcept(noexcept(std::forward<Comparator>(comp)(*l.begin(), *l.end())))
       { merge(l, l.begin(), l.end(), std::forward<Comparator>(comp)); }
 
       /**
@@ -530,7 +539,7 @@ namespace lanxc
         do
         {
           auto &n = *begin();
-          remove(n);
+          pop_front();
           carry.insert(carry.begin(), n);
 
           for (counter = &tmp[0];

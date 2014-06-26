@@ -72,9 +72,9 @@ namespace lanxc
 
       using value_type             = Node;
       using reference              = value_type &;
-      using pointer                = value_type &;
-      using const_pointer          = const pointer;
-      using const_reference        = const reference;
+      using pointer                = value_type *;
+      using const_pointer          = const value_type &;
+      using const_reference        = const value_type *;
       using size_type              = std::size_t;
       using difference_type        = std::ptrdiff_t;
 

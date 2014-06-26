@@ -53,9 +53,6 @@ namespace lanxc
 
       ~rbtree_iterator() noexcept = default;
 
-      operator bool () const noexcept
-      { return !m_node->is_container_node; }
-
       typename rbtree_iterator::reference
       operator * () const noexcept { return *internal_cast(); }
 
@@ -124,9 +121,6 @@ namespace lanxc
       rbtree_const_iterator(const rbtree_iterator &iter) noexcept
         : rbtree_const_iterator(iter.operator->())
       { }
-
-      operator bool () const noexcept
-      { return !m_node->is_container_node; }
 
       typename rbtree_const_iterator::reference
       operator * () const noexcept { return *internal_cast(); }

@@ -77,7 +77,7 @@ namespace lanxc
       { return !(l == r); }
 
     private:
-      Node *internal_cast() const noexcept
+      typename list_iterator::pointer internal_cast() const noexcept
       { return static_cast<typename list_iterator::pointer>(m_node); }
 
       node_type *m_node;
@@ -138,7 +138,7 @@ namespace lanxc
       { return !(l == r); }
     private:
 
-      Node *internal_cast() const noexcept
+      typename list_const_iterator::pointer internal_cast() const noexcept
       { return static_cast<typename list_const_iterator::pointer>(m_node); }
 
       node_type *m_node;
