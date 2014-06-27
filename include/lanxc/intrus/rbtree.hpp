@@ -73,8 +73,8 @@ namespace lanxc
       using value_type             = Node;
       using reference              = value_type &;
       using pointer                = value_type *;
-      using const_pointer          = const value_type &;
-      using const_reference        = const value_type *;
+      using const_reference        = const value_type &;
+      using const_pointer          = const value_type *;
       using size_type              = std::size_t;
       using difference_type        = std::ptrdiff_t;
 
@@ -362,8 +362,7 @@ namespace lanxc
           noexcept(node_type::is_comparator_noexcept)
       {
         node_type &ref = *hint;
-        return const_iterator(node_type::lower_bound(ref,
-              node_type::get_val(val)));
+        return iterator(node_type::lower_bound(ref, val));
       }
 
       /**
@@ -378,7 +377,7 @@ namespace lanxc
       const_iterator lower_bound(const_iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
       {
-        node_type &ref = *hint;
+        const node_type &ref = *hint;
         return const_iterator(node_type::lower_bound(ref, val));
       }
 
@@ -414,7 +413,7 @@ namespace lanxc
       iterator upper_bound(iterator hint, const Index &val)
           noexcept(node_type::is_comparator_noexcept)
       {
-        auto &ref = hint->template get_node<Tag>();
+        node_type &ref = *hint;
         return iterator(node_type::upper_bound(ref, val));
       }
 
@@ -430,7 +429,7 @@ namespace lanxc
       const_iterator upper_bound(const_iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
       {
-        auto &ref = hint->template get_node<Tag>();
+        const node_type &ref = *hint;
         return const_iterator(node_type::upper_bound(ref, val));
       }
 
@@ -460,8 +459,8 @@ namespace lanxc
       std::pair<iterator, iterator> equals_range(iterator hint, const Index &val)
           noexcept(node_type::is_comparator_noexcept)
       {
-        auto l = lower_bound(hint, val);
-        auto u = upper_bound(l, val);
+        iterator l = lower_bound(hint, val);
+        iterator u = upper_bound(l, val);
         return std::make_pair(std::move(l), std::move(u));
       }
 
@@ -493,8 +492,8 @@ namespace lanxc
       equals_range(const_iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
       {
-        auto l = lower_bound(hint, val);
-        auto u = upper_bound(l, val);
+        const_iterator l = lower_bound(hint, val);
+        const_iterator u = upper_bound(l, val);
         return std::make_pair(std::move(l), std::move(u));
       }
 

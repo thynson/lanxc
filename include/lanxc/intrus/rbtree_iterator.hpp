@@ -109,9 +109,11 @@ namespace lanxc
      */
     template<typename Index, typename Node, typename Tag>
     class rbtree_const_iterator
-      : public std::iterator<std::bidirectional_iterator_tag, Node>
+      : public std::iterator<std::bidirectional_iterator_tag,
+        const Node, std::ptrdiff_t, const Node *, const Node &>
     {
-      using node_type = const rbtree_node<Index, Node, Tag>;
+      using node_type = const rbtree_node<Index, Node, Tag,
+            rbtree_node<void, void>>;
       using rbtree_iterator = ::lanxc::intrus::rbtree_iterator<Index, Node, Tag>;
     public:
       explicit rbtree_const_iterator(node_type *x) noexcept

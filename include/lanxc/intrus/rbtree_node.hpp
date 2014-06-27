@@ -90,7 +90,7 @@ namespace lanxc
     {
     public:
       using pointer = rbtree_node *;
-      using const_pointer = const pointer;
+      using const_pointer = const rbtree_node *;
       using reference = rbtree_node &;
       using const_reference = const rbtree_node &;
 
@@ -172,12 +172,40 @@ namespace lanxc
        * @returns the root node of this rbtree, or nullptr if this tree is an
        * empty tree
        */
+      const_pointer get_root_node_from_container_node() const noexcept
+      {
+        if (m_p == this)
+          return nullptr;
+        else
+          return m_p;
+      }
+
+      /**
+       * @brief Get root node from container node
+       * @note User is responsible to ensure this node is container node
+       * @returns the root node of this rbtree, or nullptr if this tree is an
+       * empty tree
+       */
       pointer get_root_node_from_container_node() noexcept
       {
         if (m_p == this)
           return nullptr;
         else
           return m_p;
+      }
+
+      /** @brief Get root node */
+      const_pointer get_root_node() const noexcept
+      {
+        pointer p = this;
+        while (p->m_p->m_p != this)
+        {
+          if (p->m_p->m_p == p)
+            return nullptr;
+          else
+            p = p->m_p;
+        }
+        return p;
       }
 
       /** @brief Get root node */
@@ -193,6 +221,12 @@ namespace lanxc
         }
         return p;
       }
+
+      const_pointer front_of_container() const noexcept
+      { return m_l; }
+
+      const_pointer back_of_container() const noexcept
+      { return m_r; }
 
       pointer front_of_container() noexcept
       { return m_l; }
@@ -237,6 +271,19 @@ namespace lanxc
       }
 
       pointer prev() noexcept
+      {
+        if (m_has_l) return m_l->back();
+        else return m_l;
+      }
+
+
+      const_pointer next() const noexcept
+      {
+        if (m_has_r) return m_r->front();
+        else return m_r;
+      }
+
+      const_pointer prev() const noexcept
       {
         if (m_has_l) return m_l->back();
         else return m_l;
@@ -959,7 +1006,7 @@ namespace lanxc
             p = p->get_root_node_from_container_node();
         }
 
-        auto cmper = [&index, &comp] (reference node) noexcept -> bool
+        auto cmper = [&index, &comp] (Reference &node) noexcept -> bool
         { return comp(node.internal_get_index(), index); };
 
         bool hint_result = cmper(*p);
@@ -1079,7 +1126,7 @@ namespace lanxc
        * @param entry Entry node for search
        * @param index The specified value for searching the lower boundry
        */
-      static const_pointer *lower_bound(const_reference entry,
+      static const_pointer lower_bound(const_reference entry,
           const Index &index) noexcept(is_comparator_noexcept)
       { return boundry(entry, index, s_comparator).second; }
 
@@ -1452,8 +1499,7 @@ namespace lanxc
 
     /// \brief Quick access :)
     template<typename Index, typename Node>
-    class rbtree_node<Index, Node>
-      : public rbtree_node<Index, Node, rbtree_config<>>
+    class rbtree_node<Index, Node> : public rbtree_node<Index, Node, void>
     {
     public:
       template<typename ...Arguments>
