@@ -86,7 +86,7 @@ namespace lanxc
 
 
     template<typename Index, typename Node, typename Tag>
-    class rbtree_node<Index, Node, Tag, rbtree_node<void, void>>
+    class rbtree_node<Index, Node, rbtree_config<Tag>>
     {
     public:
       using pointer = rbtree_node *;
@@ -1322,23 +1322,23 @@ namespace lanxc
 
     template<typename Index, typename Node, typename Tag>
     typename
-    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::comparator_type
-    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::s_comparator;
+    rbtree_node<Index, Node, rbtree_config<Tag>>::comparator_type
+    rbtree_node<Index, Node, rbtree_config<Tag>>::s_comparator;
 
     template<typename Index, typename Node, typename Tag>
     typename
-    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::rcomparator_type
-    rbtree_node<Index, Node, Tag, rbtree_node<void, void>>::s_rcomparator;
+    rbtree_node<Index, Node, rbtree_config<Tag>>::rcomparator_type
+    rbtree_node<Index, Node, rbtree_config<Tag>>::s_rcomparator;
 
 
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<Index, Node, Tag>
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, Tag, rbtree_node<void, void>>
+      , public rbtree_node<Index, Node, rbtree_config<Tag>>
     {
       using detail = rbtree_node<void, void>;
       template<typename tag>
-      using base_node = rbtree_node<Index, Node, tag, rbtree_node<void, void>>;
+      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
 
       template<typename Policy, typename Result = void>
       using insert_policy_sfinae
@@ -1376,10 +1376,10 @@ namespace lanxc
         base_node<Tag>::insert(*hint, *this, policy);
       }
 
-      template<typename config = Tag>
+      template<typename tag = Tag>
       typename std::enable_if<
-        std::is_base_of<base_node<config>, rbtree_node>::value,
-        base_node<config>>::type &get_node()
+        std::is_base_of<base_node<tag>, rbtree_node>::value,
+        base_node<tag>>::type &get_node()
       { return *this; }
     private:
 
@@ -1388,12 +1388,12 @@ namespace lanxc
     template<typename Index, typename Node, typename ...Tag>
     class rbtree_node
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, Tag, rbtree_node<void, void>>...
+      , public rbtree_node<Index, Node, rbtree_config<Tag>>...
     {
 
       using detail = rbtree_node<void, void>;
       template<typename tag>
-      using base_node = rbtree_node<Index, Node, tag, rbtree_node<void, void>>;
+      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
 
       template<typename Policy, typename Result = void>
       using insert_policy_sfinae
@@ -1505,7 +1505,7 @@ namespace lanxc
       template<typename ...Arguments>
       rbtree_node(Arguments && ...arguments)
         noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
-        : rbtree_node<Index, Node, rbtree_config<>>(
+        : rbtree_node<Index, Node, void>(
             std::forward<Arguments>(arguments)...)
       {}
     };

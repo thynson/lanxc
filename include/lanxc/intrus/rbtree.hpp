@@ -39,8 +39,8 @@ namespace lanxc
     class rbtree
     {
       using detail                  = rbtree_node<void, void>;
-      using node_type               = rbtree_node<Index, Node, Tag, detail>;
-      using config                  = typename node_type::config;
+      using config                  = rbtree_config<Tag>;
+      using node_type               = rbtree_node<Index, Node, config>;
       using default_insert_policy   = typename config::default_insert_policy;
       using default_lookup_policy   = typename config::default_lookup_policy;
 
