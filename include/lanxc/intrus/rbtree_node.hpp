@@ -1385,6 +1385,39 @@ namespace lanxc
 
     };
 
+    template<typename Index, typename Node, typename Tag>
+    class rbtree_node<const Index, Node, Tag>
+      : public rbtree_node<Index, void>
+      , public rbtree_node<Index, Node, rbtree_config<Tag>>
+    {
+      using detail = rbtree_node<void, void>;
+      template<typename tag>
+      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
+
+      template<typename Policy, typename Result = void>
+      using insert_policy_sfinae
+          = typename detail::insert_policy_sfinae<Policy, Result>;
+    public:
+
+      template<typename ...Arguments>
+      rbtree_node(Arguments && ...arguments)
+        noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
+        : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
+      {}
+
+
+      const Index &get_index() const
+      { return rbtree_node<Index, void>::m_index; }
+
+      template<typename tag = Tag>
+      typename std::enable_if<
+        std::is_base_of<base_node<tag>, rbtree_node>::value,
+        base_node<tag>>::type &get_node()
+      { return *this; }
+    private:
+
+    };
+
     template<typename Index, typename Node, typename ...Tag>
     class rbtree_node
       : public rbtree_node<Index, void>
@@ -1494,6 +1527,45 @@ namespace lanxc
         reinsert(hint, *this,
             typename base_node<tag>::config::default_insert_policy());
       }
+
+    };
+
+    template<typename Index, typename Node, typename ...Tag>
+    class rbtree_node<const Index, Node, Tag...>
+      : public rbtree_node<Index, void>
+      , public rbtree_node<Index, Node, rbtree_config<Tag>>...
+    {
+
+      using detail = rbtree_node<void, void>;
+      template<typename tag>
+      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
+
+      template<typename Policy, typename Result = void>
+      using insert_policy_sfinae
+          = typename detail::insert_policy_sfinae<Policy, Result>;
+
+      template<typename tag>
+      using tag_sfinae
+          = typename std::enable_if<std::is_base_of<
+              base_node<tag>, rbtree_node>::value, base_node<tag>>::type;
+
+    public:
+
+      template<typename ...Arguments>
+      rbtree_node(Arguments && ...arguments)
+        noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
+        : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
+      {}
+
+      const Index &get_index() const
+      { return rbtree_node<Index, void>::m_index; }
+
+      template<typename tag>
+      typename std::enable_if<
+        std::is_base_of<base_node<tag>, rbtree_node>::value,
+        base_node<tag>>::type &
+      get_node()
+      { return *this; }
 
     };
 
