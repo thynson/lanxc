@@ -29,3 +29,4 @@ stamp-h1
 *.tar.*
 *.pyc
 /docs
+build/
