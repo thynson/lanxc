@@ -1,20 +1,18 @@
 cmake_minimum_required(VERSION 3.0)
 
 add_library(lanxc-core INTERFACE)
+
 target_include_directories(lanxc-core INTERFACE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	)
-
-
-install(TARGETS lanxc-core EXPORT lanxc-core)
-install(EXPORT lanxc-core NAMESPACE lanxc::
-	DESTINATION lib/cmake/lanxc/core )
+target_compile_options(lanxc-core INTERFACE -std=c++11)
 
 install(FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/functional.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus.hpp
 	DESTINATION include/lanxc
 	)
+
 install(FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_define.hpp
@@ -33,4 +31,41 @@ install(FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree.hpp
 	DESTINATION include/lanxc/intrus
 	)
+
+include(CMakePackageConfigHelpers)
+
+# Write version file to build dir
+write_basic_package_version_file(
+	"${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
+	VERSION 1.0
+	COMPATIBILITY AnyNewerVersion
+	)
+
+# Install version file
+install(FILES
+	"${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
+	DESTINATION lib/cmake/lanxc-core
+	)
+
+# Export targets
+install(TARGETS lanxc-core EXPORT lanxc-core-targets)
+#export(EXPORT lanxc-core-targets
+#	FILE "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-targets.cmake"
+#	NAMESPACE lanxc:: )
+install(EXPORT lanxc-core-targets
+	FILE lanxc-core-targets.cmake
+	NAMESPACE lanxc::
+	DESTINATION lib/cmake/lanxc-core
+	)
+
+# Package config file
+configure_file("lanxc-core-config.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-config.cmake"
+	COPY_ONLY)
+
+# Install package config file
+install(FILES lanxc-core-config.cmake
+	DESTINATION lib/cmake/lanxc-core
+	)
+
 
