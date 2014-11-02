@@ -1082,7 +1082,8 @@ namespace lanxc
       {
         auto *p = boundry(entry, index, s_rcomparator).first;
 
-        if (s_comparator(index_fetcher(*p), index) != s_rcomparator(index_fetcher(*p), index))
+        if (s_comparator(p->internal_get_index(), index)
+		        != s_rcomparator(p->internal_get_index(), index))
           return p;
         else
           return nullptr;
@@ -1091,9 +1092,10 @@ namespace lanxc
       static pointer find(reference entry,
           const Index &index, index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
-        auto *p = boundry(entry, index).second;
+        auto *p = boundry(entry, index, s_comparator).second;
 
-        if (cmper(index_fetcher(*p), index) != !cmper(index, index_fetcher(*p)))
+        if (s_comparator(p->internal_get_index(), index)
+		        != s_rcomparator(p->internal_get_index(), index))
           return p;
         else
           return nullptr;
@@ -1255,9 +1257,9 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::replace_frontmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.internal_get_index());
-        if (s_comparator(index_fetcher(p.second), node)
-            != s_rcomparator(index_fetcher(p.second), node))
+        auto p = boundry(entry, node.internal_get_index(), s_comparator);
+        if (s_comparator(p.second->internal_get_index(), node.internal_get_index())
+            != s_rcomparator(p.second->internal_get_index(), node.internal_get_index()))
           insert_replace(p.first, p.second, &node);
         else
           insert_between(p.first, p.second, &node);
@@ -1268,8 +1270,8 @@ namespace lanxc
           index_policy::replace_backmost) noexcept(is_comparator_noexcept)
       {
         auto p = boundry(entry, node.internal_get_index(), s_rcomparator);
-        if (s_comparator(index_fetcher(p.first), node)
-            != s_rcomparator(index_fetcher(p.first), node))
+        if (s_comparator(p.first->internal_get_index(), node.internal_get_index())
+            != s_rcomparator(p.first->internal_get_index(), node.internal_get_index()))
           insert_replace(p.first, p.second, &node);
         else
           insert_between(p.first, p.second, &node);
