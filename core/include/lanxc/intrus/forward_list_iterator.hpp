@@ -52,20 +52,10 @@ namespace lanxc
       forward_list_iterator &operator ++ () noexcept
       { m_node = m_node->m_next; return *this; }
 
-      forward_list_iterator &operator -- () noexcept
-      { m_node = m_node->m_prev; return *this; }
-
       forward_list_iterator operator ++ (int) noexcept
       {
         forward_list_iterator l(m_node);
         ++(*this);
-        return l;
-      }
-
-      forward_list_iterator operator -- (int) noexcept
-      {
-        forward_list_iterator l(m_node);
-        --(*this);
         return l;
       }
 
@@ -114,20 +104,10 @@ namespace lanxc
       forward_list_const_iterator &operator ++ () noexcept
       { m_node = m_node->m_next; return *this; }
 
-      forward_list_const_iterator &operator -- () noexcept
-      { m_node = m_node->m_prev; return *this; }
-
       forward_list_const_iterator operator ++ (int) noexcept
       {
         forward_list_const_iterator l(m_node);
         ++(*this);
-        return l;
-      }
-
-      forward_list_const_iterator operator -- (int) noexcept
-      {
-        forward_list_const_iterator l(m_node);
-        --(*this);
         return l;
       }
 

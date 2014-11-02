@@ -22,6 +22,8 @@
 
 #include "../functional.hpp"
 
+#include <algorithm>
+
 namespace lanxc
 {
   namespace intrus
@@ -137,10 +139,7 @@ namespace lanxc
         std::swap(l.m_size, m_size);
       }
 
-      void swap(forward_list &&l) noexcept
-      { swap(l); }
-
-      void splice_after(iterator pos, forward_list &l)
+      void splice_after(iterator pos, forward_list &l) noexcept
       {
         if (l.empty()) return;
 
@@ -155,8 +154,8 @@ namespace lanxc
         l.m_size = 0;
       }
 
-      void splice_after(iterator pos, forward_list &&l)
-      { splice_after(pos, l); }
+      //void splice_after(iterator pos, forward_list &&l) noexcept
+      //{ splice_after(pos, l); }
 
       void splice_after(iterator pos, forward_list &l, iterator before)
       {
@@ -194,7 +193,9 @@ namespace lanxc
       }
 
       void splice_after(iterator pos, forward_list &&l, iterator before)
-      { splice_after(pos, l, before); }
+      {
+	      splice_after(pos, l, before);
+      }
 
       void splice_after(iterator pos, forward_list &list, iterator b, iterator e)
       {
@@ -281,7 +282,7 @@ namespace lanxc
         for ( ; ; )
         {
           auto n = iterator(i->forward_list_node<Node, Tag>::m_next);
-          if (!n)
+          if (n == end())
             return;
           if (binpred(val, *n))
             erase_after(i);
@@ -296,8 +297,8 @@ namespace lanxc
         auto i = before_begin();
         for ( ; ; )
         {
-          auto n = iteraotr(i->forward_list_node<Node, Tag>::m_next);
-          if (!n)
+          auto n = iterator(i->forward_list_node<Node, Tag>::m_next);
+          if (n == end())
             return;
           if (pred(*n))
             erase_after(i);
