@@ -79,7 +79,7 @@ namespace lanxc
       using difference_type        = std::ptrdiff_t;
 
       rbtree() noexcept
-        : m_container_node(node_type::container)
+        : m_container_node()
       { }
 
       ~rbtree() noexcept
@@ -631,7 +631,7 @@ namespace lanxc
       { m_container_node.unlink_container(); }
 
     private:
-      node_type m_container_node;
+      rbtree_node<void, void, rbtree> m_container_node;
     };
   }
 }

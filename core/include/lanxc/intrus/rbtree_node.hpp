@@ -109,12 +109,6 @@ namespace lanxc
         , m_has_l(false), m_has_r(false)
       { }
 
-      rbtree_node(container_tag) noexcept
-        : m_p(this), m_l(this), m_r(this)
-        , m_is_red(true), m_is_container(true)
-        , m_has_l(false), m_has_r(false)
-      {}
-
       ~rbtree_node() noexcept
       {
         if (m_is_container)
@@ -152,7 +146,26 @@ namespace lanxc
       }
 
 
+	    const Index &get_index() const
+	    {
+		    const Node &n = static_cast<const Node &>(*this);
+		    return n.rbtree_node<Index, void>::m_index;
+	    }
+
     private:
+
+
+	    rbtree_node(container_tag) noexcept
+			    : m_p(this), m_l(this), m_r(this)
+			    , m_is_red(true), m_is_container(true)
+			    , m_has_l(false), m_has_r(false)
+	    {}
+
+	    Index &internal_get_index()
+	    {
+		    Node &n = static_cast<Node&>(*this);
+		    return n.rbtree_node<Index, void>::m_index;
+	    }
 
       /** @brief test if a node is container node or root node */
       bool is_container_or_root() const noexcept
@@ -889,10 +902,10 @@ namespace lanxc
         }
 
         auto cmp = [&] (reference node) noexcept -> bool
-        { return s_comparator(node.internal_get_index(), index); };
+        { return s_comparator(node.get_index(), index); };
 
         auto rcmp = [&] (reference node) noexcept -> bool
-        { return !s_comparator(index, node.internal_get_index()); };
+        { return !s_comparator(index, node.get_index()); };
 
         auto result = cmp(*p);
         auto rresult = rcmp(*p);
@@ -1007,7 +1020,7 @@ namespace lanxc
         }
 
         auto cmper = [&index, &comp] (Reference &node) noexcept -> bool
-        { return comp(node.internal_get_index(), index); };
+        { return comp(node.get_index(), index); };
 
         bool hint_result = cmper(*p);
 
@@ -1082,8 +1095,8 @@ namespace lanxc
       {
         auto *p = boundry(entry, index, s_rcomparator).first;
 
-        if (s_comparator(p->internal_get_index(), index)
-		        != s_rcomparator(p->internal_get_index(), index))
+        if (s_comparator(p->get_index(), index)
+		        != s_rcomparator(p->get_index(), index))
           return p;
         else
           return nullptr;
@@ -1094,8 +1107,8 @@ namespace lanxc
       {
         auto *p = boundry(entry, index, s_comparator).second;
 
-        if (s_comparator(p->internal_get_index(), index)
-		        != s_rcomparator(p->internal_get_index(), index))
+        if (s_comparator(p->get_index(), index)
+		        != !s_rcomparator(p->get_index(),index))
           return p;
         else
           return nullptr;
@@ -1166,7 +1179,7 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::backmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.internal_get_index(), s_rcomparator);
+        auto p = boundry(entry, node.get_index(), s_rcomparator);
         insert_between(p.first, p.second, &node);
         return &node;
       }
@@ -1183,7 +1196,7 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.internal_get_index(), s_comparator);
+        auto p = boundry(entry, node.get_index(), s_comparator);
         insert_between(p.first, p.second, &node);
         return &node;
       }
@@ -1200,7 +1213,7 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::nearest) noexcept(is_comparator_noexcept)
       {
-        auto p = search(entry, node.internal_get_index());
+        auto p = search(entry, node.get_index());
         insert_between(p.first, p.second, &node);
         return &node;
       }
@@ -1216,7 +1229,7 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::conflict) noexcept(is_comparator_noexcept)
       {
-        auto p = search(entry, node.internal_get_index());
+        auto p = search(entry, node.get_index());
         insert_conflict(p.first, p.second, &node);
         return node.is_linked() ? &node : p.first;
       }
@@ -1232,8 +1245,8 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::unique) noexcept(is_comparator_noexcept)
       {
-        auto l = lower_bound(entry, node.internal_get_index());
-        auto u = upper_bound(*l, node.internal_get_index());
+        auto l = lower_bound(entry, node.get_index());
+        auto u = upper_bound(*l, node.get_index());
         auto p = l->prev();
 
         while (l != u)
@@ -1249,7 +1262,7 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::replace) noexcept(is_comparator_noexcept)
       {
-        auto p = search(entry, node.internal_get_index());
+        auto p = search(entry, node.get_index());
         insert_replace(p.first, p.second, &node);
         return node.is_linked() ? &node : p.first;
       }
@@ -1257,9 +1270,9 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::replace_frontmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.internal_get_index(), s_comparator);
-        if (s_comparator(p.second->internal_get_index(), node.internal_get_index())
-            != s_rcomparator(p.second->internal_get_index(), node.internal_get_index()))
+        auto p = boundry(entry, node.get_index(), s_comparator);
+        if (s_comparator(p.second->get_index(), node.get_index())
+            != s_rcomparator(p.second->get_index(), node.get_index()))
           insert_replace(p.first, p.second, &node);
         else
           insert_between(p.first, p.second, &node);
@@ -1269,25 +1282,13 @@ namespace lanxc
       static pointer insert(reference entry, reference node,
           index_policy::replace_backmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.internal_get_index(), s_rcomparator);
-        if (s_comparator(p.first->internal_get_index(), node.internal_get_index())
-            != s_rcomparator(p.first->internal_get_index(), node.internal_get_index()))
+        auto p = boundry(entry, node.get_index(), s_rcomparator);
+        if (s_comparator(p.first->get_index(), node.get_index())
+            != s_rcomparator(p.first->get_index(), node.get_index()))
           insert_replace(p.first, p.second, &node);
         else
           insert_between(p.first, p.second, &node);
         return &node;
-      }
-
-      const Index &internal_get_index() const
-      {
-        const Node &n = static_cast<const Node &>(*this);
-        return n.rbtree_node<Index, void>::m_index;
-      }
-
-      Index &internal_get_index()
-      {
-        Node &n = static_cast<Node&>(*this);
-        return n.rbtree_node<Index, void>::m_index;
       }
 
       static comparator_type s_comparator;
@@ -1333,6 +1334,31 @@ namespace lanxc
     rbtree_node<Index, Node, rbtree_config<Tag>>::s_rcomparator;
 
 
+	  /** For container */
+    template<typename Index, typename Node, typename Tag>
+    class rbtree_node<void, void, rbtree<Index, Node, Tag>>
+		    : public rbtree_node<Index, Node, rbtree_config<Tag>>
+    {
+    public:
+	    rbtree_node()
+			    : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
+	    {}
+    };
+
+    /** For const indexed container */
+    template<typename Index, typename Node, typename Tag>
+    class rbtree_node<void, void, rbtree<const Index, Node, Tag>>
+		    : public rbtree_node<Index, Node, rbtree_config<Tag>>
+    {
+    public:
+	    rbtree_node()
+			    : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
+	    {}
+    };
+
+    /**
+	  * For single node
+    */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<Index, Node, Tag>
       : public rbtree_node<Index, void>
@@ -1387,6 +1413,7 @@ namespace lanxc
 
     };
 
+	  /** For single const indexed node */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<const Index, Node, Tag>
       : public rbtree_node<Index, void>
@@ -1407,10 +1434,6 @@ namespace lanxc
         : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
       {}
 
-
-      const Index &get_index() const
-      { return rbtree_node<Index, void>::m_index; }
-
       template<typename tag = Tag>
       typename std::enable_if<
         std::is_base_of<base_node<tag>, rbtree_node>::value,
@@ -1419,6 +1442,7 @@ namespace lanxc
     private:
 
     };
+
 
     template<typename Index, typename Node, typename ...Tag>
     class rbtree_node
@@ -1446,9 +1470,6 @@ namespace lanxc
         noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
         : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
       {}
-
-      const Index &get_index() const
-      { return rbtree_node<Index, void>::m_index; }
 
       template<typename tag>
       typename std::enable_if<
@@ -1559,9 +1580,6 @@ namespace lanxc
         : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
       {}
 
-      const Index &get_index() const
-      { return rbtree_node<Index, void>::m_index; }
-
       template<typename tag>
       typename std::enable_if<
         std::is_base_of<base_node<tag>, rbtree_node>::value,
@@ -1582,6 +1600,19 @@ namespace lanxc
         : rbtree_node<Index, Node, void>(
             std::forward<Arguments>(arguments)...)
       {}
+    };
+
+    /// \brief Quick access :)
+    template<typename Index, typename Node>
+    class rbtree_node<const Index, Node> : public rbtree_node<const Index, Node, void>
+    {
+    public:
+	    template<typename ...Arguments>
+	    rbtree_node(Arguments && ...arguments)
+	    noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
+			    : rbtree_node<Index, Node, void>(
+			    std::forward<Arguments>(arguments)...)
+	    {}
     };
   }
 }
