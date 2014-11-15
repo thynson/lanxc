@@ -48,7 +48,10 @@ install(FILES
 	)
 
 # Export targets
-install(TARGETS lanxc-core EXPORT lanxc-core-targets)
+install(TARGETS lanxc-core
+    EXPORT lanxc-core-targets
+    ARCHIVE DESTINATION lib)
+
 #export(EXPORT lanxc-core-targets
 #	FILE "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-targets.cmake"
 #	NAMESPACE lanxc:: )
@@ -57,6 +60,7 @@ install(EXPORT lanxc-core-targets
 	NAMESPACE lanxc::
 	DESTINATION lib/cmake/lanxc-core
 	)
+install(DIRECTORY include/lanxc DESTINATION include)
 
 # Package config file
 configure_file("lanxc-core-config.cmake"
