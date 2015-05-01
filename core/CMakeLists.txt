@@ -1,11 +1,25 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 add_library(lanxc-core INTERFACE)
 
 target_include_directories(lanxc-core INTERFACE
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	)
-target_compile_options(lanxc-core INTERFACE -std=c++11)
+target_compile_features(lanxc-core INTERFACE
+    cxx_alias_templates
+    cxx_auto_type
+    cxx_constexpr
+    cxx_defaulted_functions
+    cxx_deleted_functions
+    cxx_delegated_constructors
+    cxx_lambdas
+    cxx_noexcept
+    cxx_nullptr
+    cxx_rvalue_references
+    cxx_right_angle_brackets
+    cxx_static_assert
+    cxx_variadic_templates
+    )
 
 install(FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/functional.hpp
@@ -52,9 +66,6 @@ install(TARGETS lanxc-core
     EXPORT lanxc-core-targets
     ARCHIVE DESTINATION lib)
 
-#export(EXPORT lanxc-core-targets
-#	FILE "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-targets.cmake"
-#	NAMESPACE lanxc:: )
 install(EXPORT lanxc-core-targets
 	FILE lanxc-core-targets.cmake
 	NAMESPACE lanxc::
@@ -63,9 +74,7 @@ install(EXPORT lanxc-core-targets
 install(DIRECTORY include/lanxc DESTINATION include)
 
 # Package config file
-configure_file("lanxc-core-config.cmake"
-	"${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-config.cmake"
-	COPY_ONLY)
+configure_file("lanxc-core-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-config.cmake")
 
 # Install package config file
 install(FILES lanxc-core-config.cmake
