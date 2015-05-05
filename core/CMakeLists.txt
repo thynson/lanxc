@@ -11,7 +11,7 @@ target_compile_features(lanxc-core INTERFACE
     cxx_constexpr
     cxx_defaulted_functions
     cxx_deleted_functions
-    cxx_delegated_constructors
+    cxx_delegating_constructors
     cxx_lambdas
     cxx_noexcept
     cxx_nullptr

@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.0)
-
-set(CMAKE_CXX_FLAGS -std=c++11)
+cmake_minimum_required(VERSION 3.1)
 
 add_subdirectory(core)
+
+enable_testing()
+
+add_subdirectory(test)
