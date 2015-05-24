@@ -69,13 +69,6 @@ namespace lanxc
        * when they are free to speedup iteration, but should slowdown
        * insertion and deletion */
       constexpr static bool optimize_for_iteration = true;
-
-      /**
-       * @brief set this to true to make methods set_index, get_index, unlink,
-       * is_linked and get_node be public member of rbtree_node, otherwise
-       * they are protected member.
-       */
-      constexpr static bool public_node_api = true;
     };
 
     template<typename Tag>
