@@ -10,7 +10,8 @@
 *~
 *.orig
 *.gch
-.clang_complete
+.ycm_extra_conf.py
+*.pyc
 tags
 Makefile.in
 aclocal.m4
@@ -30,3 +31,4 @@ stamp-h1
 *.pyc
 /docs
 build/
+.doxytag
