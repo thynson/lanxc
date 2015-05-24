@@ -29,6 +29,6 @@ libtool
 stamp-h1
 *.tar.*
 *.pyc
-/docs
+docs/
 build/
 .doxytag
