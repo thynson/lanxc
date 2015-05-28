@@ -814,9 +814,9 @@ namespace lanxc
       static void swap_nodes(reference lhs, reference rhs) noexcept
       {
         rbtree_node tmp;
-        move(lhs, tmp);
-        move(rhs, lhs);
-        move(tmp, rhs);
+        move(tmp, lhs);
+        move(lhs, rhs);
+        move(rhs, tmp);
       }
 
       static void move(reference dst, reference src) noexcept
@@ -1354,6 +1354,9 @@ namespace lanxc
 	    rbtree_node()
 			    : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
 	    {}
+
+      const Index &get_index() const
+      { return rbtree_node<Index, void>::m_index; }
     };
 
     /**
