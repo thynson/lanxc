@@ -31,4 +31,6 @@ stamp-h1
 *.pyc
 docs/
 build/
-.doxytag
+*.doxytag
+.idea/
+
