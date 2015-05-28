@@ -22,27 +22,28 @@ target_compile_features(lanxc-core INTERFACE
     )
 
 install(FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/functional.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus.hpp
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/function.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/functional.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus.hpp"
 	DESTINATION include/lanxc
 	)
 
 install(FILES
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_define.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_node.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_iterator.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_define.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_node.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_iterator.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_config.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_define.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_node.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_iterator.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree.hpp
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_config.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_define.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_node.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_iterator.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_config.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_define.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_node.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_iterator.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_config.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_define.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_node.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_iterator.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree.hpp"
 	DESTINATION include/lanxc/intrus
 	)
 
