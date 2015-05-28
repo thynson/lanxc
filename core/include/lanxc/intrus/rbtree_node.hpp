@@ -1163,9 +1163,7 @@ namespace lanxc
        */
       static const_pointer upper_bound(const_reference entry,
           const Index &index) noexcept(is_comparator_noexcept)
-      {
-        return boundry(entry, index, s_rcomparator).second;
-      }
+      { return boundry(entry, index, s_rcomparator).second; }
 
       /**
        * @brief Insert a node to a tree that hint_node is attached to
@@ -1247,7 +1245,7 @@ namespace lanxc
       {
         auto l = lower_bound(entry, node.get_index());
         auto u = upper_bound(*l, node.get_index());
-        auto p = l->prev();
+        auto p = l->m_is_container ? l->m_r : l->prev();
 
         while (l != u)
         {
