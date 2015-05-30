@@ -20,7 +20,6 @@
 
 #include "rbtree_config.hpp"
 
-
 namespace lanxc
 {
   namespace intrus
@@ -356,7 +355,7 @@ namespace lanxc
        * @note User is responsible for ensure this node does not have left
        * child
        */
-      void insert_to_left(pointer node) noexcept
+      void insert_as_left_child(pointer node) noexcept
       {
         node->m_l = m_l;
         if (m_l->m_is_container)
@@ -374,7 +373,7 @@ namespace lanxc
        * @note User is responsible for ensure this node does not have right
        * child
        */
-      void insert_to_right(pointer node) noexcept
+      void insert_as_right_child(pointer node) noexcept
       {
         node->m_r = m_r;
         if (m_r->m_is_container)
@@ -405,27 +404,201 @@ namespace lanxc
         if (m_is_container)
           insert_root_node(node);
         else if (m_has_l)
-          prev()->insert_to_left(node);
+          prev()->insert_as_left_child(node);
         else
-          insert_to_left(node);
+          insert_as_left_child(node);
       }
 
       /** @brief Insert a node as successor of this node */
       void insert_after(pointer node) noexcept
       {
         node->unlink();
-
         if (m_is_container)
           insert_root_node(node);
         else if (this->m_has_r)
-          next()->insert_to_right(node);
+          next()->insert_as_right_child(node);
         else
-          insert_to_right(node);
+          insert_as_right_child(node);
       }
+
+
+      /**
+       * @brief Insert node as parent's chlid, left child or right chlid are
+       * all possible.
+       * @param parent The node want child
+       * @param node The node want to be inserted
+       * @note if entry is equals to node, this function will return without
+       * any changed
+       */
+      static void insert(pointer entry, pointer node) noexcept
+      {
+        if (entry == node)
+          return;
+        node->unlink();
+        if (entry->m_is_container)
+          entry->insert_root_node(node);
+        else if (!entry->m_has_l)
+          entry->insert_as_left_child(node);
+        else if (!entry->m_has_r)
+          entry->insert_as_right_child(node);
+        else
+          entry->next()->insert_as_left_child(node);
+      }
+
+      /**
+       * @brief Insert a node between prev and next
+       * @param prev The node will become predecessor of node after insertion
+       * is done
+       * @param next The node will be successor of node after insertion is
+       * done
+       * @param node The node want to be inserted
+       * @note User code should ensure that #prev is predecessor of #next
+       */
+      static void insert_between(pointer prev, pointer next,
+          pointer node) noexcept
+      {
+        if (prev == node || next == node)
+          return;
+        if (prev == next)
+          insert(prev, node);
+        else if (prev->m_is_container)
+          next->insert_as_left_child(node);
+        else if (next->m_is_container)
+          prev->insert_as_right_child(node);
+        else if (prev->m_has_r)
+          next->insert_as_left_child(node);
+        else
+          prev->insert_as_right_child(node);
+      }
+
+      /**
+       * @brief Insert a node between prev and next in condition that no index
+       * will become duplicated
+       * @param prev The node will become predecessor of the node after insertion
+       * is done
+       * @param next The node will be successor of the node after insertion is
+       * done
+       * @param node The node want to be inserted
+       * @note User code should ensure that prev is predecessor of next
+       */
+      static void insert_conflict(pointer prev, pointer next,
+          pointer node) noexcept
+      {
+        if (prev == node || next == node)
+          return;
+        if (prev == next)
+        {
+          if (prev->m_is_container)
+            prev->insert_root_node(node);
+          else
+            ; // Conflict, do nothing
+        }
+        else
+          insert_between(prev, next, node);
+      }
+
+      /**
+       * @brief Insert a node between prev and next and another node with same index
+       * will be overrided (unlinked from tree)
+       * @param prev The node will become predecessor of the node after insertion
+       * is done
+       * @param next The node will be successor of the node after insertion is
+       * done
+       * @param node The node want to be inserted
+       * @note User code should ensure that prev is predecessor of #next
+       */
+      static void insert_replace(pointer prev,
+          pointer next, pointer node) noexcept
+      {
+        if (prev == node || next == node)
+          return;
+        if (prev == next)
+        {
+          if (prev->m_is_container)
+            prev->insert_root_node(node);
+          else
+          {
+            auto *l = prev->prev(), *r = prev->next();
+            prev->unlink();
+            insert_between(l, r, node);
+          }
+        }
+        else
+          insert_between(prev, next, node);
+      }
+
+
+      /** @brief Rebalance a node after insertion */
+      static void
+      rebalance_for_insertion(pointer node) noexcept
+      {
+        while(node->m_p->m_is_red && !node->is_container_or_root())
+          // Check node is not root of node and its parent are red
+        {
+          pointer parent = node->m_p;
+
+          if (parent == parent->m_p->m_l)
+          {
+            if (parent->m_p->m_has_r && parent->m_p->m_r->m_is_red)
+            {
+              pointer y = parent->m_p->m_r;
+              parent->m_is_red = false;
+
+              y->m_is_red = false;
+              parent->m_p->m_is_red = true;
+              node = parent->m_p;
+              parent = node->m_p;
+            }
+            else
+            {
+              if (parent->m_r == node)
+              {
+                node = parent;
+                node->lrotate();
+                parent = node->m_p;
+              }
+
+              parent->m_p->rrotate();
+              parent->m_is_red = false;
+              parent->m_r->m_is_red = true;
+            }
+          }
+          else if (parent == parent->m_p->m_r)
+          {
+            if (parent->m_p->m_has_l && parent->m_p->m_l->m_is_red)
+            {
+              pointer y = parent->m_p->m_l;
+              parent->m_is_red = false;
+              y->m_is_red = false;
+              parent->m_p->m_is_red = true;
+              node = parent->m_p;
+              parent = node->m_p;
+            }
+            else
+            {
+              if (parent->m_l == node)
+              {
+                node = parent;
+                node->rrotate();
+                parent = node->m_p;
+              }
+
+              parent->m_p->lrotate();
+              parent->m_is_red = false;
+              parent->m_l->m_is_red = true;
+
+            }
+          }
+        }
+
+        if (node->is_container_or_root())
+          node->m_is_red = false;
+      }
+
 
       void unlink_cleanup() noexcept
       {
-        m_l = m_r = m_p = nullptr;
+        m_l = m_r = m_p = m_is_container ? this : nullptr;
         m_has_l = m_has_r = false;
         m_is_red = m_is_container;
       }
@@ -534,168 +707,6 @@ namespace lanxc
         return y;
 
       }
-
-      /**
-       * @brief Insert node as parent's chlid, left child or right chlid are
-       * all possible.
-       * @param parent The node want child
-       * @param node The node want to be inserted
-       */
-      static void insert(pointer entry, pointer node) noexcept
-      {
-        if (entry->m_is_container)
-          entry->insert_root_node(node);
-        else if (!entry->m_has_l)
-          entry->insert_to_left(node);
-        else if (!entry->m_has_r)
-          entry->insert_to_right(node);
-        else
-          entry->next()->insert_to_left(node);
-      }
-
-      /**
-       * @brief Insert a node between prev and next
-       * @param prev The node will become predecessor of node after insertion
-       * is done
-       * @param next The node will be successor of node after insertion is
-       * done
-       * @param node The node want to be inserted
-       * @note User code should ensure that #prev is predecessor of #next
-       */
-      static void insert_between(pointer prev, pointer next,
-          pointer node) noexcept
-      {
-        if (prev == next)
-          insert(prev, node);
-        else if (prev->m_is_container)
-          next->insert_to_left(node);
-        else if (next->m_is_container)
-          prev->insert_to_right(node);
-        else if (prev->m_has_r)
-          next->insert_to_left(node);
-        else
-          prev->insert_to_right(node);
-      }
-
-      /**
-       * @brief Insert a node between prev and next in condition that no index
-       * will become duplicated
-       * @param prev The node will become predecessor of the node after insertion
-       * is done
-       * @param next The node will be successor of the node after insertion is
-       * done
-       * @param node The node want to be inserted
-       * @note User code should ensure that prev is predecessor of next
-       */
-      static void insert_conflict(pointer prev, pointer next,
-          pointer node) noexcept
-      {
-        if (prev == next)
-        {
-          if (prev->m_is_container)
-            prev->insert_root_node(node);
-          else
-            ; // Conflict, do nothing
-        }
-        else
-          insert_between(prev, next, node);
-      }
-
-      /**
-       * @brief Insert a node between prev and next and another node with same index
-       * will be overrided (unlinked from tree)
-       * @param prev The node will become predecessor of the node after insertion
-       * is done
-       * @param next The node will be successor of the node after insertion is
-       * done
-       * @param node The node want to be inserted
-       * @note User code should ensure that prev is predecessor of #next
-       */
-      static void insert_replace(pointer prev,
-          pointer next, pointer node) noexcept
-      {
-        if (prev == next)
-        {
-          if (prev->m_is_container)
-            prev->insert_root_node(node);
-          else
-          {
-            auto *l = prev->prev(), *r = prev->next();
-            prev->unlink();
-            insert_between(l, r, node);
-          }
-        }
-        else
-          insert_between(prev, next, node);
-      }
-
-      /** @brief Rebalance a node after insertion */
-      static void
-      rebalance_for_insertion(pointer node) noexcept
-      {
-        while(node->m_p->m_is_red && !node->is_container_or_root())
-          // Check node is not root of node and its parent are red
-        {
-          pointer parent = node->m_p;
-
-          if (parent == parent->m_p->m_l)
-          {
-            if (parent->m_p->m_has_r && parent->m_p->m_r->m_is_red)
-            {
-              pointer y = parent->m_p->m_r;
-              parent->m_is_red = false;
-
-              y->m_is_red = false;
-              parent->m_p->m_is_red = true;
-              node = parent->m_p;
-              parent = node->m_p;
-            }
-            else
-            {
-              if (parent->m_r == node)
-              {
-                node = parent;
-                node->lrotate();
-                parent = node->m_p;
-              }
-
-              parent->m_p->rrotate();
-              parent->m_is_red = false;
-              parent->m_r->m_is_red = true;
-            }
-          }
-          else if (parent == parent->m_p->m_r)
-          {
-            if (parent->m_p->m_has_l && parent->m_p->m_l->m_is_red)
-            {
-              pointer y = parent->m_p->m_l;
-              parent->m_is_red = false;
-              y->m_is_red = false;
-              parent->m_p->m_is_red = true;
-              node = parent->m_p;
-              parent = node->m_p;
-            }
-            else
-            {
-              if (parent->m_l == node)
-              {
-                node = parent;
-                node->rrotate();
-                parent = node->m_p;
-              }
-
-              parent->m_p->lrotate();
-              parent->m_is_red = false;
-              parent->m_l->m_is_red = true;
-
-            }
-          }
-        }
-
-        if (node->is_container_or_root())
-          node->m_is_red = false;
-      }
-
       /** @brief Rebalance the tree after unlink */
       static void
       rebalance_for_unlink(pointer node) noexcept
@@ -713,8 +724,6 @@ namespace lanxc
             if (w->m_is_red)
               // case 1:
             {
-              // as node is black but w is red, the following assertion must
-              // satisfied
               parent->lrotate();
               parent->m_is_red = true;
               parent->m_p->m_is_red = false;
@@ -757,8 +766,6 @@ namespace lanxc
             if (w->m_is_red)
               // case 1:
             {
-              // as node is black but w is red, the following assertion must
-              // satisfied
               parent->rrotate();
               parent->m_is_red = true;
               parent->m_p->m_is_red = false;
@@ -821,19 +828,24 @@ namespace lanxc
 
       static void move(reference dst, reference src) noexcept
       {
+        dst.~rbtree_node();
+
+        if (src.m_is_container)
+        {
+          new (&dst) rbtree_node(container);
+          if (src.is_empty_container_node())
+          {
+            src.unlink_cleanup();
+            return;
+          }
+        }
+        else
+        {
+          new (&dst) rbtree_node();
+        }
 
         if (src.is_linked())
         {
-          if (src.m_is_container)
-          {
-            dst.~rbtree_node();
-            new (&dst) rbtree_node(container);
-            if (src.is_empty_container_node())
-            {
-              src.unlink_cleanup();
-              return;
-            }
-          }
 
           dst.m_p = src.m_p;
           dst.m_l = src.m_l;
@@ -847,6 +859,7 @@ namespace lanxc
             dst.m_p->m_p = &dst;
             dst.m_l->m_l = &dst;
             dst.m_r->m_r = &dst;
+            src.unlink_cleanup();
             return;
           }
 
@@ -880,12 +893,14 @@ namespace lanxc
 
       /**
        * @brief Search the position where specified index is suitable to be
+       *        placed in
        * @param entry A node in the tree which we want to search in
        * @param index The index we want to search for
        * @returns a pair of pointer to rbtree_node, if the pair is the same,
        * then the index is equals to the index of node which the two pointer
-       * point to, else if the pair is not the same, the index is greater than
-       * the first of the pair and less than the second of the pair
+       * point to, else if the pair is not the same, compare the first pointer
+       * in the pair with the index is ensured to be true, while compare the
+       * second pointer in the pair with the index is ensured to be false.
        */
       template<typename Reference>
       static std::pair<pointer, pointer>
@@ -1178,7 +1193,10 @@ namespace lanxc
           index_policy::backmost) noexcept(is_comparator_noexcept)
       {
         auto p = boundry(entry, node.get_index(), s_rcomparator);
-        insert_between(p.first, p.second, &node);
+        if (p.first == p.second)
+          p.first->insert_root_node(&node);
+        else
+          insert_between(p.first, p.second, &node);
         return &node;
       }
 
@@ -1195,7 +1213,10 @@ namespace lanxc
           index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
         auto p = boundry(entry, node.get_index(), s_comparator);
-        insert_between(p.first, p.second, &node);
+        if (p.first == p.second)
+          p.first->insert_root_node(&node);
+        else
+          insert_between(p.first, p.second, &node);
         return &node;
       }
 
@@ -1212,7 +1233,10 @@ namespace lanxc
           index_policy::nearest) noexcept(is_comparator_noexcept)
       {
         auto p = search(entry, node.get_index());
-        insert_between(p.first, p.second, &node);
+        if (p.first == p.second)
+          insert(p.first, &node);
+        else
+          insert_between(p.first, p.second, &node);
         return &node;
       }
 
@@ -1246,14 +1270,19 @@ namespace lanxc
         auto l = lower_bound(entry, node.get_index());
         auto u = upper_bound(*l, node.get_index());
         auto p = l->m_is_container ? l->m_r : l->prev();
+        bool found = false;
 
         while (l != u)
         {
           auto x = l;
           l = l->next();
-          x->unlink();
+          if (x != &node)
+            x->unlink();
+          else
+            found = true;
         }
-        insert_between(p, u, &node);
+        if (!found)
+          insert_between(p, u, &node);
         return &node;
       }
 
@@ -1269,7 +1298,9 @@ namespace lanxc
           index_policy::replace_frontmost) noexcept(is_comparator_noexcept)
       {
         auto p = boundry(entry, node.get_index(), s_comparator);
-        if (s_comparator(p.second->get_index(), node.get_index())
+        if (p.first == p.second)
+          p.first->insert_root_node(&node);
+        else if (s_comparator(p.second->get_index(), node.get_index())
             != s_rcomparator(p.second->get_index(), node.get_index()))
           insert_replace(p.first, p.second, &node);
         else
@@ -1281,7 +1312,9 @@ namespace lanxc
           index_policy::replace_backmost) noexcept(is_comparator_noexcept)
       {
         auto p = boundry(entry, node.get_index(), s_rcomparator);
-        if (s_comparator(p.first->get_index(), node.get_index())
+        if (p.first == p.second)
+          p.first->insert_root_node(&node);
+        else if (s_comparator(p.first->get_index(), node.get_index())
             != s_rcomparator(p.first->get_index(), node.get_index()))
           insert_replace(p.first, p.second, &node);
         else
