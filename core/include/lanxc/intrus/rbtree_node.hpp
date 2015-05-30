@@ -914,7 +914,7 @@ namespace lanxc
           return std::make_pair(p, p);
         else if (result)
         {
-          while (!p->m_p->m_is_container)
+          while (!p->is_container_or_root())
           {
             if (p == p->m_p->m_l)
             {
@@ -946,7 +946,7 @@ namespace lanxc
         }
         else
         {
-          while (!p->m_p->m_is_container)
+          while (!p->is_container_or_root())
           {
             if (p == p->m_p->m_r)
             {
@@ -1026,7 +1026,7 @@ namespace lanxc
 
         if (hint_result)
         {
-          while (!p->m_p->m_is_container)
+          while (!p->is_container_or_root())
           {
             if (p == p->m_p->m_l)
             {
@@ -1050,7 +1050,7 @@ namespace lanxc
         }
         else
         {
-          while (!p->m_p->m_is_container)
+          while (!p->is_container_or_root())
           {
             if (p == p->m_p->m_r)
             {
