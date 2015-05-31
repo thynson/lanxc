@@ -141,7 +141,7 @@ namespace lanxc
        **/
       bool unlink() noexcept
       {
-        return unlink_and_get_next() != nullptr;
+        return unlink_and_get_adjoin_node().first != nullptr;
       }
 
 
@@ -278,12 +278,14 @@ namespace lanxc
 
       pointer next() noexcept
       {
+        if (m_is_container) return m_l;
         if (m_has_r) return m_r->front();
         else return m_r;
       }
 
       pointer prev() noexcept
       {
+        if (m_is_container) return m_r;
         if (m_has_l) return m_l->back();
         else return m_l;
       }
@@ -291,12 +293,14 @@ namespace lanxc
 
       const_pointer next() const noexcept
       {
+        if (m_is_container) return m_l;
         if (m_has_r) return m_r->front();
         else return m_r;
       }
 
       const_pointer prev() const noexcept
       {
+        if (m_is_container) return m_r;
         if (m_has_l) return m_l->back();
         else return m_l;
       }
@@ -497,37 +501,6 @@ namespace lanxc
           insert_between(prev, next, node);
       }
 
-      /**
-       * @brief Insert a node between prev and next and another node with same index
-       * will be overrided (unlinked from tree)
-       * @param prev The node will become predecessor of the node after insertion
-       * is done
-       * @param next The node will be successor of the node after insertion is
-       * done
-       * @param node The node want to be inserted
-       * @note User code should ensure that prev is predecessor of #next
-       */
-      static void insert_replace(pointer prev,
-          pointer next, pointer node) noexcept
-      {
-        if (prev == node || next == node)
-          return;
-        if (prev == next)
-        {
-          if (prev->m_is_container)
-            prev->insert_root_node(node);
-          else
-          {
-            auto *l = prev->prev(), *r = prev->next();
-            prev->unlink();
-            insert_between(l, r, node);
-          }
-        }
-        else
-          insert_between(prev, next, node);
-      }
-
-
       /** @brief Rebalance a node after insertion */
       static void
       rebalance_for_insertion(pointer node) noexcept
@@ -619,14 +592,22 @@ namespace lanxc
         return false;
       }
 
-      pointer unlink_and_get_next() noexcept
+      std::pair<pointer, pointer>
+      unlink_and_get_adjoin_node() noexcept
       {
         if (!is_linked())
-          return nullptr;
-        pointer y = next(), x;
+          return std::make_pair(nullptr, nullptr);
+        std::pair<pointer, pointer> ret(prev(), next());
+        pointer x;
 
         if (m_has_l && m_has_r)
-          swap_nodes(*this, *y);
+        {
+          if (ret.first->m_is_red)
+            swap_nodes(*ret.first, *this);
+          else
+            swap_nodes(*ret.second, *this);
+        }
+
 
         if (m_has_l) x = m_l;
         else if (m_has_r) x = m_r;
@@ -704,9 +685,19 @@ namespace lanxc
         if (need_rebalance)
           rebalance_for_unlink(x);
         unlink_cleanup();
-        return y;
+        return ret;
 
       }
+
+      pointer unlink_for_hint() noexcept
+      {
+        auto pair = unlink_and_get_adjoin_node();
+        if (pair.first->m_is_container)
+          return pair.second;
+        else
+          return pair.first;
+      }
+
       /** @brief Rebalance the tree after unlink */
       static void
       rebalance_for_unlink(pointer node) noexcept
@@ -1286,42 +1277,6 @@ namespace lanxc
         return &node;
       }
 
-      static pointer insert(reference entry, reference node,
-          index_policy::replace) noexcept(is_comparator_noexcept)
-      {
-        auto p = search(entry, node.get_index());
-        insert_replace(p.first, p.second, &node);
-        return node.is_linked() ? &node : p.first;
-      }
-
-      static pointer insert(reference entry, reference node,
-          index_policy::replace_frontmost) noexcept(is_comparator_noexcept)
-      {
-        auto p = boundry(entry, node.get_index(), s_comparator);
-        if (p.first == p.second)
-          p.first->insert_root_node(&node);
-        else if (s_comparator(p.second->get_index(), node.get_index())
-            != s_rcomparator(p.second->get_index(), node.get_index()))
-          insert_replace(p.first, p.second, &node);
-        else
-          insert_between(p.first, p.second, &node);
-        return &node;
-      }
-
-      static pointer insert(reference entry, reference node,
-          index_policy::replace_backmost) noexcept(is_comparator_noexcept)
-      {
-        auto p = boundry(entry, node.get_index(), s_rcomparator);
-        if (p.first == p.second)
-          p.first->insert_root_node(&node);
-        else if (s_comparator(p.first->get_index(), node.get_index())
-            != s_rcomparator(p.first->get_index(), node.get_index()))
-          insert_replace(p.first, p.second, &node);
-        else
-          insert_between(p.first, p.second, &node);
-        return &node;
-      }
-
       static comparator_type s_comparator;
       static struct rcomparator_type
       {
@@ -1420,7 +1375,7 @@ namespace lanxc
       template<typename ...Arguments>
       void set_index(Arguments && ...arguments)
       {
-        auto hint = base_node<Tag>::unlink_and_get_next();
+        auto hint = base_node<Tag>::unlink_for_hint();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         if (hint)
@@ -1432,7 +1387,7 @@ namespace lanxc
       insert_policy_sfinae<InsertPolicy>
       set_index(index_policy::conflict policy, Arguments && ...arguments)
       {
-        auto hint = base_node<Tag>::unlink_and_get_next();
+        auto hint = base_node<Tag>::unlink_for_hint();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         base_node<Tag>::insert(*hint, *this, policy);
@@ -1517,7 +1472,7 @@ namespace lanxc
       {
         std::tuple<set_index_helper<Tag>...> helpers
           = std::make_tuple(
-              set_index_helper<Tag>(*this, base_node<Tag>::unlink_and_get_next())...);
+              set_index_helper<Tag>(*this, base_node<Tag>::unlink_for_hint())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
@@ -1528,7 +1483,7 @@ namespace lanxc
       {
         std::tuple<set_index_helper<Tag, decltype(policy)>...> helpers
           = std::make_tuple(set_index_helper<Tag, decltype(policy)>(
-                *this, base_node<Tag>::unlink_and_get_next())...);
+                *this, base_node<Tag>::unlink_for_hint())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }

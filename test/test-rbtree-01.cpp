@@ -22,53 +22,113 @@
 #include <random>
 #include <cstdint>
 #include <climits>
+#include <ctime>
 
 using namespace std;
+using namespace lanxc::intrus;
 
-class X : public lanxc::intrus::rbtree_node<int, X>
+class node : public rbtree_node<int, node>
 {
 public:
-  X(int x)
+  node(int x)
       : rbtree_node(x)
   { }
-
 };
 
-void test_erase(lanxc::intrus::rbtree<int, X> &t)
+std::mt19937 engine(static_cast<unsigned >(std::time(nullptr)));
+
+
+void test_move()
 {
 
-  while (!t.empty())
-  {
-    auto b = t.begin();
-    auto e = t.upper_bound(b, b->get_index());
-    t.erase(b, e);
-  }
+  int random_number = engine();
+  rbtree<int, node> t;
+  node n(random_number);
+  node m = std::move(n);
+  assert(m.get_index() == random_number);
+  t.insert(m);
+  assert(&t.front() == &m);
+  rbtree<int, node> r = std::move(t);
+  assert(t.empty());
+  assert(&r.front() == &m);
+  n = std::move(m);
+  assert(&r.front() == &n);
+
+}
+
+
+void test_insert_policy()
+{
+  rbtree<int, node> t;
+  int random_number = engine();
+  node l(random_number), m(random_number), n(random_number);
+
+  cout << "&l=" << &l << endl;
+  cout << "&m=" << &m << endl;
+  cout << "&n=" << &n << endl;
+
+  t.clear();
+
+  t.insert(l, index_policy::backmost());
+  t.insert(m, index_policy::backmost());
+  t.insert(n, index_policy::backmost());
+
+  assert (t.size() == 3);
+  assert (&t.front() == &l && &t.back() == &n);
+
+  t.clear();
+
+  t.insert(n, index_policy::frontmost());
+  t.insert(m, index_policy::frontmost());
+  t.insert(l, index_policy::frontmost());
+
+  assert (&t.front() == &l && &t.back() == &n);
+
+
+  t.clear();
+
+  t.insert(l, index_policy::nearest());
+  t.insert(n, index_policy::nearest());
+  t.insert(m, index_policy::nearest());
+
+  assert(t.size() == 3);
+  t.insert(l, index_policy::nearest());
+  t.insert(n, index_policy::nearest());
+  t.insert(m, index_policy::nearest());
+
+  assert(t.size() == 3);
+
+  t.insert(l, index_policy::unique());
+  assert(l.is_linked());
+  assert(!m.is_linked());
+  assert(!n.is_linked());
+
+  t.insert(m, index_policy::unique());
+  assert(!l.is_linked());
+  assert(m.is_linked());
+  assert(!n.is_linked());
+
+  t.insert(n, index_policy::unique());
+  assert(!l.is_linked());
+  assert(!m.is_linked());
+  assert(n.is_linked());
+
+  t.insert(l, index_policy::conflict());
+  t.insert(m, index_policy::conflict());
+  t.insert(n, index_policy::conflict());
+
+  assert (t.size() == 1);
+  assert (!l.is_linked());
+  assert (!m.is_linked());
+  assert (n.is_linked());
+
+  t.insert(n, index_policy::conflict());
+  assert (n.is_linked());
+
 }
 
 int main()
 {
-  vector<X> vx;
-  std::mt19937 engine;
-  vector<int> v;
-  for (int i = 0; i < 1000000; i++)
-  {
-    vx.emplace_back(i);
-    v.push_back(i);
-  }
-  lanxc::intrus::rbtree<int, X> t;
-
-  auto last = t.end();
-  std::shuffle(vx.begin(), vx.end(), engine);
-  for (auto i = vx.begin(); i != vx.end(); ++i)
-    last = t.insert(last, *i, lanxc::intrus::index_policy::backmost()); // test with hint
-
-  for (auto &i : t)
-    cout << i.get_index() << endl;
-
-  cout << t.front().get_index() << endl;
-  cout << t.back().get_index() << endl;
-  auto e = t.upper_bound(INT_MAX);
-  test_erase(t);
-  assert(t.empty());
-
+  test_move();
+  test_insert_policy();
 }

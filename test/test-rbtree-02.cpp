@@ -26,14 +26,14 @@
 using namespace std;
 using namespace lanxc::intrus;
 
-class X : public rbtree_node<int, X>
+class node : public rbtree_node<int, node>
 {
 public:
-  X(int x = 0)
+  node(int x = 0)
       : rbtree_node(x)
   { }
 
-  friend bool operator < (const X &lhs, const X &rhs)
+  friend bool operator < (const node &lhs, const node &rhs)
   { return lhs.get_index() < rhs.get_index(); }
 
 };
@@ -42,46 +42,36 @@ public:
 int main()
 {
 
-  rbtree<int, X> tree;
-  X vn[100];
+  rbtree<int, node> tree;
+  node vn[100];
   std::mt19937 engine;
-  for (X &x : vn)
+  for (node &x : vn)
     tree.insert(x, index_policy::backmost());
 
-  for (X &x : vn)
+  for (node &x : vn)
   {
     x.set_index(engine());
   }
   assert(std::is_sorted(tree.begin(), tree.end()));
-//
-//  for (X &x : tree)
-//    std::cout << x.get_index() << std::endl;
   assert(std::is_sorted(tree.begin(), tree.end()));
   tree.clear();
 
-  for (X &x : vn)
+  for (node &x : vn)
     tree.insert(x, index_policy::frontmost());
-  for (X &x : vn)
+  for (node &x : vn)
     x.set_index(engine());
   assert(std::is_sorted(tree.begin(), tree.end()));
   tree.clear();
 
-  for (X &x : vn)
+  for (node &x : vn)
     tree.insert(x, index_policy::nearest());
-  for (X &x : vn)
+  for (node &x : vn)
     x.set_index(engine());
   assert(std::is_sorted(tree.begin(), tree.end()));
   tree.clear();
 
-  for (X &x : vn)
+  for (node &x : vn)
     tree.insert(x, index_policy::unique());
-  assert(std::is_sorted(tree.begin(), tree.end()));
-  tree.clear();
-
-  for (X &x : vn)
-    tree.insert(x, index_policy::replace());
-  for (X &x : vn)
-    x.set_index(engine());
   assert(std::is_sorted(tree.begin(), tree.end()));
   tree.clear();
 
