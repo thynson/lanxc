@@ -209,28 +209,40 @@ namespace lanxc
       /** @brief Get root node */
       const_pointer get_root_node() const noexcept
       {
-        pointer p = this;
-        while (p->m_p->m_p != this)
-        {
-          if (p->m_p->m_p == p)
+        if (m_is_container)
+          if (m_p == this)
             return nullptr;
-          else
-            p = p->m_p;
-        }
+        pointer p = this;
+        while (p->m_p->m_p != p) p = p->m_p;
         return p;
       }
 
       /** @brief Get root node */
       pointer get_root_node() noexcept
       {
-        pointer p = this;
-        while (p->m_p->m_p != this)
-        {
-          if (p->m_p->m_p == p)
+        if (m_is_container)
+          if (m_p == this)
             return nullptr;
-          else
-            p = p->m_p;
-        }
+        pointer p = this;
+        while (p->m_p->m_p != p) p = p->m_p;
+        return p;
+      }
+
+      pointer get_container_node() noexcept
+      {
+        if (m_is_container) return this;
+        if (m_p == nullptr) return nullptr;
+        auto p = this;
+        while (!p->m_is_container) p = p->m_p;
+        return p;
+      }
+
+      const_pointer get_container_node() const noexcept
+      {
+        if (m_is_container) return this;
+        if (m_p == nullptr) return nullptr;
+        auto p = this;
+        while (!p->m_is_container) p = p->m_p;
         return p;
       }
 
@@ -398,6 +410,7 @@ namespace lanxc
       {
         m_p = m_l = m_r = node;
         node->m_p = node->m_l = node->m_r = this;
+        rebalance_for_insertion(node);
       }
 
       /** @brief Insert a node as predecessor of this node */
@@ -566,6 +579,8 @@ namespace lanxc
 
         if (node->is_container_or_root())
           node->m_is_red = false;
+        node = node->get_container_node();
+        static_cast<rbtree_node<void, void, rbtree<Index, Node, Tag>>*>(node)->m_size++;
       }
 
 
@@ -589,6 +604,7 @@ namespace lanxc
         m_p = m_l = m_r = this;
         m_has_l = m_has_r = false;
         m_is_red = true;
+        static_cast<rbtree_node<void, void, rbtree<Index, Node, Tag>>*>(this)->m_size = 0;
         return false;
       }
 
@@ -683,10 +699,12 @@ namespace lanxc
         bool need_rebalance = !m_is_red;
 
         if (need_rebalance)
-          rebalance_for_unlink(x);
+          x = rebalance_for_unlink(x);
+        else
+          x = m_p->get_container_node();
+        static_cast<rbtree_node<void, void, rbtree<Index, Node, Tag>>*>(x)->m_size--;
         unlink_cleanup();
         return ret;
-
       }
 
       pointer unlink_for_hint() noexcept
@@ -698,8 +716,11 @@ namespace lanxc
           return pair.first;
       }
 
-      /** @brief Rebalance the tree after unlink */
-      static void
+      /**
+       * @brief Rebalance the tree after unlink
+       * @returns The container node
+       */
+      static pointer
       rebalance_for_unlink(pointer node) noexcept
       {
 
@@ -797,11 +818,11 @@ namespace lanxc
         }
 
         if (node->m_is_container)
-          return;
+          return node;
         else if (!node->is_root_node())
           node = node->get_root_node();
-        if (node)
-          node->m_is_red = false;
+        node->m_is_red = false;
+        return node->get_container_node();
       }
 
       /**
@@ -1326,23 +1347,17 @@ namespace lanxc
 		    : public rbtree_node<Index, Node, rbtree_config<Tag>>
     {
     public:
-	    rbtree_node()
+	    rbtree_node() noexcept
 			    : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
-	    {}
-    };
-
-    /** For const indexed container */
-    template<typename Index, typename Node, typename Tag>
-    class rbtree_node<void, void, rbtree<const Index, Node, Tag>>
-		    : public rbtree_node<Index, Node, rbtree_config<Tag>>
-    {
-    public:
-	    rbtree_node()
-			    : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
+          , m_size(0)
 	    {}
 
-      const Index &get_index() const
-      { return rbtree_node<Index, void>::m_index; }
+    private:
+      template<typename, typename, typename...>
+      friend class rbtree_node;
+      template<typename, typename, typename>
+      friend class rbtree;
+      std::size_t m_size;
     };
 
     /**

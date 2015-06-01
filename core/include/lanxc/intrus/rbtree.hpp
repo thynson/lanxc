@@ -112,10 +112,7 @@ namespace lanxc
       /** @brief Count the elements in this tree */
       size_type size() const noexcept
       {
-        size_type s = 0;
-        auto b = begin(), e = end();
-        while (++b != e) ++s;
-        return s;
+        return m_container_node.m_size;
       }
 
       iterator begin() noexcept

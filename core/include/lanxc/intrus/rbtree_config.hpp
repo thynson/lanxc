@@ -57,18 +57,6 @@ namespace lanxc
 
       /** @brief Default policy for insert */
       using default_insert_policy = index_policy::unique;
-
-      /**
-       * @brief Allow a node be removed from a tree in constant time
-       * @note Enable this will make an rbtree costs linear time to count
-       * the number of its node
-       */
-      constexpr static bool allow_constant_time_unlink = true;
-
-      /** @brief Store predecessor and successor of one node in its child link
-       * when they are free to speedup iteration, but should slowdown
-       * insertion and deletion */
-      constexpr static bool optimize_for_iteration = true;
     };
 
     template<typename Tag>
