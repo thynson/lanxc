@@ -710,6 +710,8 @@ namespace lanxc
       pointer unlink_for_hint() noexcept
       {
         auto pair = unlink_and_get_adjoin_node();
+        if (pair.first == nullptr)
+          return nullptr;
         if (pair.first->m_is_container)
           return pair.second;
         else
@@ -965,7 +967,10 @@ namespace lanxc
               if (x)
                 p = p->m_r;
               else
+              {
+                result = x;
                 break;
+              }
             }
             else
               return std::make_pair(p, p->m_r);
@@ -981,7 +986,7 @@ namespace lanxc
               auto y = rcmp(*p->m_p);
               if (x != y)
                 return std::make_pair(p->m_p, p->m_p);
-              else if (x)
+              else if (!x)
               {
                 p = p->m_p;
                 continue;
@@ -994,10 +999,13 @@ namespace lanxc
               auto y = rcmp(*p->m_l);
               if (x != y)
                 return std::make_pair(p->m_l, p->m_l);
-              if (x)
+              if (!x)
                 p = p->m_l;
               else
+              {
+                result = x;
                 break;
+              }
             }
             else
               return std::make_pair(p->m_l, p);
@@ -1245,10 +1253,7 @@ namespace lanxc
           index_policy::nearest) noexcept(is_comparator_noexcept)
       {
         auto p = search(entry, node.get_index());
-        if (p.first == p.second)
-          insert(p.first, &node);
-        else
-          insert_between(p.first, p.second, &node);
+        insert_between(p.first, p.second, &node);
         return &node;
       }
 
@@ -1400,12 +1405,13 @@ namespace lanxc
 
       template<typename InsertPolicy, typename ...Arguments>
       insert_policy_sfinae<InsertPolicy>
-      set_index(index_policy::conflict policy, Arguments && ...arguments)
+      set_index_explicit(InsertPolicy policy, Arguments && ...arguments)
       {
         auto hint = base_node<Tag>::unlink_for_hint();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
-        base_node<Tag>::insert(*hint, *this, policy);
+        if (hint)
+          base_node<Tag>::insert(*hint, *this, policy);
       }
 
       template<typename tag = Tag>
