@@ -302,7 +302,7 @@ namespace lanxc
       find(const_iterator hint, const Index &val, LookupPolicy p = LookupPolicy()) const
           noexcept(node_type::is_comparator_noexcept)
       {
-        node_type &ref = *hint;
+        const node_type &ref = *hint;
         auto *result = node_type::find(ref, val, p);
         if (result == nullptr) return end();
         else return const_iterator(result);

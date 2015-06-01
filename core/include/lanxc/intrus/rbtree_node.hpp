@@ -917,8 +917,10 @@ namespace lanxc
        * second pointer in the pair with the index is ensured to be false.
        */
       template<typename Reference>
-      static std::pair<pointer, pointer>
+      static auto
       search(Reference &entry, const Index &index) noexcept
+        -> std::pair<decltype(std::addressof(entry)),
+              decltype(std::addressof(entry))>
       {
         auto *p = &entry;
 
@@ -930,10 +932,10 @@ namespace lanxc
             p = p->get_root_node_from_container_node();
         }
 
-        auto cmp = [&] (reference node) noexcept -> bool
+        auto cmp = [&] (Reference &node) noexcept -> bool
         { return s_comparator(node.get_index(), index); };
 
-        auto rcmp = [&] (reference node) noexcept -> bool
+        auto rcmp = [&] (Reference &node) noexcept -> bool
         { return !s_comparator(index, node.get_index()); };
 
         auto result = cmp(*p);
@@ -1123,6 +1125,41 @@ namespace lanxc
 
           hint_result = cmper(*p);
         }
+      }
+
+      static const_pointer find(const_reference entry,
+          const Index &index, index_policy::backmost) noexcept(is_comparator_noexcept)
+      {
+        auto *p = boundry(entry, index, s_rcomparator).first;
+
+        if (s_comparator(p->get_index(), index)
+		        != s_rcomparator(p->get_index(), index))
+          return p;
+        else
+          return nullptr;
+      }
+
+      static const_pointer find(const_reference entry,
+          const Index &index, index_policy::frontmost) noexcept(is_comparator_noexcept)
+      {
+        auto *p = boundry(entry, index, s_comparator).second;
+
+        if (s_comparator(p->get_index(), index)
+		        != !s_rcomparator(p->get_index(),index))
+          return p;
+        else
+          return nullptr;
+      }
+
+      static const_pointer find(const_reference entry,
+          const Index &index, index_policy::nearest) noexcept(is_comparator_noexcept)
+      {
+        auto p = search(entry, index);
+
+        if (p.first == p.second)
+          return p.first;
+        else
+          return nullptr;
       }
 
       static pointer find(reference entry,
