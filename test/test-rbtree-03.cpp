@@ -86,7 +86,7 @@ int main()
     cout << "finding: " << i << endl;
     for (auto iter = t.cbegin(); iter != t.cend(); ++iter)
     {
-      auto x = t.find(iter, i);
+      auto x = t.find(iter, i, index_policy::backmost());
       assert (x != t.end());
       assert (x->get_index() == i);
     }
