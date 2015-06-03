@@ -16,4 +16,5 @@ endfunction()
 
 lanxc_unit_test(test-rbtree-01)
 lanxc_unit_test(test-rbtree-02)
+lanxc_unit_test(test-rbtree-03)
 

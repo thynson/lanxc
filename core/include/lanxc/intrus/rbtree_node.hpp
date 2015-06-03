@@ -936,7 +936,7 @@ namespace lanxc
         { return s_comparator(node.get_index(), index); };
 
         auto rcmp = [&] (Reference &node) noexcept -> bool
-        { return !s_comparator(index, node.get_index()); };
+        { return s_rcomparator(node.get_index(), index); };
 
         auto result = cmp(*p);
         auto rresult = rcmp(*p);
@@ -1122,7 +1122,6 @@ namespace lanxc
             if (p->m_has_l) p = p->m_l;
             else return std::make_pair(p->m_l, p);
           }
-
           hint_result = cmper(*p);
         }
       }
@@ -1132,8 +1131,7 @@ namespace lanxc
       {
         auto *p = boundry(entry, index, s_rcomparator).first;
 
-        if (s_comparator(p->get_index(), index)
-		        != s_rcomparator(p->get_index(), index))
+        if (s_comparator(p->get_index(), index) != s_rcomparator(p->get_index(), index))
           return p;
         else
           return nullptr;
@@ -1144,8 +1142,7 @@ namespace lanxc
       {
         auto *p = boundry(entry, index, s_comparator).second;
 
-        if (s_comparator(p->get_index(), index)
-		        != !s_rcomparator(p->get_index(),index))
+        if (s_comparator(p->get_index(), index) != s_rcomparator(p->get_index(), index))
           return p;
         else
           return nullptr;
