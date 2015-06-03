@@ -945,7 +945,7 @@ namespace lanxc
           return std::make_pair(p, p);
         else if (result)
         {
-          while (!p->is_container_or_root())
+          while (!p->m_p->m_is_container)
           {
             if (p == p->m_p->m_l)
             {
@@ -954,13 +954,11 @@ namespace lanxc
               if (x != y)
                 return std::make_pair(p->m_p, p->m_p);
               else if (x)
-              {
                 p = p->m_p;
-                continue;
-              }
+              else
+                break;
             }
-
-            if (!p->m_r->m_is_container)
+            else if (!p->m_r->m_is_container)
             {
               auto x = cmp(*p->m_r);
               auto y = rcmp(*p->m_r);
@@ -970,6 +968,7 @@ namespace lanxc
                 p = p->m_r;
               else
               {
+                p = p->m_r;
                 result = x;
                 break;
               }
@@ -980,7 +979,7 @@ namespace lanxc
         }
         else
         {
-          while (!p->is_container_or_root())
+          while (!p->m_p->m_is_container)
           {
             if (p == p->m_p->m_r)
             {
@@ -989,13 +988,11 @@ namespace lanxc
               if (x != y)
                 return std::make_pair(p->m_p, p->m_p);
               else if (!x)
-              {
                 p = p->m_p;
-                continue;
-              }
+              else
+                break;
             }
-
-            if (!p->m_l->m_is_container)
+            else if (!p->m_l->m_is_container)
             {
               auto x = cmp(*p->m_l);
               auto y = rcmp(*p->m_l);
@@ -1005,6 +1002,7 @@ namespace lanxc
                 p = p->m_l;
               else
               {
+                p = p->m_l;
                 result = x;
                 break;
               }
