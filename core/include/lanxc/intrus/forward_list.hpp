@@ -83,7 +83,7 @@ namespace lanxc
       reference front() noexcept
       { return *begin(); }
 
-      const reference front() const noexcept
+      const_reference front() const noexcept
       { return *begin(); }
 
       bool empty() const noexcept

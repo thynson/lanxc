@@ -193,11 +193,11 @@ namespace lanxc
 
       reference front() { return *begin(); }
 
-      const reference front() const { return *begin(); }
+      const_reference front() const { return *begin(); }
 
       reference back() { return *rbegin(); }
 
-      const reference back() const { return *rbegin(); }
+      const_reference back() const { return *rbegin(); }
 
       /**
        * @brief Insert given value to specified position
