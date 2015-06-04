@@ -60,7 +60,7 @@ namespace lanxc
     };
 
     template<typename Tag>
-    struct rbtree_config : public rbtree_config<>
+    struct rbtree_config : public rbtree_config<void>
     { };
 
   }

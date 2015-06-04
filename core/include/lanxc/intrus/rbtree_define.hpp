@@ -104,19 +104,19 @@ namespace lanxc
       { static constexpr bool value = true; };
     }
 
-    template<typename Tag=void>
+    template<typename Tag>
     struct rbtree_config;
 
     template<typename Index, typename Node, typename ...Tag>
     class rbtree_node;
 
-    template<typename Index, typename Node, typename Tag>
+    template<typename Index, typename Node, typename Tag = Node>
     class rbtree_iterator;
 
-    template<typename Index, typename Node, typename Tag>
+    template<typename Index, typename Node, typename Tag = Node>
     class rbtree_const_iterator;
 
-    template<typename Index, typename Node, typename Tag = void>
+    template<typename Index, typename Node, typename Tag = Node>
     class rbtree;
 
 

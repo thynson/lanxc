@@ -28,19 +28,19 @@ namespace lanxc
   namespace intrus
   {
 
-    template<typename Tag = void>
+    template<typename Tag>
     struct list_config;
 
-    template<typename, typename=void>
+    template<typename Node, typename=Node>
     class list_node;
 
-    template<typename, typename=void>
+    template<typename Node, typename=Node>
     class list_iterator;
 
-    template<typename, typename=void>
+    template<typename Node, typename=Node>
     class list_const_iterator;
 
-    template<typename, typename=void>
+    template<typename Node, typename=Node>
     class list;
 
 
