@@ -49,6 +49,8 @@ void test_move()
   t.insert(m);
   assert(&t.front() == &m);
   rbtree<int, node> r = std::move(t);
+  assert(t.size() == 0);
+  assert(r.size() == 1);
   assert(t.empty());
   assert(&r.front() == &m);
   n = std::move(m);
