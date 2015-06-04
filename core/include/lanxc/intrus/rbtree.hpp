@@ -617,12 +617,12 @@ namespace lanxc
       }
 
       /** @brief Swap all elements with another tree @p t */
-      void swap(rbtree &&t) noexcept
-      { swap(t); }
-
-      /** @brief Swap all elements with another tree @p t */
       void swap(rbtree &t) noexcept
-      { node_type::swap_nodes(m_container_node, t.m_container_node); }
+      {
+        rbtree tmp(std::move(t));
+        t = std::move(*this);
+        *this = std::move(tmp);
+      }
 
       void clear() noexcept
       { m_container_node.unlink_container(); }

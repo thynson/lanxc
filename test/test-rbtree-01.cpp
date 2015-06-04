@@ -58,6 +58,18 @@ void test_move()
 
 }
 
+void test_swap()
+{
+  node a(1), b(2), c(3);
+  rbtree<int, node> r, t;
+  r.insert(a);
+  t.insert(b);
+  t.insert(c);
+  t.swap(r);
+  assert (t.size() == 1);
+  assert (r.size() == 2);
+}
+
 
 void test_insert_policy()
 {
@@ -132,5 +144,6 @@ void test_insert_policy()
 int main()
 {
   test_move();
+  test_swap();
   test_insert_policy();
 }
