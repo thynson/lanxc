@@ -122,8 +122,11 @@ namespace lanxc
 
       rbtree_node &operator = (rbtree_node &&n) noexcept
       {
-        this->~rbtree_node();
-        new (this) rbtree_node(std::move(n));
+        if (this != &n)
+        {
+          this->~rbtree_node();
+          new (this) rbtree_node(std::move(n));
+        }
         return *this;
       }
 
@@ -834,6 +837,7 @@ namespace lanxc
        */
       static void swap_nodes(reference lhs, reference rhs) noexcept
       {
+        if (&lhs == &rhs) return;
         rbtree_node tmp;
         move(tmp, lhs);
         move(lhs, rhs);
@@ -1383,17 +1387,36 @@ namespace lanxc
     class rbtree_node<void, void, rbtree<Index, Node, Tag>>
 		    : public rbtree_node<Index, Node, rbtree_config<Tag>>
     {
-    public:
-	    rbtree_node() noexcept
-			    : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
-          , m_size(0)
-	    {}
-
-    private:
       template<typename, typename, typename...>
       friend class rbtree_node;
       template<typename, typename, typename>
       friend class rbtree;
+
+    private:
+	    rbtree_node() noexcept
+			  : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
+        , m_size(0)
+	    {}
+
+      rbtree_node(const rbtree_node &) = delete;
+
+      rbtree_node(rbtree_node &&node) noexcept
+        : rbtree_node<Index, Node, rbtree_config<Tag>>(std::move(node))
+        , m_size(node.m_size)
+      { node.m_size = 0; }
+
+      rbtree_node &operator = (const rbtree_node &);
+
+      rbtree_node &operator = (rbtree_node &&node) noexcept
+      {
+        if (&node != this)
+        {
+          this->~rbtree_node();
+          new (this) rbtree_node(std::move(node));
+        }
+        return *this;
+      }
+
       std::size_t m_size;
     };
 
