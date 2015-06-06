@@ -156,7 +156,6 @@ namespace lanxc
 
     private:
 
-
 	    rbtree_node(container_tag) noexcept
 			    : m_p(this), m_l(this), m_r(this)
 			    , m_is_red(true), m_is_container(true)
@@ -305,7 +304,6 @@ namespace lanxc
         else return m_l;
       }
 
-
       const_pointer next() const noexcept
       {
         if (m_is_container) return m_l;
@@ -318,6 +316,87 @@ namespace lanxc
         if (m_is_container) return m_r;
         if (m_has_l) return m_l->back();
         else return m_l;
+      }
+
+      /**
+       * @brief Swap two nodes
+       * @note This will generally break the order or nodes, so it's declared
+       * privately
+       */
+      static void swap_nodes(reference lhs, reference rhs) noexcept
+      {
+        if (&lhs == &rhs) return;
+        rbtree_node tmp;
+        move(tmp, lhs);
+        move(lhs, rhs);
+        move(rhs, tmp);
+      }
+
+      /**
+       * @brief Transfer then linkship from @p src to @p dst
+       */
+      static void move(reference dst, reference src) noexcept
+      {
+        dst.~rbtree_node();
+
+        if (src.m_is_container)
+        {
+          new (&dst) rbtree_node(container);
+          if (src.is_empty_container_node())
+          {
+            src.unlink_cleanup();
+            return;
+          }
+        }
+        else
+        {
+          new (&dst) rbtree_node();
+        }
+
+        if (src.is_linked())
+        {
+
+          dst.m_p = src.m_p;
+          dst.m_l = src.m_l;
+          dst.m_r = src.m_r;
+          dst.m_has_l = src.m_has_l;
+          dst.m_has_r = src.m_has_r;
+          dst.m_is_red = src.m_is_red;
+
+          if (src.m_is_container)
+          {
+            dst.m_p->m_p = &dst;
+            dst.m_l->m_l = &dst;
+            dst.m_r->m_r = &dst;
+            src.unlink_cleanup();
+            return;
+          }
+
+          if (src.m_p->m_is_container)
+            src.m_p->m_p = &dst;
+          else if (&src == src.m_p->m_l)
+            src.m_p->m_l = &dst;
+          else
+            src.m_p->m_r = &dst;
+
+          if (src.m_has_l)
+          {
+            src.m_l->m_p = &dst;
+            src.m_l->back()->m_r = &dst;
+          }
+          else if (src.m_l->m_is_container)
+            dst.m_l->m_l = &dst;
+
+          if (src.m_has_r)
+          {
+            src.m_r->m_p = &dst;
+            src.m_r->front()->m_l = &dst;
+          }
+          else if (src.m_r->m_is_container)
+            src.m_r->m_r = &dst;
+
+          src.unlink_cleanup();
+        }
       }
 
       void lrotate() noexcept
@@ -368,6 +447,183 @@ namespace lanxc
         m_p = y;
       }
 
+      /** @brief Rebalance a node after insertion */
+      static void
+      rebalance_for_insertion(pointer node) noexcept
+      {
+        while(node->m_p->m_is_red && !node->is_container_or_root())
+          // Check node is not root of node and its parent are red
+        {
+          pointer parent = node->m_p;
+
+          if (parent == parent->m_p->m_l)
+          {
+            if (parent->m_p->m_has_r && parent->m_p->m_r->m_is_red)
+            {
+              pointer y = parent->m_p->m_r;
+              parent->m_is_red = false;
+
+              y->m_is_red = false;
+              parent->m_p->m_is_red = true;
+              node = parent->m_p;
+              parent = node->m_p;
+            }
+            else
+            {
+              if (parent->m_r == node)
+              {
+                node = parent;
+                node->lrotate();
+                parent = node->m_p;
+              }
+
+              parent->m_p->rrotate();
+              parent->m_is_red = false;
+              parent->m_r->m_is_red = true;
+            }
+          }
+          else if (parent == parent->m_p->m_r)
+          {
+            if (parent->m_p->m_has_l && parent->m_p->m_l->m_is_red)
+            {
+              pointer y = parent->m_p->m_l;
+              parent->m_is_red = false;
+              y->m_is_red = false;
+              parent->m_p->m_is_red = true;
+              node = parent->m_p;
+              parent = node->m_p;
+            }
+            else
+            {
+              if (parent->m_l == node)
+              {
+                node = parent;
+                node->rrotate();
+                parent = node->m_p;
+              }
+
+              parent->m_p->lrotate();
+              parent->m_is_red = false;
+              parent->m_l->m_is_red = true;
+
+            }
+          }
+        }
+
+        if (node->is_container_or_root())
+          node->m_is_red = false;
+        node = node->get_container_node();
+        static_cast<rbtree_node<void, void, rbtree<Index, Node, Tag>>*>(node)->m_size++;
+      }
+
+      /**
+       * @brief Rebalance the tree for unlink operation
+       * @returns The container node
+       */
+      static pointer
+      rebalance_for_unlink(pointer node) noexcept
+      {
+
+        // Be careful that node may have detached from the tree
+        while (node->m_is_red == false && !node->is_container_or_root())
+        {
+          pointer parent = node;
+
+          if (parent->m_l == node)
+          {
+
+            pointer w = parent->m_r;
+            if (w->m_is_red)
+              // case 1:
+            {
+              parent->lrotate();
+              parent->m_is_red = true;
+              parent->m_p->m_is_red = false;
+              w = parent->m_r;
+            }
+
+
+            if ((!w->m_has_l || w->m_l->m_is_red == false)
+                && (!w->m_has_r || w->m_r->m_is_red == false))
+            // case 2:
+            {
+              w->m_is_red = true;
+              node = parent;
+              parent = node->m_p;
+            }
+            else
+            {
+              if (!w->m_has_r || w->m_r->m_is_red == false)
+                // case 3:
+              {
+                w->rrotate();
+                w->m_p->m_is_red = false;
+                w->m_is_red = true;
+                w = parent->m_r;
+              }
+
+              // case 4:
+
+              w->m_is_red = parent->m_is_red;
+              parent->lrotate();
+              parent->m_is_red = false;
+              w->m_r->m_is_red = false;
+              break;
+            }
+          }
+          else if (parent->m_r == node)
+          {
+
+            pointer w = parent->m_l;
+            if (w->m_is_red)
+              // case 1:
+            {
+              parent->rrotate();
+              parent->m_is_red = true;
+              parent->m_p->m_is_red = false;
+              w = parent->m_l;
+            }
+
+
+            if ((!w->m_has_l || w->m_l->m_is_red == false)
+                && (!w->m_has_r || w->m_r->m_is_red == false))
+            // case 2:
+            {
+              w->m_is_red = true;
+              node = parent;
+              parent = node->m_p;
+            }
+            else
+            {
+              if (!w->m_has_l || w->m_l->m_is_red == false)
+                // case 3:
+              {
+                w->lrotate();
+                w->m_is_red = true;
+                w->m_p->m_is_red = false;
+                w = parent->m_l;
+              }
+
+              // case 4:
+
+              w->m_is_red = parent->m_is_red;
+              parent->rrotate();
+              parent->m_is_red = false;
+              w->m_l->m_is_red = false;
+              break;
+            }
+          }
+          else
+            break;
+        }
+
+        if (node->m_is_container)
+          return node;
+        else if (!node->is_root_node())
+          node = node->get_root_node();
+        node->m_is_red = false;
+        return node->get_container_node();
+      }
 
       /**
        * @brief Insert a node as left child of this node
@@ -445,7 +701,7 @@ namespace lanxc
       /**
        * @brief Insert node as parent's chlid, left child or right chlid are
        * all possible.
-       * @param parent The node want child
+       * @param entry The node want child
        * @param node The node want to be inserted
        * @note if entry is equals to node, this function will return without
        * any changed
@@ -515,75 +771,6 @@ namespace lanxc
         }
         else
           insert_between(prev, next, node);
-      }
-
-      /** @brief Rebalance a node after insertion */
-      static void
-      rebalance_for_insertion(pointer node) noexcept
-      {
-        while(node->m_p->m_is_red && !node->is_container_or_root())
-          // Check node is not root of node and its parent are red
-        {
-          pointer parent = node->m_p;
-
-          if (parent == parent->m_p->m_l)
-          {
-            if (parent->m_p->m_has_r && parent->m_p->m_r->m_is_red)
-            {
-              pointer y = parent->m_p->m_r;
-              parent->m_is_red = false;
-
-              y->m_is_red = false;
-              parent->m_p->m_is_red = true;
-              node = parent->m_p;
-              parent = node->m_p;
-            }
-            else
-            {
-              if (parent->m_r == node)
-              {
-                node = parent;
-                node->lrotate();
-                parent = node->m_p;
-              }
-
-              parent->m_p->rrotate();
-              parent->m_is_red = false;
-              parent->m_r->m_is_red = true;
-            }
-          }
-          else if (parent == parent->m_p->m_r)
-          {
-            if (parent->m_p->m_has_l && parent->m_p->m_l->m_is_red)
-            {
-              pointer y = parent->m_p->m_l;
-              parent->m_is_red = false;
-              y->m_is_red = false;
-              parent->m_p->m_is_red = true;
-              node = parent->m_p;
-              parent = node->m_p;
-            }
-            else
-            {
-              if (parent->m_l == node)
-              {
-                node = parent;
-                node->rrotate();
-                parent = node->m_p;
-              }
-
-              parent->m_p->lrotate();
-              parent->m_is_red = false;
-              parent->m_l->m_is_red = true;
-
-            }
-          }
-        }
-
-        if (node->is_container_or_root())
-          node->m_is_red = false;
-        node = node->get_container_node();
-        static_cast<rbtree_node<void, void, rbtree<Index, Node, Tag>>*>(node)->m_size++;
       }
 
 
@@ -721,204 +908,18 @@ namespace lanxc
           return pair.first;
       }
 
-      /**
-       * @brief Rebalance the tree after unlink
-       * @returns The container node
-       */
-      static pointer
-      rebalance_for_unlink(pointer node) noexcept
-      {
-
-        // Be careful that node may have detached from the tree
-        while (node->m_is_red == false && !node->is_container_or_root())
-        {
-          pointer parent = node;
-
-          if (parent->m_l == node)
-          {
-
-            pointer w = parent->m_r;
-            if (w->m_is_red)
-              // case 1:
-            {
-              parent->lrotate();
-              parent->m_is_red = true;
-              parent->m_p->m_is_red = false;
-              w = parent->m_r;
-            }
-
-
-            if ((!w->m_has_l || w->m_l->m_is_red == false)
-                && (!w->m_has_r || w->m_r->m_is_red == false))
-            // case 2:
-            {
-              w->m_is_red = true;
-              node = parent;
-              parent = node->m_p;
-            }
-            else
-            {
-              if (!w->m_has_r || w->m_r->m_is_red == false)
-                // case 3:
-              {
-                w->rrotate();
-                w->m_p->m_is_red = false;
-                w->m_is_red = true;
-                w = parent->m_r;
-              }
-
-              // case 4:
-
-              w->m_is_red = parent->m_is_red;
-              parent->lrotate();
-              parent->m_is_red = false;
-              w->m_r->m_is_red = false;
-              break;
-            }
-          }
-          else if (parent->m_r == node)
-          {
-
-            pointer w = parent->m_l;
-            if (w->m_is_red)
-              // case 1:
-            {
-              parent->rrotate();
-              parent->m_is_red = true;
-              parent->m_p->m_is_red = false;
-              w = parent->m_l;
-            }
-
-
-            if ((!w->m_has_l || w->m_l->m_is_red == false)
-                && (!w->m_has_r || w->m_r->m_is_red == false))
-            // case 2:
-            {
-              w->m_is_red = true;
-              node = parent;
-              parent = node->m_p;
-            }
-            else
-            {
-              if (!w->m_has_l || w->m_l->m_is_red == false)
-                // case 3:
-              {
-                w->lrotate();
-                w->m_is_red = true;
-                w->m_p->m_is_red = false;
-                w = parent->m_l;
-              }
-
-              // case 4:
-
-              w->m_is_red = parent->m_is_red;
-              parent->rrotate();
-              parent->m_is_red = false;
-              w->m_l->m_is_red = false;
-              break;
-            }
-          }
-          else
-            break;
-        }
-
-        if (node->m_is_container)
-          return node;
-        else if (!node->is_root_node())
-          node = node->get_root_node();
-        node->m_is_red = false;
-        return node->get_container_node();
-      }
-
-      /**
-       * @brief Swap two nodes in the tree
-       * @note This will generally break the order or nodes, so it's declared
-       * privately
-       */
-      static void swap_nodes(reference lhs, reference rhs) noexcept
-      {
-        if (&lhs == &rhs) return;
-        rbtree_node tmp;
-        move(tmp, lhs);
-        move(lhs, rhs);
-        move(rhs, tmp);
-      }
-
-      static void move(reference dst, reference src) noexcept
-      {
-        dst.~rbtree_node();
-
-        if (src.m_is_container)
-        {
-          new (&dst) rbtree_node(container);
-          if (src.is_empty_container_node())
-          {
-            src.unlink_cleanup();
-            return;
-          }
-        }
-        else
-        {
-          new (&dst) rbtree_node();
-        }
-
-        if (src.is_linked())
-        {
-
-          dst.m_p = src.m_p;
-          dst.m_l = src.m_l;
-          dst.m_r = src.m_r;
-          dst.m_has_l = src.m_has_l;
-          dst.m_has_r = src.m_has_r;
-          dst.m_is_red = src.m_is_red;
-
-          if (src.m_is_container)
-          {
-            dst.m_p->m_p = &dst;
-            dst.m_l->m_l = &dst;
-            dst.m_r->m_r = &dst;
-            src.unlink_cleanup();
-            return;
-          }
-
-          if (src.m_p->m_is_container)
-            src.m_p->m_p = &dst;
-          else if (&src == src.m_p->m_l)
-            src.m_p->m_l = &dst;
-          else
-            src.m_p->m_r = &dst;
-
-          if (src.m_has_l)
-          {
-            src.m_l->m_p = &dst;
-            src.m_l->back()->m_r = &dst;
-          }
-          else if (src.m_l->m_is_container)
-            dst.m_l->m_l = &dst;
-
-          if (src.m_has_r)
-          {
-            src.m_r->m_p = &dst;
-            src.m_r->front()->m_l = &dst;
-          }
-          else if (src.m_r->m_is_container)
-            src.m_r->m_r = &dst;
-
-          src.unlink_cleanup();
-        }
-      }
 
 
       /**
-       * @brief Search the position where specified index is suitable to be
-       *        placed in
-       * @param entry A node in the tree which we want to search in
+       * @brief Search for a position for @p index
+       * @param entry A node via which search will begin
        * @param index The index we want to search for
-       * @returns a pair of pointer to rbtree_node, if the pair is the same,
-       * then the index is equals to the index of node which the two pointer
-       * point to, else if the pair is not the same, compare the first pointer
-       * in the pair with the index is ensured to be true, while compare the
-       * second pointer in the pair with the index is ensured to be false.
+       * @returns a pair of pointer to @ref rbtree_node, if the two pointer in
+       * pair is the same, then @p index is equals to the index of node which
+       * the two pointer point to, else if the pair is not the same, compare
+       * the first pointer in the pair with the index is ensured to be true,
+       * while compare the second pointer in the pair with the index is
+       * ensured to be false.
        */
       template<typename Reference>
       static auto
@@ -1036,17 +1037,25 @@ namespace lanxc
         }
       }
 
-
       /**
-       * @brief Get the boundry of a rbtree for specified index
-       * @param entry The entry node of tree
+       * @brief Find the boundry defined by @p index and @p comparator
+       * @tparam Reference Type of reference to rbtree_node, should be
+       * `rbtree_node &` or `const rbtree_node &`.
+       * @tparam Comparator Type of comparator
+       * @param entry The entry node via which the tree will be searched
        * @param index The specified index depends on which the boundry is find
+       * @param comparator The comparator used to define the boundry
+       *
+       * The boundry is defined in such way:  each node in the left part
+       * has a index value `v` where `comparator(v, index)` is `true`; while
+       * each node in right part has index value `v` where
+       * `comparator(v, * index)` is `false`
        */
       template<typename Reference, typename Comparator>
-      static auto
-      boundry(Reference &entry, const Index &index, const Comparator &comp)
-        noexcept(is_comparator_noexcept) -> std::pair<typename std::add_pointer<Reference>::type,
-            typename std::add_pointer<Reference>::type>
+      static auto boundry(Reference &entry, const Index &index,
+          const Comparator &comparator)
+        noexcept(is_comparator_noexcept)
+        -> std::pair<decltype(&entry), decltype(&entry)>
       {
         auto *p = &entry;
 
@@ -1058,8 +1067,8 @@ namespace lanxc
             p = p->get_root_node_from_container_node();
         }
 
-        auto cmper = [&index, &comp] (Reference &node) noexcept -> bool
-        { return comp(node.get_index(), index); };
+        auto cmper = [&index, &comparator] (Reference &node) noexcept -> bool
+        { return comparator(node.get_index(), index); };
 
         bool hint_result = cmper(*p);
 
@@ -1237,91 +1246,99 @@ namespace lanxc
       { return boundry(entry, index, s_rcomparator).second; }
 
       /**
-       * @brief Insert a node to a tree that hint_node is attached to
-       * @param hint_node The node which is attached into a rbtree for hinting
-       * where node should be placed to
-       * @param node The node to be insert
-       * @note User is responsible to ensure hint_node is already attached to
-       * a tree; and if duplicate is permitted, the node is insert after any
-       * node duplicate with this node
+       * @brief Insert @p n to a tree via @p e
+       * @param e The entry node for the tree into which @p n will be inserted
+       * @param n The node to be inserted
+       * @returns pointer to @p n
+       * @note User code is responsible to ensure @p e is already attached to
+       * an rbtree or is the container node of an rbtree. If index of @n
+       * duplicates others, @n will be put in a place behind them
        */
-      static pointer insert(reference entry, reference node,
+      static pointer insert(reference e, reference n,
           index_policy::backmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.get_index(), s_rcomparator);
+        auto p = boundry(e, n.get_index(), s_rcomparator);
         if (p.first == p.second)
-          p.first->insert_root_node(&node);
+          p.first->insert_root_node(&n);
         else
-          insert_between(p.first, p.second, &node);
-        return &node;
+          insert_between(p.first, p.second, &n);
+        return &n;
       }
 
       /**
-       * @brief Insert a node to a tree that hint_node is attached to
-       * @param entry The node which is attached into a rbtree for hinting
-       * where node should be placed to
-       * @param node The node to be insert
-       * @note Use is responsible to ensure hint_node is already attached to a
-       * tree; and if duplicate is permitted, the node is insert before any
-       * node duplicate with this node
+       * @brief Insert @p n to a tree via @p e
+       * @param e The entry node for the tree into which @p n will be inserted
+       * @param n The node to be inserted
+       * @returns pointer to @p n
+       * @note User code is responsible to ensure @p e is already attached to
+       * an rbtree or is the container node of an rbtree. If index of @n
+       * duplicates others, @n will be put in a place in front of them
        */
-      static pointer insert(reference entry, reference node,
+      static pointer insert(reference e, reference n,
           index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(entry, node.get_index(), s_comparator);
+        auto p = boundry(e, n.get_index(), s_comparator);
         if (p.first == p.second)
-          p.first->insert_root_node(&node);
+          p.first->insert_root_node(&n);
         else
-          insert_between(p.first, p.second, &node);
-        return &node;
+          insert_between(p.first, p.second, &n);
+        return &n;
       }
 
       /**
-       * @brief Insert a node to a tree that hint_node is attached to
-       * @param entry The node which is attached into a rbtree for hinting
-       * where node should be placed to
-       * @param node The node to be insert
-       * @note Use is responsible to ensure hint_node is already attached to a
-       * tree; and if duplicate is permitted, the node is insert with least
-       * searching being done
+       * @brief Insert @p n to a tree via @p e
+       * @param e The entry node for the tree into which @p n will be inserted
+       * @param n The node to be inserted
+       * @returns pointer to @p n
+       * @note User code is responsible to ensure @p e is already inserted
+       * into a rbtree or is the container node of an rbtree. @n will be
+       * inserted once a suitable position is found without checkng index
+       * duplication
        */
-      static pointer insert(reference entry, reference node,
-          index_policy::nearest) noexcept(is_comparator_noexcept)
+      static pointer
+      insert(reference e, reference n, index_policy::nearest)
+      noexcept(is_comparator_noexcept)
       {
-        auto p = search(entry, node.get_index());
-        insert_between(p.first, p.second, &node);
-        return &node;
+        auto p = search(e, n.get_index());
+        insert_between(p.first, p.second, &n);
+        return &n;
       }
 
       /**
-       * @brief Insert a node to a tree that hint_node is attached to
-       * @param hint_node The node which is attached into a rbtree for hinting
-       * where node should be placed to
-       * @param node The node to be insert
-       * @note User is responsible to ensure hint_node is already attached to
-       * a tree; and duplicated node is not allow
+       * @brief Insert @p n to a tree via @p e
+       * @param e The entry node for the tree into which @p n will be inserted
+       * @param n The node to be inserted
+       * @returns pointer to @p n if insertion was done successfully,
+       * otherwise `nullptr`
+       * @note User code is responsible to ensure @p e is already inserted
+       * into a rbtree or it is the container node of an rbtree. If the index
+       * of @n duplicates any node in that tree, this insertion will be
+       * rejected
        */
-      static pointer insert(reference entry, reference node,
-          index_policy::conflict) noexcept(is_comparator_noexcept)
+      static pointer
+      insert(reference e, reference n, index_policy::conflict)
+      noexcept(is_comparator_noexcept)
       {
-        auto p = search(entry, node.get_index());
-        insert_conflict(p.first, p.second, &node);
-        return node.is_linked() ? &node : p.first;
+        auto p = search(e, n.get_index());
+        insert_conflict(p.first, p.second, &n);
+        return n.is_linked() ? &n : p.first;
       }
 
       /**
-       * @brief Insert a node to a tree that hint_node is attached to
-       * @param hint_node The node which is attached into a rbtree for hinting
-       * where node should be placed to
-       * @param node The node to be insert
-       * @note User is responsible to ensure hint_node is already attached to
-       * a tree; and duplicated node will be replaced by this node
+       * @brief Insert @p n to a tree via @p e
+       * @param e The entry node for the tree into which @p n will be inserted
+       * @param n The node to be inserted
+       * @returns pointer to @p n
+       * @note User code is responsible to ensure @p e is already inserted
+       * into a rbtree or it is the container node of an rbtree. And each node
+       * in that tree whose index is duplicated by @p n will be unlinked
        */
-      static pointer insert(reference entry, reference node,
-          index_policy::unique) noexcept(is_comparator_noexcept)
+      static pointer
+      insert(reference e, reference n, index_policy::unique)
+        noexcept(is_comparator_noexcept)
       {
-        auto l = lower_bound(entry, node.get_index());
-        auto u = upper_bound(*l, node.get_index());
+        auto l = lower_bound(e, n.get_index());
+        auto u = upper_bound(*l, n.get_index());
         auto p = l->m_is_container ? l->m_r : l->prev();
         bool found = false;
 
@@ -1329,14 +1346,14 @@ namespace lanxc
         {
           auto x = l;
           l = l->next();
-          if (x != &node)
+          if (x != &n)
             x->unlink();
           else
             found = true;
         }
         if (!found)
-          insert_between(p, u, &node);
-        return &node;
+          insert_between(p, u, &n);
+        return &n;
       }
 
       static comparator_type s_comparator;
@@ -1361,14 +1378,13 @@ namespace lanxc
       friend class rbtree;
 
 
-      node_pointer m_p;
-      node_pointer m_l;
-      node_pointer m_r;
-      bool m_is_red;
-      const bool m_is_container;
-      bool m_has_l;
-      bool m_has_r;
-
+      node_pointer m_p;           /** < @brief Parent */
+      node_pointer m_l;           /** < @brief Left child or predecessor */
+      node_pointer m_r;           /** < @brief Right child */
+      bool m_is_red;              /** < @brief Is red node */
+      const bool m_is_container;  /** < @brief Is container node */
+      bool m_has_l;               /** < @breef If this node has left chlid */
+      bool m_has_r;               /** < @brief If this node has right child */
     };
 
     template<typename Index, typename Node, typename Tag>
@@ -1546,7 +1562,7 @@ namespace lanxc
       template<typename ...Arguments>
       void set_index(Arguments && ...arguments) noexcept
       {
-        std::tuple<set_index_helper<Tag>...> helpers
+        auto helpers
           = std::make_tuple(
               set_index_helper<Tag>(*this, base_node<Tag>::unlink_for_hint())...);
         rbtree_node<Index, void>::m_index
@@ -1557,7 +1573,7 @@ namespace lanxc
       insert_policy_sfinae<InsertPolicy>
       set_index(InsertPolicy policy, Arguments && ...arguments) noexcept
       {
-        std::tuple<set_index_helper<Tag, decltype(policy)>...> helpers
+        auto helpers
           = std::make_tuple(set_index_helper<Tag, decltype(policy)>(
                 *this, base_node<Tag>::unlink_for_hint())...);
         rbtree_node<Index, void>::m_index

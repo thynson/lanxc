@@ -30,7 +30,7 @@
  * So I rewrite all the standard functor, with C++14 Transparent Operator
  * Functor (N3421) feature integrated.
  *
- * @defgroup functor
+ * @defgroup functional Functors improved
  * @{
  */
 

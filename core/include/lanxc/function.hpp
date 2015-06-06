@@ -26,7 +26,14 @@
 #include <typeinfo>
 #include <memory>
 
-
+/**
+ * @file function.hpp
+ * @brief Function Object
+ * @author LAN Xingcan
+ *
+ * This file implements a morden function object against standard
+ * std::function
+ */
 
 namespace lanxc
 {
@@ -52,20 +59,28 @@ namespace lanxc
     template<typename>
     friend class function;
 
+    /**
+     * @brief function object padding
+     * The size of function object is equals to size of 4 pointers,
+     * The first memeber of function will be a pointer point to
+     * a function which forwards arguments to the real functor; the remains
+     * space is equals to size of 3 pointers
+     */
     using functor_padding = void *[3];
 
     template<typename T>
     struct is_inplace_allocated
     {
       static const bool value
-          // so that it fits
           = sizeof(T) <= sizeof(functor_padding)
-            // so that it will be aligned
-            && std::alignment_of<functor_padding>::value % std::alignment_of<T>::value == 0
-            // so that we can offer noexcept move
+            && (std::alignment_of<void *>::value
+                % std::alignment_of<T>::value == 0)
             && std::is_nothrow_move_constructible<T>::value;
     };
 
+    template<typename T>
+    using inplace_allocated_sfinae =
+      typename std::enable_if<is_inplace_allocated<T>::value>::type;
 
 
     template<typename T>
@@ -73,17 +88,25 @@ namespace lanxc
     { return false; }
 
     template<typename Result, typename... Arguments>
-    static bool is_null(Result (*const &function_pointer)(Arguments...)) noexcept
-    { return function_pointer == nullptr; }
+    static bool
+    is_null(Result (*const &fp)(Arguments...)) noexcept
+    { return fp == nullptr; }
 
     template<typename Result, typename Class, typename... Arguments>
-    static bool is_null(Result (Class::* const &function_pointer)(Arguments...)) noexcept
-    { return function_pointer == nullptr; }
+    static bool
+    is_null(Result (Class::* const &fp)(Arguments...)) noexcept
+    { return fp == nullptr; }
 
     template<typename Result, typename Class, typename... Arguments>
-    static bool is_null(Result (Class::* const &function_pointer)(Arguments...) const) noexcept
-    { return function_pointer == nullptr; }
+    static bool
+    is_null(Result (Class::* const &fp)(Arguments...) const) noexcept
+    { return fp == nullptr; }
 
+    /**
+     * @brief Functor implementation commands
+     * These commands is defined to avoid implementing @ref manager with
+     * virtual functions.
+     */
     enum class command
     {
       move,
@@ -95,7 +118,9 @@ namespace lanxc
 
     struct manager
     {
-      using implement_type = std::pair<void*, const void*> (*)(manager *, const manager *, void *, command);
+      using implement_type = std::pair<void*, const void*>
+        (*)(manager *, const manager *, void *, command);
+
       const implement_type m_implement;
       manager(implement_type implement) noexcept
           : m_implement(implement)
@@ -112,20 +137,21 @@ namespace lanxc
 
     template<typename Result, typename Class, typename... Arguments>
     static auto make_functor(Result (Class::*func)(Arguments &&...))
-    -> decltype(std::mem_fn(func))
+      -> decltype(std::mem_fn(func))
     { return std::mem_fn(func); }
 
 
     template<typename Result, typename Class, typename... Arguments>
     static auto make_functor(Result (Class::*func)(Arguments &&...) const)
-    -> decltype(std::mem_fn(func))
+      -> decltype(std::mem_fn(func))
     { return std::mem_fn(func); }
 
-    template<typename T, typename Allocator, bool = is_inplace_allocated<T>::value>
+    template<typename T, typename Allocator, typename = void>
     struct manager_implement;
 
     template<typename Function, typename Allocator>
-    struct manager_implement<Function, Allocator, true> : manager
+    struct manager_implement<Function, Allocator,
+        inplace_allocated_sfinae<Function>> : manager
     {
       Function m_function;
       static const std::type_info &typeinfo;
@@ -136,19 +162,19 @@ namespace lanxc
         auto self = static_cast<manager_implement *>(mgr);
         switch (cmd)
         {
-          case command::move:
-            new(args) manager_implement(std::move(*self));
-            return std::pair<void *, const void*>(nullptr, nullptr);
-          case command::destroy:
-            self->~manager_implement();
-            return std::pair<void *, const void*>(nullptr, nullptr);;
-          case command::typeinfo:
-            return std::pair<void *, const void*>(nullptr, &typeinfo);
-          case command::target:
-            return std::pair<void *, const void*>(&self->m_function, nullptr);
-          case command::const_target:
-            return std::pair<void *, const void*>(nullptr, &static_cast<const manager_implement *>(cmgr)->m_function);
-
+        case command::move:
+          new(args) manager_implement(std::move(*self));
+          return std::pair<void *, const void*>(nullptr, nullptr);
+        case command::destroy:
+          self->~manager_implement();
+          return std::pair<void *, const void*>(nullptr, nullptr);;
+        case command::typeinfo:
+          return std::pair<void *, const void*>(nullptr, &typeinfo);
+        case command::target:
+          return std::pair<void *, const void*>(&self->m_function, nullptr);
+        case command::const_target:
+          return std::pair<void *, const void*>(nullptr,
+              &static_cast<const manager_implement *>(cmgr)->m_function);
         }
       }
 
@@ -160,13 +186,13 @@ namespace lanxc
       }
 
       manager_implement(Function &functor, const Allocator &) noexcept
-          : manager(implement)
-            , m_function(std::forward<Function>(functor))
+        : manager(implement)
+        , m_function(std::forward<Function>(functor))
       { }
 
       manager_implement(manager_implement &&other) noexcept
-          : manager(other.m_implement)
-            , m_function(std::move(other.m_function))
+        : manager(other.m_implement)
+        , m_function(std::move(other.m_function))
       { }
 
       ~manager_implement() = default;
@@ -174,15 +200,16 @@ namespace lanxc
 
 
     template<typename Function, typename Allocator>
-    struct manager_implement<Function, Allocator, false> : manager
+    struct manager_implement<Function, Allocator, void> : manager
     {
-      using allocator_type = typename std::allocator_traits<Allocator>::template rebind_alloc<Function>;
+      using allocator_type = typename std::allocator_traits<Allocator>
+        ::template rebind_alloc<Function>;
       using allocator_traits = std::allocator_traits<allocator_type>;
 
       allocator_type m_allocator;
       Function *m_function;
 
-      const static std::type_info &typeinfo;
+      static const std::type_info &typeinfo;
 
       template<typename Result, typename ...Arguments>
       static Result call(manager *mgr, Arguments &&...args)
@@ -193,39 +220,42 @@ namespace lanxc
 
 
       static std::pair<void*, const void *>
-      implement(manager *mgr, const manager *cmgr,  void *args, command cmd) noexcept
+      implement(manager *mgr, const manager *cmgr,  void *args, command cmd)
+      noexcept
       {
         auto self = static_cast<manager_implement *>(mgr);
 
         switch (cmd)
         {
-          case command::move:
-            new(args) manager_implement(std::move(*self));
-            return std::pair<void *, const void *>(nullptr, nullptr);
-          case command::destroy:
-            self->~manager_implement();
-            return std::pair<void *, const void *>(nullptr, nullptr);
-          case command::typeinfo:
-            return std::pair<void *, const void*>(nullptr, &typeinfo);
-          case command::target:
-            return std::pair<void *, const void*>(&self->m_function, nullptr);
-          case command::const_target:
-            return std::pair<void *, const void*>(nullptr, &static_cast<const manager_implement *>(cmgr)->m_function);
+        case command::move:
+          new(args) manager_implement(std::move(*self));
+          return std::pair<void *, const void *>(nullptr, nullptr);
+        case command::destroy:
+          self->~manager_implement();
+          return std::pair<void *, const void *>(nullptr, nullptr);
+        case command::typeinfo:
+          return std::pair<void *, const void*>(nullptr, &typeinfo);
+        case command::target:
+          return std::pair<void *, const void*>(&self->m_function, nullptr);
+        case command::const_target:
+          return std::pair<void *, const void*>(nullptr,
+              &static_cast<const manager_implement *>(cmgr)->m_function);
         }
       }
 
       manager_implement(Function &function, const Allocator &alloc) noexcept
-          : manager(implement)
-            , m_allocator(alloc)
-            , m_function(std::allocator_traits<allocator_type>::allocate(m_allocator, 1))
+        : manager(implement)
+        , m_allocator(alloc)
+        , m_function(allocator_traits::allocate(m_allocator, 1))
       {
-        allocator_traits::construct(m_allocator, m_function, std::move(function));
+        allocator_traits::construct(m_allocator, m_function,
+            std::move(function));
       }
 
       manager_implement(manager_implement &&other) noexcept
-          : manager(implement)
-            , m_allocator(std::move(other.m_allocator))
-            , m_function(other.m_function)
+        : manager(implement)
+        , m_allocator(std::move(other.m_allocator))
+        , m_function(other.m_function)
       {
         other.m_function = nullptr;
       }
@@ -261,10 +291,14 @@ namespace lanxc
   };
 
   template<typename Function, typename Allocator>
-  const std::type_info &function<void>::manager_implement<Function, Allocator, true>::typeinfo = typeid(Function);
+  const std::type_info &function<void>::manager_implement<
+    Function, Allocator, void>::typeinfo = typeid(Function);
 
   template<typename Function, typename Allocator>
-  const std::type_info &function<void>::manager_implement<Function, Allocator, false>::typeinfo = typeid(Function);
+  const std::type_info &function<void>::manager_implement<
+    Function, Allocator,
+    function<void>::inplace_allocated_sfinae<Function>
+    >::typeinfo = typeid(Function);
 
   /**
    * @brief An implementation of function object alternative (but not
@@ -296,19 +330,22 @@ namespace lanxc
     using valid_functor_sfinae = typename std::enable_if<
         std::is_move_constructible<Function>::value
         && std::is_convertible<
-            decltype(detail::make_functor(std::declval<Function>())(std::declval<Arguments>()...)),
+            decltype(detail::make_functor(std::declval<Function>())
+                (std::declval<Arguments>()...)),
             Result>::value>::type;
 
     using caller_type = Result (*)(detail::manager *, Arguments &&...);
 
-    constexpr static caller_type noop_function = detail::template invalid_function<Result, Arguments...>;
+    constexpr static caller_type noop_function
+      = detail::template invalid_function<Result, Arguments...>;
 
     template<typename Allocator, typename Function>
     static caller_type get_caller(const Function &f) noexcept
     {
+      using implement = detail::manager_implement<Function, Allocator>;
       if (detail::is_null(f))
         return noop_function;
-      return detail::manager_implement<Function, Allocator>::template call<Result, Arguments...>;
+      return implement::template call<Result, Arguments...>;
     }
 
   public:
@@ -329,18 +366,20 @@ namespace lanxc
     template<typename Function, typename = valid_functor_sfinae<Function>>
     function(Function functor)
     noexcept(detail::is_inplace_allocated<Function>::value)
-        : function(std::allocator_arg, std::allocator<void>(), std::forward<Function>(functor))
+        : function(std::allocator_arg, std::allocator<void>(),
+            std::forward<Function>(functor))
     { }
 
-    template<typename Function, typename Allocator, typename = valid_functor_sfinae<Function>>
+    template<typename Function, typename Allocator,
+        typename = valid_functor_sfinae<Function>>
     function(std::allocator_arg_t, const Allocator &allocator, Function functor)
-    noexcept(detail::is_inplace_allocated<Function>::value)
-        : m_caller(get_caller<Allocator, Function>(functor))
+      noexcept(detail::is_inplace_allocated<Function>::value)
+      : m_caller(get_caller<Allocator, Function>(functor))
     {
+      using implement = detail::manager_implement<Function, Allocator>;
       if (m_caller != noop_function)
       {
-        using manager_implement = detail::manager_implement <Function, Allocator>;
-        new(m_store) detail::manager_implement<Function, Allocator>(detail::make_functor(functor), allocator);
+        new(m_store) implement(detail::make_functor(functor), allocator);
       }
     }
 
@@ -348,7 +387,8 @@ namespace lanxc
         : function()
     { swap(other); }
 
-    template<typename Allocator, typename Function, typename = valid_functor_sfinae<Function>>
+    template<typename Allocator, typename Function,
+        typename = valid_functor_sfinae<Function>>
     function(std::allocator_arg_t, const Allocator &, function &&other) noexcept
         : function(std::forward<function>(other))
     { }
@@ -369,8 +409,10 @@ namespace lanxc
       detail::functor_padding tmp;
       auto imp = other.cast()->m_implement;
       imp(other.cast(), nullptr, &tmp, detail::command::move);
-      cast()->m_implement(other.cast(), nullptr, &other.m_store, detail::command::move);
-      imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, &m_store, detail::command::move);
+      cast()->m_implement(other.cast(), nullptr, &other.m_store,
+          detail::command::move);
+      imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, &m_store,
+          detail::command::move);
       return *this;
     }
 
@@ -379,7 +421,7 @@ namespace lanxc
     explicit operator bool() const noexcept
     { return m_caller == noop_function; }
 
-    inline Result operator ()(Arguments &&...args)
+    Result operator ()(Arguments &&...args)
     {
       return (*m_caller)(cast(), std::forward<Arguments>(args)...);
     }
@@ -395,8 +437,10 @@ namespace lanxc
           detail::functor_padding tmp;
           auto imp = rhs->cast()->m_implement;
           imp(rhs->cast(), nullptr, &tmp, detail::command::move);
-          lhs->cast()->m_implement(rhs->cast(), nullptr, &rhs->m_store, detail::command::move);
-          imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, this->m_store, detail::command::move);
+          lhs->cast()->m_implement(rhs->cast(), nullptr, &rhs->m_store,
+              detail::command::move);
+          imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, this->m_store,
+              detail::command::move);
           return;
         }
         else
@@ -407,13 +451,14 @@ namespace lanxc
       {
         std::swap(lhs->m_caller, rhs->m_caller);
         auto rhs_implement = rhs->cast()->m_implement;
-        rhs_implement(rhs->cast(), nullptr, &lhs->m_store, detail::command::move);
+        rhs_implement(rhs->cast(), nullptr, &lhs->m_store,
+            detail::command::move);
       }
     }
 
     template<typename Function, typename Allocator=std::allocator<void>>
     void assign(Function callable, const Allocator &allocator = Allocator())
-    noexcept(detail::is_inplace_allocated<Function>::value)
+      noexcept(detail::is_inplace_allocated<Function>::value)
     {
       function(std::allocator_arg, allocator, std::move(callable)).swap(*this);
     }
@@ -422,8 +467,9 @@ namespace lanxc
     {
       if (m_caller == noop_function)
         return typeid(nullptr);
-      return *static_cast<const std::type_info *>(
-          (*cast()->m_implement)(nullptr, nullptr, nullptr, detail::command::typeinfo).second);
+      auto ret = (*cast()->m_implement)(nullptr, nullptr, nullptr,
+          detail::command::typeinfo).second;
+      return *static_cast<const std::type_info *>(ret);
     }
 
     template<typename Target>
@@ -433,8 +479,9 @@ namespace lanxc
         return nullptr;
       if (typeid(Target) == target_type())
         return nullptr;
-      return static_cast<const Target *>(
-          (*cast()->m_implement)(nullptr, nullptr, nullptr, detail::command::const_target).second);
+      auto ret = (*cast()->m_implement)(nullptr, nullptr, nullptr,
+          detail::command::const_target).second;
+      return static_cast<const Target *>(ret);
     }
 
 
@@ -445,8 +492,9 @@ namespace lanxc
         return nullptr;
       if (typeid(Target) == target_type())
         return nullptr;
-      return static_cast<Target *>(
-          (*cast()->m_implement)(nullptr, nullptr, nullptr, detail::command::const_target).first);
+      auto ret = (*cast()->m_implement)(nullptr, nullptr, nullptr,
+          detail::command::const_target).first;
+      return static_cast<Target *>(ret);
     }
 
   private:
@@ -467,7 +515,6 @@ namespace std
   template<typename Result, typename... Arguments, typename Allocator>
   struct uses_allocator<lanxc::function<Result (Arguments...)>, Allocator>
     : std::true_type
-  {
-  };
+  { };
 }
 #endif
