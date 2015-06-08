@@ -1397,6 +1397,10 @@ namespace lanxc
     rbtree_node<Index, Node, rbtree_config<Tag>>::rcomparator_type
     rbtree_node<Index, Node, rbtree_config<Tag>>::s_rcomparator;
 
+    template<typename Index, typename Node, typename Tag>
+    typename rbtree_node<Index, Node, rbtree_config<Tag>>::container_tag
+    rbtree_node<Index, Node, rbtree_config<Tag>>::container;
+
 
 	  /** For container */
     template<typename Index, typename Node, typename Tag>
