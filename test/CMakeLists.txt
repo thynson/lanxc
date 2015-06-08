@@ -1,10 +1,4 @@
 cmake_minimum_required(VERSION 3.1)
-#
-#add_executable(test-01 test-01.cpp)
-#add_executable(test-02 test-rbtree-01.cpp)
-#target_link_libraries(test-01 lanxc-core)
-#target_link_libraries(test-rbtree-01 lanxc-core)
-#add_test(ctest test-01)
 
 function(lanxc_unit_test )
     foreach (t ${ARGN})
@@ -14,7 +8,5 @@ function(lanxc_unit_test )
     endforeach()
 endfunction()
 
-lanxc_unit_test(test-rbtree-01)
-lanxc_unit_test(test-rbtree-02)
-lanxc_unit_test(test-rbtree-03)
+lanxc_unit_test(rbtree-01 rbtree-02 rbtree-03)
 
