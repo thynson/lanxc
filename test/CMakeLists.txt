@@ -10,5 +10,5 @@ function(lanxc_unit_test )
     endforeach()
 endfunction()
 
-lanxc_unit_test(rbtree-01 rbtree-02 rbtree-03)
+lanxc_unit_test(list-01 rbtree-01 rbtree-02 rbtree-03)
 
