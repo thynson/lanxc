@@ -25,7 +25,7 @@
 
 namespace lanxc
 {
-  namespace intrus
+  namespace link
   {
     template<typename Tag=void>
     struct forward_list_config;

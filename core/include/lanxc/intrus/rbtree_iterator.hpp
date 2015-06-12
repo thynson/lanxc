@@ -24,7 +24,7 @@
 
 namespace lanxc
 {
-  namespace intrus
+  namespace link
   {
 
     /**
@@ -114,7 +114,7 @@ namespace lanxc
     {
       using config    = rbtree_config<Tag>;
       using node_type = const rbtree_node<Index, Node, config>;
-      using rbtree_iterator = ::lanxc::intrus::rbtree_iterator<Index, Node, Tag>;
+      using rbtree_iterator = ::lanxc::link::rbtree_iterator<Index, Node, Tag>;
     public:
       explicit rbtree_const_iterator(node_type *x) noexcept
         : m_node(x)

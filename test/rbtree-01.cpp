@@ -25,7 +25,7 @@
 #include <ctime>
 
 using namespace std;
-using namespace lanxc::intrus;
+using namespace lanxc::link;
 
 class node : public rbtree_node<int, node>
 {

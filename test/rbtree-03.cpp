@@ -27,7 +27,7 @@
 #include <list>
 
 using namespace std;
-using namespace lanxc::intrus;
+using namespace lanxc::link;
 
 constexpr int N = 100;
 constexpr int M = 10;

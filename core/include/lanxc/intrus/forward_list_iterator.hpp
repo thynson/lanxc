@@ -25,7 +25,7 @@
 
 namespace lanxc
 {
-  namespace intrus
+  namespace link
   {
     template<typename Node, typename Tag>
     class forward_list_iterator

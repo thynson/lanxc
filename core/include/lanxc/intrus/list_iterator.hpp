@@ -24,7 +24,7 @@
 
 namespace lanxc
 {
-  namespace intrus
+  namespace link
   {
     template<typename Node, typename Tag>
     class list_iterator

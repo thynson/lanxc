@@ -26,7 +26,7 @@
 
 namespace lanxc
 {
-  namespace intrus
+  namespace link
   {
 
     /**

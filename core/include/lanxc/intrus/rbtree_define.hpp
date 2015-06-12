@@ -25,7 +25,7 @@
 
 namespace lanxc
 {
-  namespace intrus
+  namespace link
   {
     namespace index_policy
     {
