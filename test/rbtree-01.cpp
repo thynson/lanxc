@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/intrus/rbtree.hpp>
+#include <lanxc/link/rbtree.hpp>
 #include <iostream>
 #include <cassert>
 #include <algorithm>

@@ -16,7 +16,7 @@
  */
 
 
-#include <lanxc/intrus/rbtree.hpp>
+#include <lanxc/link/rbtree.hpp>
 #include <iostream>
 #include <vector>
 #include <cassert>
