@@ -32,18 +32,32 @@ namespace lanxc
     {
       template<typename, typename>
       friend class list_node;
-    public:
 
-      template<typename Node, bool Enabled>
-      class enable_unlink
-      { };
+      template<typename Node, typename Tag,
+          typename = typename std::conditional<
+              list_config<Tag>::allow_constant_time_unlink,
+                  std::true_type, std::false_type>::type>
+      class enable_unlink;
 
-      template<typename Node>
-      class enable_unlink<Node, true>
+      template<typename Node, typename Tag>
+      class enable_unlink<Node, Tag, typename std::enable_if<
+          !list_config<Tag>::allow_constant_time_unlink, std::false_type>::type>
+      {
+      protected:
+        ~enable_unlink()
+        { assert(!(static_cast<list_node<Node, Tag>*>(this)->is_linked())); }
+      };
+
+      template<typename Node, typename Tag>
+      class enable_unlink<Node, Tag, typename std::enable_if<
+          list_config<Tag>::allow_constant_time_unlink, std::true_type>::type>
       {
       public:
         void unlink()
         { static_cast<Node*>(this)->Node::unlink_internal(); }
+      protected:
+        ~enable_unlink()
+        { unlink(); }
       };
 
     };
@@ -53,9 +67,7 @@ namespace lanxc
      * @ingroup intrusive_list
      */
     template<typename Node, typename Tag>
-    class list_node
-      : public list_node<void>::enable_unlink<list_node<Node, Tag>,
-          list_config<Tag>::allow_constant_time_unlink>
+    class list_node : public list_node<void>::enable_unlink<Node, Tag>
     {
       using config = list_config<Tag>;
       using node_pointer = typename config::template pointer<list_node>;
@@ -69,17 +81,10 @@ namespace lanxc
 
       list_node() noexcept
         : m_prev(nullptr), m_next(nullptr)
-      {}
+      { }
 
       ~list_node() noexcept
-      {
-        if (config::allow_constant_time_unlink)
-          unlink_internal();
-        else
-          // When used as container node, either next link or prev link is
-          // null
-          assert(m_next == nullptr || m_prev == nullptr);
-      }
+      { }
 
       list_node(list_node &&other) noexcept
         : list_node()

@@ -46,34 +46,14 @@ namespace lanxc
       // Implementation details here
 
       template<typename Node, typename Tag,
-          typename = typename std::enable_if<list_config<Tag>::allow_constant_time_unlink>::type>
-      class enable_counter
-      {
-        template<typename, typename>
-        friend class list;
+          typename = typename std::conditional<list_config<Tag>::allow_constant_time_unlink,
+              std::true_type, std::false_type>::type>
+      class enable_counter;
 
-        using size_type = std::size_t;
-
-        void increase(size_type) noexcept {}
-
-        void decrease(size_type) noexcept {}
-
-        void swap_size(enable_counter &) { }
-
-      public:
-        size_type get_size() const
-        {
-          const list<Node, Tag> &l = static_cast<const list<Node, Tag>&>(*this);
-          size_type s = 0;
-          auto b = l.cbegin();
-          auto e = l.cend();
-          while (b++ != e) s++;
-          return s;
-        }
-      };
-
-      template<typename Node, typename Config>
-      class enable_counter<Node, Config, void>
+      template<typename Node, typename Tag>
+      class enable_counter<Node, Tag,
+          typename std::enable_if<
+              !list_config<Tag>::allow_constant_time_unlink, std::false_type>::type>
       {
         template<typename, typename>
         friend class list;
@@ -99,6 +79,35 @@ namespace lanxc
         { return m_counter; }
       };
 
+
+      template<typename Node, typename Tag>
+      class enable_counter<Node, Tag,
+          typename std::enable_if<
+              list_config<Tag>::allow_constant_time_unlink, std::true_type>::type>
+
+      {
+        template<typename, typename>
+        friend class list;
+
+        using size_type = std::size_t;
+
+        void increase(size_type) noexcept {}
+
+        void decrease(size_type) noexcept {}
+
+        void swap_size(enable_counter &) { }
+
+      public:
+        size_type get_size() const
+        {
+          const list<Node, Tag> &l = static_cast<const list<Node, Tag>&>(*this);
+          size_type s = 0;
+          auto b = l.cbegin();
+          auto e = l.cend();
+          while (b++ != e) s++;
+          return s;
+        }
+      };
 
     };
 
