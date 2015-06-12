@@ -20,8 +20,9 @@
 
 #include "list_iterator.hpp"
 #include "list_node.hpp"
-
 #include "../functional.hpp"
+
+#include <algorithm>
 
 namespace lanxc
 {
