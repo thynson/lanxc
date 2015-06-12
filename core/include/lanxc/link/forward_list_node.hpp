@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 LAN Xingcan
+ * Copyright (C) 2015 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_INTRUS_FORWARD_LIST_NODE_HPP_INCLUDED
-#define LANXC_INTRUS_FORWARD_LIST_NODE_HPP_INCLUDED
+#ifndef LANXC_LINK_FORWARD_LIST_NODE_HPP_INCLUDED
+#define LANXC_LINK_FORWARD_LIST_NODE_HPP_INCLUDED
 
 #include "forward_list_config.hpp"
 

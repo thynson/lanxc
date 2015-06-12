@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 LAN Xingcan
+ * Copyright (C) 2015 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -16,8 +16,8 @@
  */
 
 
-#ifndef LANXC_INTRUS_RBTREE_HPP_INCLUDED
-#define LANXC_INTRUS_RBTREE_HPP_INCLUDED
+#ifndef LANXC_LINK_RBTREE_HPP_INCLUDED
+#define LANXC_LINK_RBTREE_HPP_INCLUDED
 
 #include "rbtree_config.hpp"
 #include "rbtree_node.hpp"

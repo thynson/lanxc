@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 LAN Xingcan
+ * Copyright (C) 2015 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_INTRUS_FORWARD_LIST_HPP_INCLUDED
-#define LANXC_INTRUS_FORWARD_LIST_HPP_INCLUDED
+#ifndef LANXC_LINK_FORWARD_LIST_HPP_INCLUDED
+#define LANXC_LINK_FORWARD_LIST_HPP_INCLUDED
 
 #include "forward_list_iterator.hpp"
 
@@ -154,9 +154,6 @@ namespace lanxc
         l.m_size = 0;
       }
 
-      //void splice_after(iterator pos, forward_list &&l) noexcept
-      //{ splice_after(pos, l); }
-
       void splice_after(iterator pos, forward_list &l, iterator before)
       {
         if (l.before_begin() == before)
@@ -190,11 +187,6 @@ namespace lanxc
         x.m_next = n;
         m_size += s;
         l.m_size -= s;
-      }
-
-      void splice_after(iterator pos, forward_list &&l, iterator before)
-      {
-	      splice_after(pos, l, before);
       }
 
       void splice_after(iterator pos, forward_list &list, iterator b, iterator e)
@@ -242,9 +234,6 @@ namespace lanxc
         m_size += s;
         list.m_size -= s;
       }
-
-      void splice_after(iterator pos, forward_list &&l, iterator b, iterator e)
-      { splice_after(pos, l, b, e); }
 
       template<typename Comparator = less<Node>>
       void merge(forward_list &l, Comparator &&comp = Comparator())
