@@ -45,7 +45,8 @@ namespace lanxc
 
       // Implementation details here
 
-      template<typename List, bool>
+      template<typename Node, typename Tag,
+          typename = typename std::enable_if<list_config<Tag>::allow_constant_time_unlink>::type>
       class enable_counter
       {
         template<typename, typename>
@@ -60,19 +61,19 @@ namespace lanxc
         void swap_size(enable_counter &) { }
 
       public:
-        size_type size() const
+        size_type get_size() const
         {
-          auto &l = static_cast<const List&>(*this);
+          const list<Node, Tag> &l = static_cast<const list<Node, Tag>&>(*this);
           size_type s = 0;
-          auto b = l.begin();
-          auto e = l.end();
+          auto b = l.cbegin();
+          auto e = l.cend();
           while (b++ != e) s++;
           return s;
         }
       };
 
-      template<typename List>
-      class enable_counter<List, true>
+      template<typename Node, typename Config>
+      class enable_counter<Node, Config, void>
       {
         template<typename, typename>
         friend class list;
@@ -94,7 +95,7 @@ namespace lanxc
         { std::swap(m_counter, n.m_counter); }
 
       public:
-        size_type size() const
+        size_type get_size() const
         { return m_counter; }
       };
 
@@ -106,14 +107,11 @@ namespace lanxc
      * @ingroup intrusive_list
      */
     template<typename Node, typename Tag>
-    class list
-      : public list<void>::enable_counter<list<Node, Tag>,
-          !list_config<Tag>::allow_constant_time_unlink>
+    class list : private list<void>::enable_counter<Node, Tag>
     {
       using config                  = list_config<Tag>;
       using node_type               = list_node<Node, Tag>;
-      using enable_counter = list<void>::enable_counter<list,
-            !list_config<Tag>::allow_constant_time_unlink>;
+      using enable_counter          = list<void>::enable_counter<Node, Tag>;
     public:
       using iterator                = list_iterator<Node, Tag>;
       using const_iterator          = list_const_iterator<Node, Tag>;
@@ -133,6 +131,17 @@ namespace lanxc
         : m_head(nullptr, &m_tail)
         , m_tail(&m_head, nullptr)
       {}
+
+      template<typename InputIterator>
+      list(InputIterator b, InputIterator e)
+        : list()
+      {
+        while (b != e)
+        {
+          this->insert(end(), b);
+          ++b;
+        }
+      }
 
       /** @brief Destructor */
       ~list() noexcept
@@ -199,6 +208,9 @@ namespace lanxc
 
       const_reference back() const { return *rbegin(); }
 
+      size_type size() const noexcept
+      { return enable_counter::get_size(); }
+
       /**
        * @brief Insert given value to specified position
        * @param pos The specified position
@@ -225,12 +237,12 @@ namespace lanxc
        * @param e The end of the range
        */
       template<typename InputIterator>
-        void insert(iterator pos, InputIterator b, InputIterator e)
-          noexcept(noexcept(list(b, e)))
-        {
-          list l(b, e);
-          splice(pos, l);
-        }
+      void insert(iterator pos, InputIterator b, InputIterator e)
+        noexcept(noexcept(list(b, e)))
+      {
+        list l(b, e);
+        splice(pos, l);
+      }
 
       /**
        * @brief Erase an elements at specified position
@@ -271,7 +283,7 @@ namespace lanxc
        * @brief Remove the last element from the list
        */
       void pop_back() noexcept
-      { erase(iterator(m_tail->m_prev)); }
+      { erase(iterator(m_tail.m_prev)); }
 
       /**
        * @brief Remove a node from this list
@@ -300,13 +312,14 @@ namespace lanxc
        */
       template<typename Predicate>
       void remove_if(Predicate &&predicate)
-        noexcept(noexcept(predicate(std::declval<Node*>())))
+        noexcept(noexcept(predicate(std::declval<Node&>())))
       {
         auto k = begin();
-        while (!k)
+        auto e = end();
+        while (k != e)
         {
           auto c = k++;
-          if (predicate(&*c))
+          if (predicate(*c))
             erase(c);
         }
       }
@@ -349,8 +362,8 @@ namespace lanxc
 
         auto b = l.begin(), e = l.end();
 
-        this->increase(l.m_counter.m_counter);
-        l.decrease(l.m_coutner.m_counter);
+        this->increase(l.m_counter);
+        l.decrease(l.m_counter);
 
         node_type &x = *(b->m_prev), &y = *(e->m_prev);
         x.m_next = &(*e);
@@ -360,15 +373,6 @@ namespace lanxc
         y.m_next = &(*pos);
         b->m_prev->m_next = &(*b);
         y.m_next->m_prev = &y;
-      }
-
-      /**
-       * @brief Transfer all elements from l to position pos in this list
-       */
-      void splice(iterator pos, list &&l) noexcept
-      {
-        if (&l == this) return;
-        splice(pos, l.begin(), l.end());
       }
 
       /**
@@ -394,10 +398,6 @@ namespace lanxc
         b->m_prev->m_next = &(*b);
         y.m_next->m_prev = &y;
       }
-
-      /** @brief Swap content with another list */
-      void swap(list &&l) noexcept
-      { return swap(l); }
 
       /** @brief Swap content with another list */
       void swap(list &l) noexcept
@@ -481,29 +481,16 @@ namespace lanxc
       }
 
       /**
-       * @brief Merge a another sorted list with specified strict comparator
+       * @brief Merge another sorted list with comparator @p c
        * @param l The list to be merged
        * @param comp The specified strict weak ordering comparer
        * @note both of this list and the part to be merged should be sorted
        * with specified comparer, and b and e should be iterators of distinct list
        */
       template<typename Comparator=less<Node>>
-      void merge(list &l, Comparator &&comp = Comparator())
-        noexcept(noexcept(std::forward<Comparator>(comp)(*l.begin(), *l.end())))
-      { merge(l, l.begin(), l.end(), std::forward<Comparator>(comp)); }
-
-      /**
-       * @brief Merge a another sorted list with specified strict comparator
-       * @param l The list to be merged
-       * @param comp The specified strict weak ordering comparer
-       * @note both of this list and the part to be merged should be sorted
-       * with specified comparer, and b and e should be iterators of distinct list
-       */
-      template<typename Comparator=less<Node>>
-      void merge(list &&l, Comparator &&comp = Comparator())
-        noexcept(noexcept(merge(l, l.begin(), l.end(),
-                std::forward<Comparator>(comp))))
-      { merge(l, l.begin(), l.end(), std::forward<Comparator>(comp)); }
+      void merge(list &l, Comparator &&c = Comparator())
+        noexcept(noexcept(std::forward<Comparator>(c)(*l.begin(), *l.end())))
+      { merge(l, l.begin(), l.end(), std::forward<Comparator>(c)); }
 
       /**
        * @brief Erase duplicate elements with specified binary predicate
@@ -587,7 +574,6 @@ namespace lanxc
       }
 
     private:
-
       node_type m_head;
       node_type m_tail;
 
@@ -597,8 +583,8 @@ namespace lanxc
       inline bool operator == (const list<Node, Tag> &x,
           const list<Node, Tag> &y) noexcept
       {
-        auto i = x.begin(), j = y.begin();
-        auto m = x.end(), n = y.end();
+        auto i = x.cbegin(), j = y.cbegin();
+        auto m = x.cend(), n = y.cend();
 
         while (i != m && j != n && *i == *j)
         { ++i; ++j; }

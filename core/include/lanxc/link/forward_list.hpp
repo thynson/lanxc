@@ -47,7 +47,7 @@ namespace lanxc
       using iterator_category = std::forward_iterator_tag;
 
       forward_list() noexcept
-        : m_head() , m_tail() , m_size(0)
+        : m_head(), m_tail(), m_size(0)
       {}
 
       ~forward_list()
@@ -393,8 +393,8 @@ namespace lanxc
       inline bool operator == (const forward_list<Node, Tag> &x,
           const forward_list<Node, Tag> &y) noexcept
       {
-        auto i = x.begin(), j = y.begin();
-        auto m = x.end(), n = y.end();
+        auto i = x.cbegin(), j = y.cbegin();
+        auto m = x.cend(), n = y.cend();
 
         while (i != m && j != n && *i == *j)
         { ++i; ++j; }
