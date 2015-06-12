@@ -220,7 +220,7 @@ namespace lanxc
 
 
       static std::pair<void*, const void *>
-      implement(manager *mgr, const manager *cmgr,  void *args, command cmd)
+      implement(manager *mgr, const manager *cmgr, void *args, command cmd)
       noexcept
       {
         auto self = static_cast<manager_implement *>(mgr);
@@ -372,14 +372,14 @@ namespace lanxc
 
     template<typename Function, typename Allocator,
         typename = valid_functor_sfinae<Function>>
-    function(std::allocator_arg_t, const Allocator &allocator, Function functor)
+    function(std::allocator_arg_t, const Allocator &a, Function f)
       noexcept(detail::is_inplace_allocated<Function>::value)
-      : m_caller(get_caller<Allocator, Function>(functor))
+      : m_caller(get_caller<Allocator, Function>(f))
     {
-      using implement = detail::manager_implement<Function, Allocator>;
       if (m_caller != noop_function)
       {
-        new(m_store) implement(detail::make_functor(functor), allocator);
+        new (m_store) detail::manager_implement<Function, Allocator>(
+            detail::make_functor(f), a);
       }
     }
 
@@ -457,10 +457,10 @@ namespace lanxc
     }
 
     template<typename Function, typename Allocator=std::allocator<void>>
-    void assign(Function callable, const Allocator &allocator = Allocator())
+    void assign(Function f, const Allocator &a = Allocator())
       noexcept(detail::is_inplace_allocated<Function>::value)
     {
-      function(std::allocator_arg, allocator, std::move(callable)).swap(*this);
+      function(std::allocator_arg, a, std::move(f)).swap(*this);
     }
 
     const std::type_info &target_type() const noexcept
@@ -473,7 +473,7 @@ namespace lanxc
     }
 
     template<typename Target>
-    const Target *target() const
+    const Target *target() const noexcept
     {
       if (m_caller == noop_function)
         return nullptr;
@@ -486,7 +486,7 @@ namespace lanxc
 
 
     template<typename Target>
-    Target *target()
+    Target *target() noexcept
     {
       if (m_caller == noop_function)
         return nullptr;
