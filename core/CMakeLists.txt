@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 3.1)
 
 add_library(lanxc-core INTERFACE)
 
-target_include_directories(lanxc-core INTERFACE
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-	)
+
 target_compile_features(lanxc-core INTERFACE
     cxx_alias_templates
     cxx_auto_type
@@ -21,31 +19,10 @@ target_compile_features(lanxc-core INTERFACE
     cxx_variadic_templates
     )
 
-install(FILES
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/function.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/functional.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus.hpp"
-	DESTINATION include/lanxc
+target_include_directories(lanxc-core INTERFACE
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	)
-
-install(FILES
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_config.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_define.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_node.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list_iterator.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/forward_list.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_config.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_define.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_node.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list_iterator.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/list.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_config.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_define.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_node.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree_iterator.hpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/include/lanxc/intrus/rbtree.hpp"
-	DESTINATION include/lanxc/intrus
-	)
+install(DIRECTORY include/lanxc DESTINATION include/lanxc)
 
 include(CMakePackageConfigHelpers)
 
@@ -82,4 +59,35 @@ install(FILES lanxc-core-config.cmake
 	DESTINATION lib/cmake/lanxc-core
 	)
 
+
+
+
+##### Dummy target to makes IDEA happy
+add_library(lanxc-core-dummy STATIC EXCLUDE_FROM_ALL
+
+	"include/lanxc/type_traits.hpp"
+	"include/lanxc/function.hpp"
+	"include/lanxc/functional.hpp"
+	"include/lanxc/intrus.hpp"
+	"include/lanxc/intrus/forward_list_config.hpp"
+	"include/lanxc/intrus/forward_list_define.hpp"
+	"include/lanxc/intrus/forward_list_node.hpp"
+	"include/lanxc/intrus/forward_list_iterator.hpp"
+	"include/lanxc/intrus/forward_list.hpp"
+	"include/lanxc/intrus/list_config.hpp"
+	"include/lanxc/intrus/list_define.hpp"
+	"include/lanxc/intrus/list_node.hpp"
+	"include/lanxc/intrus/list_iterator.hpp"
+	"include/lanxc/intrus/list.hpp"
+	"include/lanxc/intrus/rbtree_config.hpp"
+	"include/lanxc/intrus/rbtree_define.hpp"
+	"include/lanxc/intrus/rbtree_node.hpp"
+	"include/lanxc/intrus/rbtree_iterator.hpp"
+	"include/lanxc/intrus/rbtree.hpp"
+	"dummy.cpp")
+
+set_target_properties(lanxc-core-dummy PROPERTIES LINK_LANGUAGE CXX)
+
+target_link_libraries(lanxc-core-dummy lanxc-core)
+#### End of dummy target
 
