@@ -146,12 +146,15 @@ namespace lanxc
       -> decltype(std::mem_fn(func))
     { return std::mem_fn(func); }
 
-    template<typename T, typename Allocator, typename = void>
+    template<typename T, typename Allocator,
+        typename = typename std::conditional<
+            is_inplace_allocated<T>::value, std::true_type, std::false_type>::type>
     struct manager_implement;
 
     template<typename Function, typename Allocator>
     struct manager_implement<Function, Allocator,
-        inplace_allocated_sfinae<Function>> : manager
+        typename std::enable_if<
+            is_inplace_allocated<Function>::value, std::true_type>::type> : manager
     {
       Function m_function;
       static const std::type_info &typeinfo;
@@ -200,7 +203,9 @@ namespace lanxc
 
 
     template<typename Function, typename Allocator>
-    struct manager_implement<Function, Allocator, void> : manager
+    struct manager_implement<Function, Allocator,
+        typename std::enable_if<
+            !is_inplace_allocated<Function>::value, std::false_type>::type> : manager
     {
       using allocator_type = typename std::allocator_traits<Allocator>
         ::template rebind_alloc<Function>;
@@ -292,13 +297,15 @@ namespace lanxc
 
   template<typename Function, typename Allocator>
   const std::type_info &function<void>::manager_implement<
-    Function, Allocator, void>::typeinfo = typeid(Function);
+    Function, Allocator, typename std::enable_if<
+        function<void>::is_inplace_allocated<Function>::value,
+            std::true_type>::type>::typeinfo = typeid(Function);
 
   template<typename Function, typename Allocator>
   const std::type_info &function<void>::manager_implement<
-    Function, Allocator,
-    function<void>::inplace_allocated_sfinae<Function>
-    >::typeinfo = typeid(Function);
+    Function, Allocator, typename std::enable_if<
+        !function<void>::is_inplace_allocated<Function>::value,
+            std::false_type>::type>::typeinfo = typeid(Function);
 
   /**
    * @brief An implementation of function object alternative (but not
