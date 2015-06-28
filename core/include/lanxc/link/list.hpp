@@ -66,13 +66,19 @@ namespace lanxc
           : m_counter(0)
         {}
 
-        void increase(size_type n) noexcept
-        { m_counter += n; }
+        void increase() noexcept
+        { m_counter += 1; }
 
-        void decrease(size_type n) noexcept
-        { m_counter -= n; }
+        void decrease() noexcept
+        { m_counter -= 1; }
 
-        void swap_size(enable_counter &n)
+        void transfer(enable_counter &n) noexcept
+        {
+          m_counter += n.m_counter;
+          n.m_counter = 0;
+        }
+
+        void swap_size(enable_counter &n) noexcept
         { std::swap(m_counter, n.m_counter); }
 
       public:
@@ -92,11 +98,13 @@ namespace lanxc
 
         using size_type = std::size_t;
 
-        void increase(size_type) noexcept {}
+        void increase() noexcept {}
 
-        void decrease(size_type) noexcept {}
+        void decrease() noexcept {}
 
-        void swap_size(enable_counter &) { }
+        void swap_size(enable_counter &) noexcept { }
+
+        void transfer(enable_counter &) noexcept { }
 
       public:
         size_type get_size() const
@@ -236,7 +244,7 @@ namespace lanxc
         nref.m_prev->m_next = &nref;
         pos->m_prev = &nref;
         nref.m_next = &(*pos);
-        this->increase(1);
+        this->increase();
       }
 
       /**
@@ -264,7 +272,7 @@ namespace lanxc
         if (pos->is_linked())
         {
           ref.unlink_internal();
-          this->decrease(1);
+          this->decrease();
         }
       }
 
@@ -372,8 +380,7 @@ namespace lanxc
 
         auto b = l.begin(), e = l.end();
 
-        this->increase(l.m_counter);
-        l.decrease(l.m_counter);
+        this->transfer(l);
 
         node_type &x = *(b->m_prev), &y = *(e->m_prev);
         x.m_next = &(*e);
