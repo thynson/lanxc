@@ -377,6 +377,7 @@ namespace lanxc
       void splice(iterator pos, list &l) noexcept
       {
         if (&l == this) return;
+        if (l.empty()) return;
 
         auto b = l.begin(), e = l.end();
 
@@ -398,13 +399,15 @@ namespace lanxc
        */
       void splice(iterator pos, list &l, iterator b, iterator e) noexcept
       {
+
+        if (&l == this) return;
         if (b == e) return;
 
-        size_t s = 0;
-        for (auto i = b; i != e; ++i) s++;
+        for (auto i = b; i != e; ++i) {
 
-        this->increase(s);
-        l.decrease(s);
+          this->increase();
+          l.decrease();
+        }
 
         node_type &x = *(b->m_prev), &y = *(e->m_prev);
         x.m_next = &(*e);
