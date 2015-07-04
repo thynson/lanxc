@@ -19,6 +19,7 @@
 #define LANXC_TYPE_TRAITS_HPP_INCLUDED
 
 #include <type_traits>
+#include <utility>
 
 namespace lanxc
 {
@@ -79,9 +80,7 @@ namespace lanxc
 
   template<typename T>
   struct result_of : result_of<void>::detail<T>
-  {
-
-  };
+  { };
 
 }
 #endif
