@@ -44,7 +44,6 @@ namespace lanxc
       using default_insert_policy   = typename config::default_insert_policy;
       using default_lookup_policy   = typename config::default_lookup_policy;
 
-
       /**
        * @brief SFINAE check for lookup policy
        * @tparam Policy Type of lookup policy
@@ -103,107 +102,73 @@ namespace lanxc
         return *this;
       }
 
-
-      /** @brief Test if this rbtree is empty */
+      /** @brief Tests if this rbtree contains no element */
       bool empty() const noexcept
       { return m_container_node.is_empty_container_node(); }
 
-
-      /** @brief Count the elements in this tree */
+      /** @brief Counts the elements in this tree */
       size_type size() const noexcept
       {
         return m_container_node.m_size;
       }
 
+      /** @brief Get an iterator point to the first element */
       iterator begin() noexcept
       { return iterator(m_container_node.front_of_container()); }
 
-      /**
-       * @brief Get an reverse iterator to the position of the last element in
-       *         this tree
-       */
-      reverse_iterator rbegin() noexcept
-      { return reverse_iterator(end()); }
-
-      /**
-       * @brief Get an const iterator point to the position of the first element
-       *        in this tree
-       */
+      /** @brief Get a const iterator point to the first element */
       const_iterator begin() const noexcept
-      { return const_iterator(end()); }
+      { return const_iterator(m_container_node.front_of_container()); }
 
-      /**
-       * @brief Get an const reverse iterator to the position of the last
-       *        element in this tree
-       */
-      const_reverse_iterator rbegin() const noexcept
-      { return const_reverse_iterator(end()); }
-
-      /**
-       * @brief Get an const iterator point to the position of the first
-       *        element in this tree
-       */
+      /** @brief Get a const iterator point to the first element */
       const_iterator cbegin() const noexcept
       { return const_iterator(m_container_node.front_of_container()); }
 
-      /**
-       * @brief Get an const reverse iterator to the position of the last
-       *        element in this tree
-       */
+      /** @brief Get a reverse iterator point to the last element */
+      reverse_iterator rbegin() noexcept
+      { return reverse_iterator(end()); }
+
+      /** @brief Get a const reverse iterator point to the last element */
+      const_reverse_iterator rbegin() const noexcept
+      { return const_reverse_iterator(end()); }
+
+      /** @brief Get a const reverse iterator point to the last element */
       const_reverse_iterator crbegin() const noexcept
       { return const_reverse_iterator(end()); }
 
-      /**
-       * @brief Get an iterator to the position after the last element
-       *        in this tree
-       */
+      /**@breif Get an iterator point to the end of this tree */
       iterator end() noexcept
       { return iterator(&m_container_node); }
 
-      /**
-       * @brief Get an reverse iterator point to the position before the
-       *        first element in this tree
-       */
-      reverse_iterator rend() noexcept
-      { return reverse_iterator(begin()); }
-
-      /**
-       * @brief Get an const iterator point to the position after the last
-       *        element in this tree
-       */
+      /**@breif Get a const iterator point to the end of this tree */
       const_iterator end() const noexcept
       { return const_iterator(&m_container_node); }
 
-      /**
-       * @brief Get an const reverse iterator point to the position before the
-       *        first element in this tree
-       */
-      const_reverse_iterator rend() const noexcept
-      { return const_reverse_iterator(begin()); }
-
-      /**
-       * @brief Get an const iterator point to the position after the last
-       *        element in this tree
-       */
+      /**@breif Get a const iterator point to the end of this tree */
       const_iterator cend() const noexcept
       { return const_iterator(&m_container_node); }
 
-      /**
-       * @brief Get an const reverse iterator point to the position before the
-       *        first element in this tree
-       */
+      /**@breif Get an iterator point to the reverse end of this tree */
+      reverse_iterator rend() noexcept
+      { return reverse_iterator(begin()); }
+
+      /**@breif Get a const iterator point to the reverse end of this tree */
+      const_reverse_iterator rend() const noexcept
+      { return const_reverse_iterator(begin()); }
+
+      /**@breif Get a const iterator point to the reverse end of this tree */
       const_reverse_iterator crend() const noexcept
       { return const_reverse_iterator(begin()); }
 
       /**
-       * @brief Get a reference to the first element in this tree
+       * @brief Get a reference to the first element
        * @note User should ensure this tree is not empty
        */
       reference front() noexcept
       { return *begin(); }
 
       /**
-       * @brief Get a const reference to the first element in this tree
+       * @brief Get a const reference to the first element
        * @note User should ensure this tree is not empty
        */
       const_reference front() const noexcept
@@ -224,9 +189,9 @@ namespace lanxc
       { return *rbegin(); }
 
       /**
-       * @brief Find an element its index is equals to @p val
+       * @brief Find an element whose index is equals to @p val
        * @tparam LookupPolicy Lookup policy
-       * @param val The value of index of the element want to find
+       * @param val The value of index to be searched for
        * @param p policy
        * @returns
        *        An iterator point to the element with same index value with
@@ -241,12 +206,12 @@ namespace lanxc
       { return find(end(), val, p); }
 
       /**
-       * @brief Find an element its index is equals to @p val
+       * @brief Find an element whose index is equals to @p val
        * @tparam LookupPolicy Lookup policy
-       * @param val  The value of index of the element want to find
-       * @param hint Search is start from this position other than the root
+       * @param val The value of index to be searched for
+       * @param hint Search is start from this position rather than the root
        *             of tree, may affects performance depends on the position
-       *             between search result and @p hint
+       *             between result position and @p hint
        * @param p policy
        *
        * @returns
@@ -267,9 +232,9 @@ namespace lanxc
       }
 
       /**
-       * @brief Find an element its index is equals to @p val
+       * @brief Find an element whose index is equals to @p val
        * @tparam LookupPolicy Lookup policy
-       * @param val The value of index of the element want to find
+       * @param val The value of index to be searched for
        * @param p policy
        * @returns
        *        A const iterator point to the element with same index value
@@ -284,9 +249,9 @@ namespace lanxc
       { return find(end(), val, p); }
 
       /**
-       * @brief Find an element its index is equals to @p val
+       * @brief Find an element whose index is equals to @p val
        * @tparam LookupPolicy Lookup policy
-       * @param val The value of index of the element want to find
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
@@ -310,9 +275,9 @@ namespace lanxc
 
       /**
        * @brief Find the lower bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @returns An iterator point to the first element that is not less than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       iterator lower_bound(const Index &val)
           noexcept(node_type::is_comparator_noexcept)
@@ -322,9 +287,9 @@ namespace lanxc
 
       /**
        * @brief Find the lower bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @returns A const iterator point to the first element that is not less
-       *          than @p val
+       *          than @p val, or @a end() if there is no such element
        */
       const_iterator lower_bound(const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
@@ -332,12 +297,12 @@ namespace lanxc
 
       /**
        * @brief Find the lower bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
        * @returns An iterator point to the first element that is not less than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       iterator lower_bound(iterator hint, const Index &val)
           noexcept(node_type::is_comparator_noexcept)
@@ -348,12 +313,12 @@ namespace lanxc
 
       /**
        * @brief Find the lower bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
        * @returns A iterator point to the first element that is not less than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       iterator lower_bound(iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
@@ -364,12 +329,12 @@ namespace lanxc
 
       /**
        * @brief Find the lower bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
        * @returns A const iterator point to the first element that is not less
-       *          than @p val
+       *          than @p val, or @a end() if there is no such element
        */
       const_iterator lower_bound(const_iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
@@ -380,9 +345,9 @@ namespace lanxc
 
       /**
        * @brief Find the upper bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @returns An iterator point to the first element that is greater than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       iterator upper_bound(const Index &val)
           noexcept(node_type::is_comparator_noexcept)
@@ -390,9 +355,9 @@ namespace lanxc
 
       /**
        * @brief Find the upper bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @returns A const iterator point to the first element that is greater than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       const_iterator upper_bound(const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
@@ -400,12 +365,12 @@ namespace lanxc
 
       /**
        * @brief Find the upper bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
        * @returns An iterator point to the first element that is greater than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       iterator upper_bound(iterator hint, const Index &val)
           noexcept(node_type::is_comparator_noexcept)
@@ -416,12 +381,12 @@ namespace lanxc
 
       /**
        * @brief Find the upper bound for @p val in this tree
-       * @param val The value for searching the boundary
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
        * @returns A const iterator point to the first element that is greater than
-       *          @p val
+       *          @p val, or @a end() if there is no such element
        */
       const_iterator upper_bound(const_iterator hint, const Index &val) const
           noexcept(node_type::is_comparator_noexcept)
@@ -431,9 +396,8 @@ namespace lanxc
       }
 
       /**
-       * @brief Returns a range that indexes of elements inside are equals to
-       *        @p val
-       * @param val The value for searching the equal range
+       * @brief Returns a range of elements whose indexes are equals to @p val
+       * @param val The value of index to be searched for
        * @returns A pair of iterator that represents the equal range. The
        *          first iterator is the lower bound, the second iterator
        *          is the upper bound
@@ -443,9 +407,8 @@ namespace lanxc
       { return equals_range(end(), val); }
 
       /**
-       * @brief Returns a range that indexes of elements inside are equals to
-       *        @p val
-       * @param val The value for searching the equal range
+       * @brief Returns a range of elements whose indexes are equals to @p val
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
@@ -462,9 +425,8 @@ namespace lanxc
       }
 
       /**
-       * @brief Returns a range that indexes of elements inside are equals to
-       *        @p val
-       * @param val The value for searching the equal range
+       * @brief Returns a range of elements whose indexes are equals to @p val
+       * @param val The value of index to be searched for
        * @returns A pair of const iterator that represents the equal range.
        *          The first iterator is the lower bound, the second iterator
        *          is the upper bound
@@ -475,9 +437,8 @@ namespace lanxc
       { return equals_range(end(), val); }
 
       /**
-       * @brief Returns a range that indexes of elements inside are equals to
-       *        @p val
-       * @param val The value for searching the equal range
+       * @brief Returns a range of elements whose indexes are equals to @p val
+       * @param val The value of index to be searched for
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
@@ -624,6 +585,7 @@ namespace lanxc
         *this = std::move(tmp);
       }
 
+      /** @brif Remove all elements from this tree */
       void clear() noexcept
       { m_container_node.unlink_container(); }
 
@@ -633,4 +595,3 @@ namespace lanxc
   }
 }
 #endif
-
