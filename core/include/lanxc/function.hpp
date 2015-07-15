@@ -362,7 +362,7 @@ namespace lanxc
     { }
 
     function(std::nullptr_t) noexcept
-        : m_caller(detail::invalid_function)
+        : m_caller(noop_function)
     { }
 
     template<typename Allocator>
@@ -413,20 +413,37 @@ namespace lanxc
     function &operator =(function &&other) noexcept
     {
       std::swap(m_caller, other.m_caller);
-      detail::functor_padding tmp;
-      auto imp = other.cast()->m_implement;
-      imp(other.cast(), nullptr, &tmp, detail::command::move);
-      cast()->m_implement(other.cast(), nullptr, &other.m_store,
-          detail::command::move);
-      imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, &m_store,
-          detail::command::move);
+      if (other.m_caller == noop_function)
+      {
+        if (m_caller != noop_function)
+        {
+
+          auto imp = other.cast()->m_implement;
+          // other->tmp
+          imp(other.cast(), nullptr, &m_store, detail::command::move);
+        }
+      }
+      else
+      {
+        //std::swap(m_caller, other.m_caller);
+        detail::functor_padding tmp;
+        auto imp = other.cast()->m_implement;
+        // other->tmp
+        imp(other.cast(), nullptr, &tmp, detail::command::move);
+        // this -> other
+        cast()->m_implement(cast(), nullptr, &other.m_store,
+                            detail::command::move);
+        // tmp->this
+        imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, &m_store,
+            detail::command::move);
+      }
       return *this;
     }
 
     function &operator =(const function &other) = delete;
 
     explicit operator bool() const noexcept
-    { return m_caller == noop_function; }
+    { return m_caller != noop_function; }
 
     Result operator ()(Arguments &&...args)
     {
