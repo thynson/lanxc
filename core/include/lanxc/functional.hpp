@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 LAN Xingcan
+ * Copyright (C) 2013, 2015 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -18,17 +18,18 @@
 #ifndef LANXC_FUNCTIONAL_HPP
 #define LANXC_FUNCTIONAL_HPP
 
-#include <type_traits>
 #include <functional>
+#include <lanxc/type_traits.hpp>
 
 /**
  * @file functional.hpp
  * @brief Functors
  * @author LAN Xingcan
  *
- * The standard functors (e.g. std::less) does not have const noexcept deduction.
- * So I rewrite all the standard functor, with C++14 Transparent Operator
- * Functor (N3421) feature integrated.
+ * This file provides provides alternative functors implementations against
+ * standard one, which is lack of noexcept deduction, as well as C++14
+ * Transparent Operator Functor (N3421) feature added; and some interesting
+ * stuff for functional programming will also be introduced here.
  *
  * @defgroup functional Functors improved
  * @{
@@ -356,6 +357,185 @@ namespace lanxc
         -> decltype(lhs ^ rhs)
       { return lhs ^ rhs; }
     };
+
+
+  /**
+   * Extends parameter for functor
+   *
+   * For example:
+   * @code
+   * auto x = [](int x) { return x + 1; }
+   * lanxc::extends_parameters<decltype(x), bool, int &> f(x);
+   * int v = 0;
+   * f(42, true, v); // Returns 43; where `true' and `v' is ignored
+   * f(42, true, 0); // Compile error: 0 is not convertible to int &
+   * @endcode
+   */
+  template<typename Function, typename ...OmittedArgument>
+  class extend_parameter
+  {
+    /** @brief Convert variadic template pack to tuple */
+    template<unsigned long N, typename ...Argument>
+    struct helper;
+
+    template<typename Current, typename ...Argument>
+    struct helper<0, Current, Argument...>
+    {
+      using type = std::tuple<Current, Argument...>;
+    };
+
+    template<unsigned long N, typename Current, typename ...Argument>
+    struct helper<N, Current, Argument...> : helper<N - 1, Argument...>
+    { };
+
+    /** @brief Test if types in @p TupleA is convertible to @p TupleB */
+    template<typename TupleA, typename TupleB>
+    struct test;
+
+    template<typename A, typename B>
+    struct test<std::tuple<A>, std::tuple<B>>
+    {
+      static constexpr bool value = std::is_convertible<A, B>::value;
+    };
+
+    template<typename A, typename ...T, typename B, typename ...R>
+    struct test<std::tuple<A, T...>, std::tuple<B, R...>>
+    {
+      static constexpr bool value
+        = (sizeof ... (T) == sizeof ...(R))
+          ? (std::is_convertible<A, B>::value
+             && (sizeof ...(T) == 0
+                 || test<std::tuple<T...>, std::tuple<R...>>::value))
+          : false;
+    };
+
+    template<unsigned long N, typename F, typename T, typename ...R>
+    struct invoke_helper
+    { };
+
+    template<typename F, typename ...A, typename T, typename ...R>
+    struct invoke_helper<0UL, F, std::tuple<A...>, T, R...>
+    {
+      using type = decltype(std::declval<F>()(std::declval<A>()...));
+
+      static type invoke(F &f, A &&...args, T &&, R &&...)
+      noexcept(noexcept(f(std::forward<A>(args)...)))
+      {
+        return f(std::forward<A>(args)...);
+      }
+    };
+
+    template<unsigned long N, typename F, typename ...A, typename T,
+        typename ...R>
+    struct invoke_helper<N, F, std::tuple<A...>, T, R...>
+        : invoke_helper<N - 1, F, std::tuple<A..., T>, R...>
+    { };
+
+    Function m_function;
+
+    template<typename ...Arguments>
+    using omit_argument_sfinae
+      = typename std::enable_if<
+          sizeof ...(Arguments) >= sizeof ... (OmittedArgument)
+            && test<std::tuple<OmittedArgument...>,
+              typename helper<sizeof...(Arguments) - sizeof...(OmittedArgument),
+                  Arguments...>::type>::value,
+          typename invoke_helper<
+              sizeof...(Arguments) - sizeof...(OmittedArgument),
+              Function,
+              std::tuple<>,
+              Arguments &&...>::type>::type;
+
+    template<typename ...Arguments>
+    using invoker
+      = invoke_helper<
+        sizeof...(Arguments) - sizeof...(OmittedArgument),
+        Function,
+        std::tuple<>,
+        Arguments &&...>;
+
+    /**
+     * Helper function to determin if it's noexcept when invoke the
+     * underlying function with such arguments.
+     */
+    template<typename ...Arguments>
+    static constexpr bool is_invoke_noexcept() noexcept
+    {
+      return noexcept(invoker<Arguments...>::invoke(std::declval<Function&>(),
+          std::declval<Arguments&&>()...));
+    }
+
+  public:
+
+    extend_parameter(Function f)
+        : m_function(std::move(f))
+    { }
+
+    template<typename ...Arguments>
+    omit_argument_sfinae<Arguments...> operator () (Arguments &&... args)
+      noexcept(is_invoke_noexcept<Arguments...>())
+    {
+      return invoker<Arguments...>::invoke(m_function,
+          std::forward<Arguments>(args)...);
+    }
+  };
+
+  /**
+   * Extends parameter for a function pointer
+   *
+   * For example:
+   * @code
+   * int add_one(int x) { return x + 1; }
+   * lanxc::extends_parameters<int (*)(int), bool, int &> f(&add_one);
+   * int v = 0;
+   * f(42, true, v); // Returns 43; where `true' and `v' is ignored
+   * f(42, true, 0); // Compile error: 0 is not convertible to int &
+   * @endcode
+   */
+  template<typename Result, typename ...Arguments, typename ...Omitted>
+  class extend_parameter<Result (*)(Arguments...), Omitted...>
+  {
+    Result (*m_function)(Arguments...);
+  public:
+    extend_parameter(Result (*func)(Arguments...)) noexcept
+        : m_function(func)
+    { }
+
+    Result operator ()(Arguments &&...args, Omitted ...) const
+    noexcept(noexcept(m_function(std::forward<Arguments>(args)...)))
+    { return (*m_function)(std::forward<Arguments>(args)...); }
+  };
+
+  /**
+   * Extends parameter for a class function pointer
+   *
+   * For example:
+   * @code
+   * struct A
+   * {
+   *   int add_one(int x) { return x + 1; }
+   * };
+   * lanxc::extends_parameters<int (A::*)(int), bool, int &> f(&add_one);
+   * int v = 0;
+   * f(A(), 42, true, v); // Returns 43; where `true' and `v' is ignored
+   * f(A(), 42, true, 0); // Compile error: 0 is not convertible to int &
+   * @endcode
+   */
+  template<typename Class, typename Result,
+      typename ...Arguments, typename ...Omitted>
+  class extend_parameter<Result (Class::*)(Arguments...), Omitted...>
+  {
+    Result (Class::*m_function)(Arguments...);
+  public:
+    extend_parameter(Result(Class::*func)(Arguments...)) noexcept
+        : m_function(func)
+    { }
+
+    Result operator () (Class &target, Arguments &&...args, Omitted &&...)
+      noexcept(noexcept((target.*m_function)(std::forward<Arguments>(args)...)))
+    { return (target.*m_function)(std::forward<Arguments>(args)...); }
+  };
+
 }
 
 /** @} */
