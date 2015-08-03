@@ -372,15 +372,15 @@ namespace lanxc
 
     template<typename Function, typename = valid_functor_sfinae<Function>>
     function(Function functor)
-    noexcept(detail::is_inplace_allocated<Function>::value)
-        : function(std::allocator_arg, std::allocator<void>(),
-            std::forward<Function>(functor))
+        noexcept(detail::is_inplace_allocated<Function>::value)
+      : function(std::allocator_arg, std::allocator<void>()
+        , std::forward<Function>(functor))
     { }
 
     template<typename Function, typename Allocator,
         typename = valid_functor_sfinae<Function>>
     function(std::allocator_arg_t, const Allocator &a, Function f)
-      noexcept(detail::is_inplace_allocated<Function>::value)
+        noexcept(detail::is_inplace_allocated<Function>::value)
       : m_caller(get_caller<Allocator, Function>(f))
     {
       if (m_caller != noop_function)
@@ -410,33 +410,9 @@ namespace lanxc
       impl(cast(), nullptr, nullptr, detail::command::destroy);
     }
 
-    function &operator =(function &&other) noexcept
+    function &operator = (function &&other) noexcept
     {
-      std::swap(m_caller, other.m_caller);
-      if (other.m_caller == noop_function)
-      {
-        if (m_caller != noop_function)
-        {
-
-          auto imp = other.cast()->m_implement;
-          // other->tmp
-          imp(other.cast(), nullptr, &m_store, detail::command::move);
-        }
-      }
-      else
-      {
-        //std::swap(m_caller, other.m_caller);
-        detail::functor_padding tmp;
-        auto imp = other.cast()->m_implement;
-        // other->tmp
-        imp(other.cast(), nullptr, &tmp, detail::command::move);
-        // this -> other
-        cast()->m_implement(cast(), nullptr, &other.m_store,
-                            detail::command::move);
-        // tmp->this
-        imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, &m_store,
-            detail::command::move);
-      }
+      swap(other);
       return *this;
     }
 
@@ -453,6 +429,8 @@ namespace lanxc
     void swap(function &other) noexcept
     {
       function *lhs = this, *rhs = &other;
+      if (lhs == rhs)
+        return;
       if (lhs->m_caller != noop_function)
       {
         if (lhs->m_caller != noop_function)
