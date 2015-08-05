@@ -466,7 +466,6 @@ namespace lanxc
               y->m_is_red = false;
               parent->m_p->m_is_red = true;
               node = parent->m_p;
-              parent = node->m_p;
             }
             else
             {
@@ -491,7 +490,6 @@ namespace lanxc
               y->m_is_red = false;
               parent->m_p->m_is_red = true;
               node = parent->m_p;
-              parent = node->m_p;
             }
             else
             {
@@ -525,7 +523,7 @@ namespace lanxc
       {
 
         // Be careful that node may have detached from the tree
-        while (node->m_is_red == false && !node->is_container_or_root())
+        while (!node->m_is_red && !node->is_container_or_root())
         {
           pointer parent = node;
 
@@ -543,8 +541,8 @@ namespace lanxc
             }
 
 
-            if ((!w->m_has_l || w->m_l->m_is_red == false)
-                && (!w->m_has_r || w->m_r->m_is_red == false))
+            if ((!w->m_has_l || !w->m_l->m_is_red)
+                && (!w->m_has_r || !w->m_r->m_is_red))
             // case 2:
             {
               w->m_is_red = true;
@@ -553,7 +551,7 @@ namespace lanxc
             }
             else
             {
-              if (!w->m_has_r || w->m_r->m_is_red == false)
+              if (!w->m_has_r || !w->m_r->m_is_red)
                 // case 3:
               {
                 w->rrotate();
@@ -585,8 +583,8 @@ namespace lanxc
             }
 
 
-            if ((!w->m_has_l || w->m_l->m_is_red == false)
-                && (!w->m_has_r || w->m_r->m_is_red == false))
+            if ((!w->m_has_l || !w->m_l->m_is_red)
+                && (!w->m_has_r || !w->m_r->m_is_red))
             // case 2:
             {
               w->m_is_red = true;
@@ -595,7 +593,7 @@ namespace lanxc
             }
             else
             {
-              if (!w->m_has_l || w->m_l->m_is_red == false)
+              if (!w->m_has_l || !w->m_l->m_is_red)
                 // case 3:
               {
                 w->lrotate();
@@ -1424,8 +1422,6 @@ namespace lanxc
         : rbtree_node<Index, Node, rbtree_config<Tag>>(std::move(node))
         , m_size(node.m_size)
       { node.m_size = 0; }
-
-      rbtree_node &operator = (const rbtree_node &);
 
       rbtree_node &operator = (rbtree_node &&node) noexcept
       {

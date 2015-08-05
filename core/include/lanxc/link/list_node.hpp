@@ -91,7 +91,10 @@ namespace lanxc
       { swap_nodes(*this, other); }
 
       list_node &operator = (list_node &&other) noexcept
-      { swap_nodes(*this, other); }
+      {
+        swap_nodes(*this, other);
+        return *this;
+      }
 
       list_node(const list_node &) = delete;
       list_node &operator = (const list_node &) = delete;

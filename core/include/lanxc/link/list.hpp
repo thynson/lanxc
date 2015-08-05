@@ -65,7 +65,7 @@ namespace lanxc
         size_type m_counter;
         enable_counter()
           : m_counter(0)
-        {}
+        { }
 
         void increase() noexcept
         { m_counter += 1; }
