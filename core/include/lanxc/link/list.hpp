@@ -47,8 +47,9 @@ namespace lanxc
       // Implementation details here
 
       template<typename Node, typename Tag,
-          typename = typename std::conditional<list_config<Tag>::allow_constant_time_unlink,
-              std::true_type, std::false_type>::type>
+        typename = typename std::conditional<
+            list_config<Tag>::allow_constant_time_unlink,
+            std::true_type, std::false_type>::type>
       class enable_counter;
 
       template<typename Node, typename Tag>
@@ -173,7 +174,10 @@ namespace lanxc
 
       /** @brief Move assign operator */
       list &operator = (list &&other) noexcept
-      { swap(other); }
+      {
+        swap(other);
+        return *this;
+      }
 
       list(const list &) = delete;
 
