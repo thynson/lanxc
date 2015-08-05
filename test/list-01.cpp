@@ -67,5 +67,4 @@ int main()
   m.push_back(x);
   n.push_back(y);
   assert(x.is_linked());
-  x.unlink();
 }
