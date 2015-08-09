@@ -19,6 +19,7 @@
 #ifndef LANXC_FUNCTION_HPP_INCLUDED
 #define LANXC_FUNCTION_HPP_INCLUDED
 
+#include <tuple>
 #include <utility>
 #include <type_traits>
 #include <functional>
@@ -312,15 +313,16 @@ namespace lanxc
    *        compatitable) to std::function in spirit of morden C++
    * @author LAN Xingcan
    *
-   * Since std::function was born in pre-C++11 era, where concept of
+   * Since @p std::function was born in pre-C++11 era, where concept of
    * move-sematics construction was not yet presented, it requires functor
    * satisify copy-construtible rather than move-construtible. While in C++14,
-   * lambda capture initialization expression was introduced, a lambda captured
-   * an move-constructible but not copy-constructible object can not be accepted
-   * by std::function.
+   * lambda capture initialization expression was introduced, a lambda
+   * captured an move-constructible but not copy-constructible object can not
+   *  be accepted by @p std::function.
    * @code
    * MoveConstrutible obj; // but not copy-constructible
-   * std::function<void()> = [obj=std::move(obj)] () { obj(); } // compile error
+   * std::function<void()> = [obj=std::move(obj)] () { obj(); };   // error
+   * lanxc::function<void()> = [obj=std::move(obj)] () { obj(); }; // fine
    * @endcode
    * This implementation avoid the std::function design defect, which requires
    * functor be move-construtible instead.
@@ -357,26 +359,53 @@ namespace lanxc
 
   public:
 
+    /** @brief Length of parameter list */
+    static constexpr std::size_t parameter_length = sizeof ... Arguments;
+
+    /** @brief Type of N-th parameter */
+    template<std::size_t N>
+    using parameter = typename std::tuple_element<N, std::tuple<Arguments...>>::type;
+
+    /**
+     * @brief Default constructor
+     * Construct an uninitialized function object
+     */
     function() noexcept
         : function(nullptr)
     { }
 
+    /**
+     * @brief Constructor for null pointer
+     * Construct an uninitialized function object
+     */
     function(std::nullptr_t) noexcept
         : m_caller(noop_function)
     { }
 
+    /**
+     * @brief Constructor for null pointer with custom allocator
+     * Construct an uninitialized function object
+     */
     template<typename Allocator>
     function(std::allocator_arg_t, const Allocator &, std::nullptr_t) noexcept
         : function(nullptr)
     { }
 
+    /**
+     * @brief Construct a function from a functor object or (member) function
+     * pointer
+     */
     template<typename Function, typename = valid_functor_sfinae<Function>>
     function(Function functor)
         noexcept(detail::is_inplace_allocated<Function>::value)
       : function(std::allocator_arg, std::allocator<void>()
-        , std::forward<Function>(functor))
+      , std::forward<Function>(functor))
     { }
 
+    /**
+     * @brief Construct a function from a functor object or (member) function
+     * pointer with custom allocator
+     */
     template<typename Function, typename Allocator,
         typename = valid_functor_sfinae<Function>>
     function(std::allocator_arg_t, const Allocator &a, Function f)
@@ -390,18 +419,18 @@ namespace lanxc
       }
     }
 
+    /**
+     * @breif Move constructor
+     */
     function(function &&other) noexcept
-        : function()
+        : function(nullptr)
     { swap(other); }
-
-    template<typename Allocator, typename Function,
-        typename = valid_functor_sfinae<Function>>
-    function(std::allocator_arg_t, const Allocator &, function &&other) noexcept
-        : function(std::forward<function>(other))
-    { }
 
     function(const function &) = delete;
 
+    /**
+     * @breif Destructor
+     */
     ~function()
     {
       if (m_caller == noop_function)
@@ -410,6 +439,9 @@ namespace lanxc
       impl(cast(), nullptr, nullptr, detail::command::destroy);
     }
 
+    /**
+     * @brief Move assignment
+     */
     function &operator = (function &&other) noexcept
     {
       swap(other);
@@ -418,14 +450,23 @@ namespace lanxc
 
     function &operator =(const function &other) = delete;
 
+    /**
+     * @breif Test if this function is initialized
+     */
     explicit operator bool() const noexcept
     { return m_caller != noop_function; }
 
-    Result operator ()(Arguments &&...args)
+    /**
+     * @brief Invoke this function
+     */
+    Result operator () (Arguments &&...args)
     {
       return (*m_caller)(cast(), std::forward<Arguments>(args)...);
     }
 
+    /**
+     * @brief Swap two function
+     */
     void swap(function &other) noexcept
     {
       function *lhs = this, *rhs = &other;
@@ -458,6 +499,10 @@ namespace lanxc
       }
     }
 
+    /**
+     * @breif Reconstruct this function from functor object or (member)
+     * function pointer with specified allocator
+     */
     template<typename Function, typename Allocator=std::allocator<void>>
     void assign(Function f, const Allocator &a = Allocator())
       noexcept(detail::is_inplace_allocated<Function>::value)
@@ -465,6 +510,9 @@ namespace lanxc
       function(std::allocator_arg, a, std::move(f)).swap(*this);
     }
 
+    /**
+     * @brief Get type info of underlying functor or function pointer
+     */
     const std::type_info &target_type() const noexcept
     {
       if (m_caller == noop_function)
@@ -474,6 +522,9 @@ namespace lanxc
       return *static_cast<const std::type_info *>(ret);
     }
 
+    /**
+     * @brief Get pointer to underlying functor or function pointer
+     */
     template<typename Target>
     const Target *target() const noexcept
     {
@@ -486,7 +537,9 @@ namespace lanxc
       return static_cast<const Target *>(ret);
     }
 
-
+    /**
+     * @brief Get pointer to underlying functor or function pointer
+     */
     template<typename Target>
     Target *target() noexcept
     {
