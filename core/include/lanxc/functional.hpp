@@ -471,6 +471,22 @@ namespace lanxc
         : m_function(std::move(f))
     { }
 
+    extend_parameter(extend_parameter &&other)
+        : m_function(std::move(other.m_function))
+    { }
+
+    extend_parameter(const extend_parameter &other) = delete;
+
+
+    extend_parameter &operator = (extend_parameter &&other)
+    {
+      this->~extend_parameter();
+      new (this) extend_parameter(std::move(other));
+      return *this;
+    }
+
+    extend_parameter &operator = (const extend_parameter &other) = delete;
+
     template<typename ...Arguments>
     omit_argument_sfinae<Arguments...> operator () (Arguments &&... args)
       noexcept(is_invoke_noexcept<Arguments...>())
@@ -507,7 +523,7 @@ namespace lanxc
   };
 
   /**
-   * Extends parameter for a class function pointer
+   * Extends parameter for a class member function pointer
    *
    * For example:
    * @code
@@ -517,8 +533,9 @@ namespace lanxc
    * };
    * lanxc::extends_parameters<int (A::*)(int), bool, int &> f(&add_one);
    * int v = 0;
-   * f(A(), 42, true, v); // Returns 43; where `true' and `v' is ignored
-   * f(A(), 42, true, 0); // Compile error: 0 is not convertible to int &
+   * A a;
+   * f(a, 42, true, v); // Returns 43; where `true' and `v' is ignored
+   * f(a, 42, true, 0); // Compile error: 0 is not convertible to int &
    * @endcode
    */
   template<typename Class, typename Result,
@@ -532,10 +549,40 @@ namespace lanxc
     { }
 
     Result operator () (Class &target, Arguments &&...args, Omitted &&...)
-      noexcept(noexcept((target.*m_function)(std::forward<Arguments>(args)...)))
     { return (target.*m_function)(std::forward<Arguments>(args)...); }
+
+    Result operator () (Class &&target, Arguments &&...args, Omitted &&...remains)
+    { return operator() (target, std::forward<Arguments>(args)..., std::forward<Omitted>(remains)...); }
   };
 
+  /**
+   * Extends parameter for a const class member function pointer
+   *
+   * For example:
+   * @code
+   * struct A
+   * {
+   *   int add_one(int x) const { return x + 1; }
+   * };
+   * lanxc::extends_parameters<int (A::*)(int), bool, int &> f(&add_one);
+   * int v = 0;
+   * f(A(), 42, true, v); // Returns 43; where `true' and `v' is ignored
+   * f(A(), 42, true, 0); // Compile error: 0 is not convertible to int &
+   * @endcode
+   */
+  template<typename Class, typename Result,
+      typename ...Arguments, typename ...Omitted>
+  class extend_parameter<Result (Class::*)(Arguments...) const, Omitted...>
+  {
+    Result (Class::*m_function)(Arguments...);
+  public:
+    extend_parameter(Result(Class::*func)(Arguments...)) noexcept
+        : m_function(func)
+    { }
+
+    Result operator () (const Class &target, Arguments &&...args, Omitted &&...)
+    { return (target.*m_function)(std::forward<Arguments>(args)...); }
+  };
 }
 
 /** @} */
