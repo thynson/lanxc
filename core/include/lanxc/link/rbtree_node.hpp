@@ -18,19 +18,29 @@
 #ifndef LANXC_LINK_RBTREE_NODE_HPP_INCLUDED
 #define LANXC_LINK_RBTREE_NODE_HPP_INCLUDED
 
-#include "rbtree_config.hpp"
+#include <lanxc/link/rbtree_define.hpp>
+#include <lanxc/link/rbtree_config.hpp>
 
 namespace lanxc
 {
   namespace link
   {
 
+    template<typename, typename, typename, typename...>
+    class rbtree_node;
+
+    template<typename, typename, typename>
+    class rbtree;
+
+    template<typename>
+    class rbtree_config;
+
 
     template<>
     class rbtree_node<void, void>
     {
 
-      template<typename, typename, typename...>
+      template<typename, typename, typename, typename...>
       friend class rbtree_node;
 
       template<typename, typename, typename>
@@ -61,7 +71,7 @@ namespace lanxc
     template<typename Index>
     class rbtree_node<Index, void>
     {
-      template<typename, typename, typename...>
+      template<typename, typename, typename, typename...>
       friend class rbtree_node;
 
       template<typename, typename, typename>
@@ -85,7 +95,7 @@ namespace lanxc
 
 
     template<typename Index, typename Node, typename Tag>
-    class rbtree_node<Index, Node, rbtree_config<Tag>>
+    class rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
     {
     public:
       using pointer = rbtree_node *;
@@ -936,10 +946,10 @@ namespace lanxc
         }
 
         auto cmp = [&] (Reference &node) noexcept -> bool
-        { return s_comparator(node.get_index(), index); };
+        { return compare(node.get_index(), index); };
 
         auto rcmp = [&] (Reference &node) noexcept -> bool
-        { return s_rcomparator(node.get_index(), index); };
+        { return negative_reverse_compare(node.get_index(), index); };
 
         auto result = cmp(*p);
         auto rresult = rcmp(*p);
@@ -1138,9 +1148,9 @@ namespace lanxc
       static const_pointer find(const_reference entry,
           const Index &index, index_policy::backmost) noexcept(is_comparator_noexcept)
       {
-        auto *p = boundry(entry, index, s_rcomparator).first;
+        auto *p = boundry(entry, index, &negative_reverse_compare).first;
 
-        if (s_comparator(p->get_index(), index) != s_rcomparator(p->get_index(), index))
+        if (test_equalivent(p->get_index(), index))
           return p;
         else
           return nullptr;
@@ -1149,9 +1159,9 @@ namespace lanxc
       static const_pointer find(const_reference entry,
           const Index &index, index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
-        auto *p = boundry(entry, index, s_comparator).second;
+        auto *p = boundry(entry, index, &compare).second;
 
-        if (s_comparator(p->get_index(), index) != s_rcomparator(p->get_index(), index))
+        if (test_equalivent(p->get_index(), index))
           return p;
         else
           return nullptr;
@@ -1171,10 +1181,9 @@ namespace lanxc
       static pointer find(reference entry,
           const Index &index, index_policy::backmost) noexcept(is_comparator_noexcept)
       {
-        auto *p = boundry(entry, index, s_rcomparator).first;
+        auto *p = boundry(entry, index, &negative_reverse_compare).first;
 
-        if (s_comparator(p->get_index(), index)
-		        != s_rcomparator(p->get_index(), index))
+        if (test_equalivent(p->get_index(), index))
           return p;
         else
           return nullptr;
@@ -1183,10 +1192,9 @@ namespace lanxc
       static pointer find(reference entry,
           const Index &index, index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
-        auto *p = boundry(entry, index, s_comparator).second;
+        auto *p = boundry(entry, index, &compare).second;
 
-        if (s_comparator(p->get_index(), index)
-		        != !s_rcomparator(p->get_index(),index))
+        if (test_equalivent(p->get_index(), index))
           return p;
         else
           return nullptr;
@@ -1211,7 +1219,7 @@ namespace lanxc
        */
       static pointer lower_bound(reference entry,
           const Index &index) noexcept(is_comparator_noexcept)
-      { return boundry(entry, index, s_comparator).second; }
+      { return boundry(entry, index, &compare).second; }
 
       /**
        * @brief Get the first node in the tree whose index is not less than
@@ -1221,7 +1229,7 @@ namespace lanxc
        */
       static const_pointer lower_bound(const_reference entry,
           const Index &index) noexcept(is_comparator_noexcept)
-      { return boundry(entry, index, s_comparator).second; }
+      { return boundry(entry, index, &compare).second; }
 
       /**
        * @brief Get the first node in the tree whose index is greater than
@@ -1231,7 +1239,7 @@ namespace lanxc
        */
       static pointer upper_bound(reference &entry,
           const Index &index) noexcept(is_comparator_noexcept)
-      { return boundry(entry, index, s_rcomparator).second; }
+      { return boundry(entry, index, &negative_reverse_compare).second; }
 
       /**
        * @brief Get the first node in the tree whose index is greater than
@@ -1241,7 +1249,7 @@ namespace lanxc
        */
       static const_pointer upper_bound(const_reference entry,
           const Index &index) noexcept(is_comparator_noexcept)
-      { return boundry(entry, index, s_rcomparator).second; }
+      { return boundry(entry, index, &negative_reverse_compare).second; }
 
       /**
        * @brief Insert @p n to a tree via @p e
@@ -1255,7 +1263,7 @@ namespace lanxc
       static pointer insert(reference e, reference n,
           index_policy::backmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(e, n.get_index(), s_rcomparator);
+        auto p = boundry(e, n.get_index(), &negative_reverse_compare);
         if (p.first == p.second)
           p.first->insert_root_node(&n);
         else
@@ -1275,7 +1283,7 @@ namespace lanxc
       static pointer insert(reference e, reference n,
           index_policy::frontmost) noexcept(is_comparator_noexcept)
       {
-        auto p = boundry(e, n.get_index(), s_comparator);
+        auto p = boundry(e, n.get_index(), &compare);
         if (p.first == p.second)
           p.first->insert_root_node(&n);
         else
@@ -1354,16 +1362,29 @@ namespace lanxc
         return &n;
       }
 
-      static comparator_type s_comparator;
-      static struct rcomparator_type
-      {
-        rcomparator_type() = default;
-        bool operator () (const Index &lhs, const Index &rhs) const
-          noexcept(is_comparator_noexcept)
-        { return !s_comparator(rhs, lhs); }
-      } s_rcomparator;
 
-      template<typename, typename, typename...>
+
+      static bool compare(const Index &lhs, const Index &rhs)
+        noexcept(is_comparator_noexcept)
+      {
+        static comparator_type cmper;
+        return cmper(lhs, rhs);
+      }
+
+      static bool negative_reverse_compare(const Index &lhs, const Index &rhs)
+      noexcept(is_comparator_noexcept)
+
+      {
+        return !compare(rhs, lhs);
+      }
+
+      static bool test_equalivent(const Index &lhs, const Index &rhs)
+        noexcept(is_comparator_noexcept)
+      {
+        return compare(lhs, rhs) != negative_reverse_compare(lhs, rhs);
+      }
+
+      template<typename, typename, typename, typename...>
       friend class rbtree_node;
 
       template<typename, typename, typename>
@@ -1386,40 +1407,30 @@ namespace lanxc
     };
 
     template<typename Index, typename Node, typename Tag>
-    typename
-    rbtree_node<Index, Node, rbtree_config<Tag>>::comparator_type
-    rbtree_node<Index, Node, rbtree_config<Tag>>::s_comparator;
-
-    template<typename Index, typename Node, typename Tag>
-    typename
-    rbtree_node<Index, Node, rbtree_config<Tag>>::rcomparator_type
-    rbtree_node<Index, Node, rbtree_config<Tag>>::s_rcomparator;
-
-    template<typename Index, typename Node, typename Tag>
-    typename rbtree_node<Index, Node, rbtree_config<Tag>>::container_tag
-    rbtree_node<Index, Node, rbtree_config<Tag>>::container;
+    typename rbtree_node<void, void, rbtree_node<Index, Node, Tag>>::container_tag
+        rbtree_node<void, void, rbtree_node<Index, Node, Tag>>::container;
 
 
 	  /** For container */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<void, void, rbtree<Index, Node, Tag>>
-		    : public rbtree_node<Index, Node, rbtree_config<Tag>>
+		    : public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
     {
-      template<typename, typename, typename...>
+      template<typename, typename, typename, typename...>
       friend class rbtree_node;
       template<typename, typename, typename>
       friend class rbtree;
 
     private:
 	    rbtree_node() noexcept
-			  : rbtree_node<Index, Node, rbtree_config<Tag>>(rbtree_node::container)
+			  : rbtree_node<void, void, rbtree_node<Index, Node, Tag>>(rbtree_node::container)
         , m_size(0)
 	    {}
 
       rbtree_node(const rbtree_node &) = delete;
 
       rbtree_node(rbtree_node &&node) noexcept
-        : rbtree_node<Index, Node, rbtree_config<Tag>>(std::move(node))
+        : rbtree_node<void, void, rbtree_node<Index, Node, Tag>>(std::move(node))
         , m_size(node.m_size)
       { node.m_size = 0; }
 
@@ -1442,11 +1453,11 @@ namespace lanxc
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<Index, Node, Tag>
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, rbtree_config<Tag>>
+      , public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
     {
       using detail = rbtree_node<void, void>;
-      template<typename tag>
-      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
+
+      using base_node = rbtree_node<void, void, rbtree_node<Index, Node, Tag>>;
 
       template<typename Policy, typename Result = void>
       using insert_policy_sfinae
@@ -1466,29 +1477,26 @@ namespace lanxc
       template<typename ...Arguments>
       void set_index(Arguments && ...arguments) noexcept
       {
-        auto hint = base_node<Tag>::unlink_for_hint();
+        auto hint = base_node::unlink_for_hint();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         if (hint)
-          base_node<Tag>::insert(*hint, *this,
-              typename base_node<Tag>::config::default_insert_policy());
+          base_node::insert(*hint, *this,
+              typename base_node::config::default_insert_policy());
       }
 
       template<typename InsertPolicy, typename ...Arguments>
       insert_policy_sfinae<InsertPolicy>
       set_index_explicit(InsertPolicy policy, Arguments && ...arguments) noexcept
       {
-        auto hint = base_node<Tag>::unlink_for_hint();
+        auto hint = base_node::unlink_for_hint();
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
         if (hint)
-          base_node<Tag>::insert(*hint, *this, policy);
+          base_node::insert(*hint, *this, policy);
       }
 
-      template<typename tag = Tag>
-      typename std::enable_if<
-        std::is_base_of<base_node<tag>, rbtree_node>::value,
-        base_node<tag>>::type &get_node() noexcept
+      base_node &get_node() noexcept
       { return *this; }
     private:
 
@@ -1498,11 +1506,10 @@ namespace lanxc
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<const Index, Node, Tag>
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, rbtree_config<Tag>>
+      , public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
     {
       using detail = rbtree_node<void, void>;
-      template<typename tag>
-      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
+      using base_node = rbtree_node<void, void, rbtree_node<Index, Node, Tag>>;
 
       template<typename Policy, typename Result = void>
       using insert_policy_sfinae
@@ -1515,20 +1522,16 @@ namespace lanxc
         : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
       {}
 
-      template<typename tag = Tag>
-      typename std::enable_if<
-        std::is_base_of<base_node<tag>, rbtree_node>::value,
-        base_node<tag>>::type &get_node() noexcept
+      base_node &get_node() noexcept
       { return *this; }
-    private:
-
     };
 
 
-    template<typename Index, typename Node, typename ...Tag>
+    template<typename Index, typename Node, typename Tag, typename ...Tags>
     class rbtree_node
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, rbtree_config<Tag>>...
+      , public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
+      , public rbtree_node<void, void, rbtree_node<Index, Node, Tags>>...
     {
 
       using detail = rbtree_node<void, void>;
@@ -1564,7 +1567,8 @@ namespace lanxc
       {
         auto helpers
           = std::make_tuple(
-              set_index_helper<Tag>(*this, base_node<Tag>::unlink_for_hint())...);
+              set_index_helper<Tag>(*this, base_node<Tag>::unlink_for_hint()),
+              set_index_helper<Tags>(*this, base_node<Tags>::unlink_for_hint())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
@@ -1574,12 +1578,14 @@ namespace lanxc
       set_index(InsertPolicy policy, Arguments && ...arguments) noexcept
       {
         auto helpers
-          = std::make_tuple(set_index_helper<Tag, decltype(policy)>(
-                *this, base_node<Tag>::unlink_for_hint())...);
+          = std::make_tuple(
+                set_index_helper<Tag, decltype(policy)>(
+                *this, base_node<Tag>::unlink_for_hint()),
+                set_index_helper<Tags, decltype(policy)>(
+                    *this, base_node<Tags>::unlink_for_hint())...);
         rbtree_node<Index, void>::m_index
           = Index(std::forward<Arguments>(arguments)...);
       }
-
 
     private:
 
@@ -1610,40 +1616,24 @@ namespace lanxc
         set_index_helper(const set_index_helper &) = delete;
         set_index_helper &operator = (const set_index_helper &) = delete;
 
-
-
         ~set_index_helper()
         {
           if (hints != nullptr)
             base_node<tag>::insert(*hints, node, Policy());
         }
-
       };
-
-      template<typename tag, typename Policy>
-      void reinsert(typename base_node<tag>::pointer hint, Policy policy) noexcept
-      {
-        reinsert(hint, *this, policy);
-      }
-
-      template<typename tag, typename Policy>
-      void reinsert(typename base_node<tag>::pointer hint) noexcept
-      {
-        reinsert(hint, *this,
-            typename base_node<tag>::config::default_insert_policy());
-      }
-
     };
 
-    template<typename Index, typename Node, typename ...Tag>
-    class rbtree_node<const Index, Node, Tag...>
+    template<typename Index, typename Node, typename Tag, typename ...Tags>
+    class rbtree_node<const Index, Node, Tag, Tags...>
       : public rbtree_node<Index, void>
-      , public rbtree_node<Index, Node, rbtree_config<Tag>>...
+      , public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
+      , public rbtree_node<void, void, rbtree_node<Index, Node, Tags>>...
     {
 
       using detail = rbtree_node<void, void>;
       template<typename tag>
-      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
+      using base_node = rbtree_node<void, void, rbtree_node<Index, Node, tag>>;
 
       template<typename Policy, typename Result = void>
       using insert_policy_sfinae
@@ -1668,33 +1658,6 @@ namespace lanxc
         base_node<tag>>::type &
       get_node() noexcept
       { return *this; }
-
-    };
-
-    /// \brief Quick access :)
-    template<typename Index, typename Node>
-    class rbtree_node<Index, Node> : public rbtree_node<Index, Node, Node>
-    {
-    public:
-      template<typename ...Arguments>
-      rbtree_node(Arguments && ...arguments)
-        noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
-        : rbtree_node<Index, Node, Node>(
-            std::forward<Arguments>(arguments)...)
-      {}
-    };
-
-    /// \brief Quick access :)
-    template<typename Index, typename Node>
-    class rbtree_node<const Index, Node> : public rbtree_node<const Index, Node, Node>
-    {
-    public:
-	    template<typename ...Arguments>
-	    rbtree_node(Arguments && ...arguments)
-	    noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
-			    : rbtree_node<Index, Node, Node>(
-			    std::forward<Arguments>(arguments)...)
-	    {}
     };
   }
 }

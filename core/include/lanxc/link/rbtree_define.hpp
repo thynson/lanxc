@@ -107,16 +107,16 @@ namespace lanxc
     template<typename Tag>
     struct rbtree_config;
 
-    template<typename Index, typename Node, typename ...Tag>
+    template<typename Index, typename Node, typename Tag = void, typename ...Tags>
     class rbtree_node;
 
-    template<typename Index, typename Node, typename Tag = Node>
+    template<typename Index, typename Node, typename Tag = void>
     class rbtree_iterator;
 
-    template<typename Index, typename Node, typename Tag = Node>
+    template<typename Index, typename Node, typename Tag = void>
     class rbtree_const_iterator;
 
-    template<typename Index, typename Node, typename Tag = Node>
+    template<typename Index, typename Node, typename Tag = void>
     class rbtree;
 
 

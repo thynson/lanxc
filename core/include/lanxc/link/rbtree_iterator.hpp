@@ -37,7 +37,7 @@ namespace lanxc
                              Node, std::ptrdiff_t, Node *, Node &>
     {
       using config    = rbtree_config<Tag>;
-      using node_type = rbtree_node<Index, Node, config>;
+      using node_type = rbtree_node<void, void, rbtree_node<Index, Node, Tag>>;
     public:
 
       explicit rbtree_iterator(node_type *x) noexcept
@@ -112,8 +112,8 @@ namespace lanxc
       : public std::iterator<std::bidirectional_iterator_tag,
         const Node, std::ptrdiff_t, const Node *, const Node &>
     {
-      using config    = rbtree_config<Tag>;
-      using node_type = const rbtree_node<Index, Node, config>;
+      using config          = rbtree_config<Tag>;
+      using node_type       = const rbtree_node<void, void, rbtree_node<Index, Node, Tag>>;
       using rbtree_iterator = ::lanxc::link::rbtree_iterator<Index, Node, Tag>;
     public:
       explicit rbtree_const_iterator(node_type *x) noexcept
