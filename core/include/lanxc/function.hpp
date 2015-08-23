@@ -360,7 +360,7 @@ namespace lanxc
   public:
 
     /** @brief Length of parameter list */
-    static constexpr std::size_t parameter_length = sizeof ... Arguments;
+    static constexpr std::size_t parameter_length = sizeof ... (Arguments);
 
     /** @brief Type of N-th parameter */
     template<std::size_t N>
