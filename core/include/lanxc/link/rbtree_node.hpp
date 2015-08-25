@@ -163,7 +163,7 @@ namespace lanxc
             , m_has_l(false), m_has_r(false)
         {}
 
-        const Index &get_index() const noexcept
+        const Index &internal_get_index() const noexcept
         {
           const Node &n = static_cast<const Node &>(*this);
           return n.rbtree_node<void, void>::index<Index>::m_index;
@@ -937,10 +937,14 @@ namespace lanxc
           }
 
           auto cmp = [&] (Reference &node) noexcept -> bool
-          { return compare(node.get_index(), index); };
+          {
+            return compare(node.internal_get_index(), index);
+          };
 
           auto rcmp = [&] (Reference &node) noexcept -> bool
-          { return negative_reverse_compare(node.get_index(), index); };
+          {
+            return negative_reverse_compare(node.internal_get_index(), index);
+          };
 
           auto result = cmp(*p);
           auto rresult = rcmp(*p);
@@ -1067,7 +1071,9 @@ namespace lanxc
           }
 
           auto cmper = [&index, &comparator] (Reference &node) noexcept -> bool
-          { return comparator(node.get_index(), index); };
+          {
+            return comparator(node.internal_get_index(), index);
+          };
 
           bool hint_result = cmper(*p);
 
@@ -1142,7 +1148,7 @@ namespace lanxc
         {
           auto *p = boundry(e, i, &negative_reverse_compare).first;
 
-          if (test_equalivent(p->get_index(), i))
+          if (test_equalivent(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1154,7 +1160,7 @@ namespace lanxc
         {
           auto *p = boundry(e, i, &compare).second;
 
-          if (test_equalivent(p->get_index(), i))
+          if (test_equalivent(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1178,7 +1184,7 @@ namespace lanxc
         {
           auto *p = boundry(e, i, &negative_reverse_compare).first;
 
-          if (test_equalivent(p->get_index(), i))
+          if (test_equalivent(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1190,7 +1196,7 @@ namespace lanxc
         {
           auto *p = boundry(e, i, &compare).second;
 
-          if (test_equalivent(p->get_index(), i))
+          if (test_equalivent(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1265,7 +1271,8 @@ namespace lanxc
         insert(reference e, reference n, index_policy::backmost)
         noexcept(is_comparator_noexcept)
         {
-          auto p = boundry(e, n.get_index(), &negative_reverse_compare);
+          auto p = boundry(e, n.internal_get_index(),
+                           &negative_reverse_compare);
           if (p.first == p.second)
             p.first->insert_root_node(&n);
           else
@@ -1286,7 +1293,7 @@ namespace lanxc
         insert(reference e, reference n, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto p = boundry(e, n.get_index(), &compare);
+          auto p = boundry(e, n.internal_get_index(), &compare);
           if (p.first == p.second)
             p.first->insert_root_node(&n);
           else
@@ -1308,7 +1315,7 @@ namespace lanxc
         insert(reference e, reference n, index_policy::nearest)
         noexcept(is_comparator_noexcept)
         {
-          auto p = search(e, n.get_index());
+          auto p = search(e, n.internal_get_index());
           insert_between(p.first, p.second, &n);
           return &n;
         }
@@ -1328,7 +1335,7 @@ namespace lanxc
         insert(reference e, reference n, index_policy::conflict)
         noexcept(is_comparator_noexcept)
         {
-          auto p = search(e, n.get_index());
+          auto p = search(e, n.internal_get_index());
           insert_conflict(p.first, p.second, &n);
           return n.is_linked() ? &n : p.first;
         }
@@ -1346,8 +1353,8 @@ namespace lanxc
         insert(reference e, reference n, index_policy::unique)
         noexcept(is_comparator_noexcept)
         {
-          auto l = lower_bound(e, n.get_index());
-          auto u = upper_bound(*l, n.get_index());
+          auto l = lower_bound(e, n.internal_get_index());
+          auto u = upper_bound(*l, n.internal_get_index());
           auto p = l->m_is_container ? l->m_r : l->prev();
           bool found = false;
 
