@@ -26,14 +26,15 @@ namespace lanxc
   namespace link
   {
     template<>
-    struct forward_list_config<void>
+    class forward_list_config<void>
     {
+    public:
       template<typename Node>
       using pointer = Node *;
     };
 
     template<typename>
-    struct forward_list_config : forward_list_config<void>
+    class forward_list_config : public forward_list_config<void>
     { };
   }
 }

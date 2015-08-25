@@ -28,7 +28,7 @@ namespace lanxc
   namespace link
   {
     template<typename Tag = void>
-    struct forward_list_config;
+    class forward_list_config;
 
     template<typename, typename Tag = void>
     class forward_list_node;

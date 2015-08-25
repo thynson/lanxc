@@ -31,8 +31,9 @@ namespace lanxc
      * @ingroup intrusive_list
      */
     template<>
-    struct list_config<void>
+    class list_config<void>
     {
+    public:
       template<typename T>
       using pointer  = T *;
 
@@ -41,7 +42,7 @@ namespace lanxc
 
 
     template<typename Tag>
-    struct list_config : public list_config<void>
+    class list_config : public list_config<void>
     { };
 
   }

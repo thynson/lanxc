@@ -29,7 +29,7 @@ namespace lanxc
   {
 
     template<typename Tag>
-    struct list_config;
+    class list_config;
 
     template<typename Node, typename = void>
     class list_node;
