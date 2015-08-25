@@ -31,16 +31,16 @@ namespace lanxc
     template<typename Tag>
     struct list_config;
 
-    template<typename Node, typename=Node>
+    template<typename Node, typename = void>
     class list_node;
 
-    template<typename Node, typename=Node>
+    template<typename Node, typename = void>
     class list_iterator;
 
-    template<typename Node, typename=Node>
+    template<typename Node, typename = void>
     class list_const_iterator;
 
-    template<typename Node, typename=Node>
+    template<typename Node, typename = void>
     class list;
 
 
