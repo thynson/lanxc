@@ -24,13 +24,15 @@ namespace lanxc
   namespace link
   {
     template<>
-    struct list_config<X> : public list_config<void>
+    class list_config<X> : public list_config<void>
     {
+    public:
       static constexpr bool allow_constant_time_unlink = true;
     };
     template<>
-    struct list_config<Y> : public list_config<void>
+    class list_config<Y> : public list_config<void>
     {
+    public:
       static constexpr bool allow_constant_time_unlink = false;
     };
   }
@@ -42,22 +44,21 @@ struct X : public lanxc::link::list_node<X, X>
 
 };
 
-struct Y : public lanxc::link::list_node<Y, X>
+struct Y : public lanxc::link::list_node<Y, Y>
 {
 
 };
 
-
-static_assert(sizeof(lanxc::link::list<Y>) >  2 * sizeof(X), "");
-static_assert(sizeof(lanxc::link::list<X>) == 2 * sizeof(X), "");
+static_assert(sizeof(lanxc::link::list<Y, Y>) >  2 * sizeof(Y), "");
+static_assert(sizeof(lanxc::link::list<X, X>) == 2 * sizeof(X), "");
 
 
 int main()
 {
   X x;
   Y y;
-  lanxc::link::list<X> m;
-  lanxc::link::list<Y> n;
+  lanxc::link::list<X, X> m;
+  lanxc::link::list<Y, Y> n;
   m.push_back(x);
   n.push_back(y);
   assert(x.is_linked());
