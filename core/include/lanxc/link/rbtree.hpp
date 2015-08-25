@@ -40,7 +40,7 @@ namespace lanxc
     {
       using detail                  = rbtree_node<void, void>;
       using config                  = rbtree_config<Tag>;
-      using node_type               = rbtree_node<void, void, rbtree_node<Index, Node, Tag>>;
+      using node_type               = rbtree_node<void, void>::node<Index, Node, Tag>;
       using default_insert_policy   = typename config::default_insert_policy;
       using default_lookup_policy   = typename config::default_lookup_policy;
 
@@ -590,7 +590,7 @@ namespace lanxc
       { m_container_node.unlink_container(); }
 
     private:
-      rbtree_node<void, void, rbtree> m_container_node;
+      rbtree_node<void, void>::container<Index, Node, Tag> m_container_node;
     };
   }
 }
