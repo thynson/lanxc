@@ -19,12 +19,6 @@
 struct X;
 struct Y;
 
-namespace {
-  template<>
-  struct ::lanxc::link::list_config<X> : public list_config<void>
-  {};
-
-}
 namespace lanxc
 {
   namespace link
