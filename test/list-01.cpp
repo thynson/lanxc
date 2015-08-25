@@ -37,12 +37,12 @@ namespace lanxc
 }
 
 
-struct X : public lanxc::link::list_node<X>
+struct X : public lanxc::link::list_node<X, X>
 {
 
 };
 
-struct Y : public lanxc::link::list_node<Y>
+struct Y : public lanxc::link::list_node<Y, X>
 {
 
 };

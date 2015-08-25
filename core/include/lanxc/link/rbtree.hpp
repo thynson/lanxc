@@ -84,13 +84,9 @@ namespace lanxc
       ~rbtree() noexcept
       { clear(); };
 
-      rbtree(const rbtree &) = delete;
-
       rbtree(rbtree &&t) noexcept
         : m_container_node(std::move(t.m_container_node))
       {  }
-
-      rbtree &operator = (const rbtree &t) = delete;
 
       rbtree &operator = (rbtree &&t) noexcept
       {

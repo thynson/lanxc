@@ -27,19 +27,19 @@ namespace lanxc
 {
   namespace link
   {
-    template<typename Tag=void>
+    template<typename Tag = void>
     struct forward_list_config;
 
-    template<typename, typename Tag=void>
+    template<typename, typename Tag = void>
     class forward_list_node;
 
-    template<typename, typename Tag=void>
+    template<typename, typename Tag = void>
     class forward_list_iterator;
 
-    template<typename, typename Tag=void>
+    template<typename, typename Tag = void>
     class forward_list_const_iterator;
 
-    template<typename, typename Tag=void>
+    template<typename, typename Tag = void>
     class forward_list;
   }
 }
