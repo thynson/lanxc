@@ -105,7 +105,7 @@ namespace lanxc
     }
 
     template<typename Tag>
-    struct rbtree_config;
+    class rbtree_config;
 
     template<typename Index, typename Node, typename Tag = void, typename ...Tags>
     class rbtree_node;

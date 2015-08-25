@@ -34,8 +34,9 @@ namespace lanxc
      * @ingroup intrusive_rbtree
      */
     template<>
-    struct rbtree_config<void>
+    class rbtree_config<void>
     {
+    public:
       /** @brief Comparator adapter, must meets requiement of strict weak
        * ordering binary predicate */
       template<typename T> using comparator = less<T>;
@@ -60,7 +61,7 @@ namespace lanxc
     };
 
     template<typename Tag>
-    struct rbtree_config : public rbtree_config<void>
+    class rbtree_config : public rbtree_config<void>
     { };
 
   }
