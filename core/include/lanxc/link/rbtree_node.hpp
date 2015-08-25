@@ -157,26 +157,20 @@ namespace lanxc
         return unlink_and_get_adjoin_node().first != nullptr;
       }
 
-
-	    const Index &get_index() const noexcept
-	    {
-		    const Node &n = static_cast<const Node &>(*this);
-		    return n.rbtree_node<Index, void>::m_index;
-	    }
-
     private:
 
-	    rbtree_node(container_tag) noexcept
-			    : m_p(this), m_l(this), m_r(this)
-			    , m_is_red(true), m_is_container(true)
-			    , m_has_l(false), m_has_r(false)
-	    {}
+      rbtree_node(container_tag) noexcept
+          : m_p(this), m_l(this), m_r(this)
+          , m_is_red(true), m_is_container(true)
+          , m_has_l(false), m_has_r(false)
+      {}
 
-	    Index &internal_get_index() noexcept
-	    {
-		    Node &n = static_cast<Node&>(*this);
-		    return n.rbtree_node<Index, void>::m_index;
-	    }
+      const Index &get_index() const noexcept
+      {
+        const Node &n = static_cast<const Node &>(*this);
+        return n.rbtree_node<Index, void>::m_index;
+      }
+
 
       /** @brief test if a node is container node or root node */
       bool is_container_or_root() const noexcept
@@ -904,7 +898,6 @@ namespace lanxc
         unlink_cleanup();
         return ret;
       }
-
       pointer unlink_for_hint() noexcept
       {
         auto pair = unlink_and_get_adjoin_node();
@@ -1411,10 +1404,10 @@ namespace lanxc
         rbtree_node<void, void, rbtree_node<Index, Node, Tag>>::container;
 
 
-	  /** For container */
+    /** For container */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<void, void, rbtree<Index, Node, Tag>>
-		    : public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
+        : public rbtree_node<void, void, rbtree_node<Index, Node, Tag>>
     {
       template<typename, typename, typename, typename...>
       friend class rbtree_node;
@@ -1422,10 +1415,10 @@ namespace lanxc
       friend class rbtree;
 
     private:
-	    rbtree_node() noexcept
-			  : rbtree_node<void, void, rbtree_node<Index, Node, Tag>>(rbtree_node::container)
+      rbtree_node() noexcept
+        : rbtree_node<void, void, rbtree_node<Index, Node, Tag>>(rbtree_node::container)
         , m_size(0)
-	    {}
+      {}
 
       rbtree_node(const rbtree_node &) = delete;
 
@@ -1448,7 +1441,7 @@ namespace lanxc
     };
 
     /**
-	  * For single node
+    * For single node
     */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<Index, Node, Tag>
@@ -1502,7 +1495,7 @@ namespace lanxc
 
     };
 
-	  /** For single const indexed node */
+    /** For single const indexed node */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<const Index, Node, Tag>
       : public rbtree_node<Index, void>
@@ -1524,6 +1517,11 @@ namespace lanxc
 
       base_node &get_node() noexcept
       { return *this; }
+
+
+
+      const Index &get_index() const noexcept
+      { return rbtree_node<Index, void>::m_index; }
     };
 
 
@@ -1536,7 +1534,7 @@ namespace lanxc
 
       using detail = rbtree_node<void, void>;
       template<typename tag>
-      using base_node = rbtree_node<Index, Node, rbtree_config<tag>>;
+      using base_node = rbtree_node<void, void, rbtree_node<Index, Node, tag>>;
 
       template<typename Policy, typename Result = void>
       using insert_policy_sfinae
@@ -1547,63 +1545,43 @@ namespace lanxc
           = typename std::enable_if<std::is_base_of<
               base_node<tag>, rbtree_node>::value, base_node<tag>>::type;
 
-    public:
+      template<typename ...>
+      struct helper_tuple
+      { };
 
-      template<typename ...Arguments>
-      rbtree_node(Arguments && ...arguments)
-        noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
-        : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
-      {}
-
-      template<typename tag>
-      typename std::enable_if<
-        std::is_base_of<base_node<tag>, rbtree_node>::value,
-        base_node<tag>>::type &
-      get_node() noexcept
-      { return *this; }
-
-      template<typename ...Arguments>
-      void set_index(Arguments && ...arguments) noexcept
+      template<typename Policy>
+      constexpr static bool check_policy_list(Policy)
       {
-        auto helpers
-          = std::make_tuple(
-              set_index_helper<Tag>(*this, base_node<Tag>::unlink_for_hint()),
-              set_index_helper<Tags>(*this, base_node<Tags>::unlink_for_hint())...);
-        rbtree_node<Index, void>::m_index
-          = Index(std::forward<Arguments>(arguments)...);
+        return index_policy::is_insert_policy<Policy>::value;
       }
 
-      template<typename InsertPolicy, typename ...Arguments>
-      insert_policy_sfinae<InsertPolicy>
-      set_index(InsertPolicy policy, Arguments && ...arguments) noexcept
+      template<typename Policy, typename ...Policies>
+      constexpr static bool check_policy_list(Policy, Policies...p)
       {
-        auto helpers
-          = std::make_tuple(
-                set_index_helper<Tag, decltype(policy)>(
-                *this, base_node<Tag>::unlink_for_hint()),
-                set_index_helper<Tags, decltype(policy)>(
-                    *this, base_node<Tags>::unlink_for_hint())...);
-        rbtree_node<Index, void>::m_index
-          = Index(std::forward<Arguments>(arguments)...);
+        return index_policy::is_insert_policy<
+            typename std::remove_reference<Policy>::type>::value
+               && check_policy_list(p...);
       }
 
-    private:
+      template<typename ...Policies>
+      constexpr static bool check_policy_tuple(std::tuple<Policies...>)
+      { return check_policy_list(Policies()...); }
+
 
       template<typename tag,
-        typename Policy = typename base_node<tag>::config::default_insert_policy>
+          typename Policy = typename base_node<tag>::config::default_insert_policy>
       struct set_index_helper
       {
         rbtree_node &node;
         typename base_node<tag>::pointer hints;
-        set_index_helper(rbtree_node &node, typename base_node<tag>::pointer hints)
-          noexcept
-          : node(node)
-          , hints(hints)
+        set_index_helper(rbtree_node &node, typename base_node<tag>::pointer hints) noexcept
+            : node(node)
+              , hints(hints)
         {  }
 
         set_index_helper(set_index_helper &&x) noexcept
-          : node(x.node)
-          , hints(x.hints)
+            : node(x.node)
+              , hints(x.hints)
         { x.hints = nullptr; }
 
         set_index_helper &operator = (set_index_helper &&x) noexcept
@@ -1622,6 +1600,78 @@ namespace lanxc
             base_node<tag>::insert(*hints, node, Policy());
         }
       };
+
+      template<typename A, typename B, typename...>
+      struct set_index_explicit_helper;
+
+      template<typename ...Arguments>
+      struct set_index_explicit_helper<std::tuple<>, std::tuple<>, Arguments...>
+      {
+        static void execute(rbtree_node &x, Arguments &&...args)
+        {
+          x.rbtree_node<Index, void, void>::m_index = Index(std::forward<Arguments>(args)...);
+        }
+      };
+
+      template<typename tag, typename ...tags,
+          typename Policy, typename ...Policies, typename ...Arguments>
+      struct set_index_explicit_helper<std::tuple<tag, tags...>, std::tuple<Policy, Policies...>, Arguments...>
+      {
+        static void execute(rbtree_node &x, Arguments &&...args)
+        {
+          set_index_helper<tag, Policy> tmp(x, x.base_node<tag>::unlink_for_hint());
+          set_index_explicit_helper<
+              std::tuple<tags...>,
+              std::tuple<Policies...>,
+              Arguments...>::execute(x, std::forward<Arguments>(args)...);
+        }
+      };
+
+    public:
+
+      template<typename ...Arguments>
+      rbtree_node(Arguments && ...arguments)
+        noexcept(noexcept(Index(std::forward<Arguments>(arguments)...)))
+        : rbtree_node<Index, void>(std::forward<Arguments>(arguments)...)
+      {}
+
+      template<typename tag>
+      typename std::enable_if<
+        std::is_base_of<base_node<tag>, rbtree_node>::value,
+        base_node<tag>>::type &
+      get_node() noexcept
+      { return *this; }
+
+
+      const Index &get_index() const noexcept
+      { return rbtree_node<Index, void>::m_index; }
+
+      template<typename ...Arguments>
+      void set_index(Arguments && ...arguments) noexcept
+      {
+        auto helpers
+          = std::make_tuple(
+              set_index_helper<Tag>(*this, base_node<Tag>::unlink_for_hint()),
+              set_index_helper<Tags>(*this, base_node<Tags>::unlink_for_hint())...);
+        rbtree_node<Index, void>::m_index
+          = Index(std::forward<Arguments>(arguments)...);
+      }
+
+      template<typename ...Policies, typename ...Arguments>
+      auto
+      set_index_explicit(std::tuple<Policies...>, Arguments && ...arguments)
+      noexcept -> typename std::enable_if<
+          sizeof...(Policies) == (sizeof...(Tags) + 1)
+          && check_policy_tuple(std::tuple<Policies...>())>::type
+      {
+        set_index_explicit_helper<
+            std::tuple<Tag, Tags...>,
+            std::tuple<Policies...>,
+            Arguments...>::execute(*this, std::forward<Arguments>(arguments)...);
+      }
+
+    private:
+
     };
 
     template<typename Index, typename Node, typename Tag, typename ...Tags>
