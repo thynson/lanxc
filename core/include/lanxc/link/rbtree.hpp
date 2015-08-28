@@ -313,22 +313,6 @@ namespace lanxc
        * @param hint Search is start from this position other than the root
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
-       * @returns A iterator point to the first element that is not less than
-       *          @p val, or @a end() if there is no such element
-       */
-      iterator lower_bound(iterator hint, const Index &val) const
-          noexcept(node_type::is_comparator_noexcept)
-      {
-        node_type &ref = *hint;
-        return iterator(node_type::lower_bound(ref, val));
-      }
-
-      /**
-       * @brief Find the lower bound for @p val in this tree
-       * @param val The value of index to be searched for
-       * @param hint Search is start from this position other than the root
-       *             of tree, may affects performance depends on the position
-       *             between search result and @p hint
        * @returns A const iterator point to the first element that is not less
        *          than @p val, or @a end() if there is no such element
        */

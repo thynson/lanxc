@@ -191,7 +191,7 @@ namespace lanxc
 
       manager_implement(Function &functor, const Allocator &) noexcept
         : manager(implement)
-        , m_function(std::forward<Function>(functor))
+        , m_function(std::move(functor))
       { }
 
       manager_implement(manager_implement &&other) noexcept
@@ -398,8 +398,8 @@ namespace lanxc
     template<typename Function, typename = valid_functor_sfinae<Function>>
     function(Function functor)
         noexcept(detail::is_inplace_allocated<Function>::value)
-      : function(std::allocator_arg, std::allocator<void>()
-      , std::forward<Function>(functor))
+        : function(std::allocator_arg, std::allocator<void>(),
+                   std::move(functor))
     { }
 
     /**
