@@ -60,20 +60,20 @@ namespace lanxc
     template<typename>
     friend class function;
 
-    /**
-     * @brief function object padding
-     * The size of function object is equals to size of 4 pointers,
-     * The first memeber of function will be a pointer point to
-     * a function which forwards arguments to the real functor; the remains
-     * space is equals to size of 3 pointers
+    /*
+     * The size of function object is equals to size of 4 pointers. The first
+     * memeber of function will be a pointer point to a function which
+     * forwards arguments to the real functor; the second member is a implment
+     * function pointer the remains space is equals to size of 2 pointers.
      */
+
     using functor_padding = void *[3];
 
     template<typename T>
     struct is_inplace_allocated
     {
       static const bool value
-          = sizeof(T) <= sizeof(functor_padding)
+          = sizeof(T) <= (sizeof(void*) * 2)
             && (std::alignment_of<void *>::value
                 % std::alignment_of<T>::value == 0)
             && std::is_nothrow_move_constructible<T>::value;
@@ -406,8 +406,9 @@ namespace lanxc
      * @brief Construct a function from a functor object or (member) function
      * pointer with custom allocator
      */
-    template<typename Function, typename Allocator,
-        typename = valid_functor_sfinae<Function>>
+    template<typename Function,
+             typename Allocator,
+             typename = valid_functor_sfinae<Function>>
     function(std::allocator_arg_t, const Allocator &a, Function f)
         noexcept(detail::is_inplace_allocated<Function>::value)
       : m_caller(get_caller<Allocator, Function>(f))
