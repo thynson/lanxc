@@ -110,6 +110,8 @@ namespace lanxc
             noexcept(std::declval<typename config::template comparator<Index>>()
                 (std::declval<Index>(), std::declval<Index>()));
 
+
+
         constexpr node() noexcept
             : m_p(nullptr), m_l(nullptr), m_r(nullptr)
             , m_is_red(false), m_is_container(false)
@@ -156,6 +158,25 @@ namespace lanxc
         }
 
       private:
+
+
+        struct nrcomparator_type
+        {
+          bool operator ()(const Index &lhs, const Index &rhs) const
+          noexcept(is_comparator_noexcept)
+          {
+            comparator_type c;
+            return !c(rhs, lhs);
+          }
+        };
+
+
+        static bool equal_test(const Index &lhs, const Index &rhs)
+        {
+          comparator_type c;
+          nrcomparator_type nrc;
+          return c(lhs, rhs) != nrc(lhs, rhs);
+        }
 
         constexpr node(container_tag) noexcept
             : m_p(this), m_l(this), m_r(this)
@@ -936,14 +957,15 @@ namespace lanxc
               p = p->get_root_node_from_container_node();
           }
 
-          auto cmp = [&] (Reference &node) noexcept -> bool
+          auto cmp = [&index] (Reference &node) noexcept -> bool
           {
-            return compare(node.internal_get_index(), index);
+            return comparator_type()(node.internal_get_index(), index);
           };
 
-          auto rcmp = [&] (Reference &node) noexcept -> bool
+
+          auto rcmp = [&index] (Reference &node) noexcept -> bool
           {
-            return negative_reverse_compare(node.internal_get_index(), index);
+            return nrcomparator_type()(node.internal_get_index(), index);
           };
 
           auto result = cmp(*p);
@@ -1058,7 +1080,7 @@ namespace lanxc
         static auto boundry(Reference &entry, const Index &index,
                             const Comparator &comparator)
         noexcept(is_comparator_noexcept)
-        -> std::pair<decltype(&entry), decltype(&entry)>
+        -> std::pair<decltype(std::addressof(entry)), decltype(std::addressof(entry))>
         {
           auto *p = &entry;
 
@@ -1146,9 +1168,9 @@ namespace lanxc
         find(const_reference e, const Index &i, index_policy::backmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, &negative_reverse_compare).first;
+          auto *p = boundry(e, i, nrcomparator_type()).first;
 
-          if (test_equalivent(p->internal_get_index(), i))
+          if (equal_test(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1158,9 +1180,9 @@ namespace lanxc
         find(const_reference e, const Index &i, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, &compare).second;
+          auto *p = boundry(e, i, comparator_type()).second;
 
-          if (test_equalivent(p->internal_get_index(), i))
+          if (equal_test(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1182,9 +1204,9 @@ namespace lanxc
         find(reference e, const Index &i, index_policy::backmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, &negative_reverse_compare).first;
+          auto *p = boundry(e, i, nrcomparator_type()).first;
 
-          if (test_equalivent(p->internal_get_index(), i))
+          if (equal_test(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1194,9 +1216,9 @@ namespace lanxc
         find(reference e, const Index &i, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, &compare).second;
+          auto *p = boundry(e, i, comparator_type()).second;
 
-          if (test_equalivent(p->internal_get_index(), i))
+          if (equal_test(p->internal_get_index(), i))
             return p;
           else
             return nullptr;
@@ -1223,7 +1245,7 @@ namespace lanxc
         static pointer
         lower_bound(reference entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, &compare).second; }
+        { return boundry(entry, index, comparator_type()).second; }
 
         /**
          * @brief Get the first node in the tree whose index is not less than
@@ -1234,7 +1256,7 @@ namespace lanxc
         static const_pointer
         lower_bound(const_reference entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, &compare).second; }
+        { return boundry(entry, index, comparator_type()).second; }
 
         /**
          * @brief Get the first node in the tree whose index is greater than
@@ -1245,7 +1267,7 @@ namespace lanxc
         static pointer
         upper_bound(reference &entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, &negative_reverse_compare).second; }
+        { return boundry(entry, index, nrcomparator_type()).second; }
 
         /**
          * @brief Get the first node in the tree whose index is greater than
@@ -1256,7 +1278,7 @@ namespace lanxc
         static const_pointer
         upper_bound(const_reference entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, &negative_reverse_compare).second; }
+        { return boundry(entry, index, nrcomparator_type()).second; }
 
         /**
          * @brief Insert @p n to a tree via @p e
@@ -1272,7 +1294,7 @@ namespace lanxc
         noexcept(is_comparator_noexcept)
         {
           auto p = boundry(e, n.internal_get_index(),
-                           &negative_reverse_compare);
+                           nrcomparator_type());
           if (p.first == p.second)
             p.first->insert_root_node(&n);
           else
@@ -1293,7 +1315,7 @@ namespace lanxc
         insert(reference e, reference n, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto p = boundry(e, n.internal_get_index(), &compare);
+          auto p = boundry(e, n.internal_get_index(), comparator_type());
           if (p.first == p.second)
             p.first->insert_root_node(&n);
           else
@@ -1372,27 +1394,6 @@ namespace lanxc
           return &n;
         }
 
-
-
-        static bool compare(const Index &lhs, const Index &rhs)
-        noexcept(is_comparator_noexcept)
-        {
-          static comparator_type cmper;
-          return cmper(lhs, rhs);
-        }
-
-        static bool negative_reverse_compare(const Index &lhs, const Index &rhs)
-        noexcept(is_comparator_noexcept)
-
-        {
-          return !compare(rhs, lhs);
-        }
-
-        static bool test_equalivent(const Index &lhs, const Index &rhs)
-        noexcept(is_comparator_noexcept)
-        {
-          return compare(lhs, rhs) != negative_reverse_compare(lhs, rhs);
-        }
 
         template<typename, typename, typename, typename...>
         friend class rbtree_node;
