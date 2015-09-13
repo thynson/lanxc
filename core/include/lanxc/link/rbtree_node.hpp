@@ -18,8 +18,8 @@
 #ifndef LANXC_LINK_RBTREE_NODE_HPP_INCLUDED
 #define LANXC_LINK_RBTREE_NODE_HPP_INCLUDED
 
-#include <lanxc/link/rbtree_define.hpp>
-#include <lanxc/link/rbtree_config.hpp>
+#include "rbtree_define.hpp"
+#include "rbtree_config.hpp"
 
 namespace lanxc
 {

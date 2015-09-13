@@ -18,8 +18,8 @@
 #ifndef LANXC_LINK_RBTREE_CONFIG_HPP_INCLUDED
 #define LANXC_LINK_RBTREE_CONFIG_HPP_INCLUDED
 
-#include <lanxc/functional.hpp>
-#include <lanxc/link/rbtree_define.hpp>
+#include "../functional.hpp"
+#include "rbtree_define.hpp"
 
 #include <type_traits>
 

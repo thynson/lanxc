@@ -19,7 +19,7 @@
 #define LANXC_FUNCTIONAL_HPP
 
 #include <functional>
-#include <lanxc/type_traits.hpp>
+#include "type_traits.hpp"
 
 /**
  * @file functional.hpp
