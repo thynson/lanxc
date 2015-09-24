@@ -237,7 +237,7 @@ namespace lanxc
           if (m_is_container)
           if (m_p == this)
             return nullptr;
-          pointer p = this;
+          const_pointer p = this;
           while (p->m_p->m_p != p) p = p->m_p;
           return p;
         }
@@ -1433,8 +1433,6 @@ namespace lanxc
             , m_size(0)
         {}
 
-        container(const container &) = delete;
-
         container(container &&node) noexcept
             : rbtree_node<void, void>::node<Index, Node, Tag>(std::move(node))
             , m_size(node.m_size)
@@ -1590,24 +1588,15 @@ namespace lanxc
             , hints(hints)
         {  }
 
-        index_setter(index_setter &&x) noexcept
-            : node(x.node)
-              , hints(x.hints)
-        { x.hints = nullptr; }
-
         ~index_setter()
         {
           if (hints != nullptr)
             base_node<tag>::insert(*hints, node, Policy());
         }
 
-        index_setter &operator = (index_setter &&x) noexcept
-        {
-          this->~index_setter();
-          new (this) index_setter(std::move(x));
-          return *this;
-        }
 
+        index_setter(index_setter &&) = delete;
+        index_setter &operator = (index_setter &&) = delete;
         index_setter(const index_setter &) = delete;
         index_setter &operator = (const index_setter &) = delete;
 
