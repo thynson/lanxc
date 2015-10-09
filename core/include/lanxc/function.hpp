@@ -473,9 +473,9 @@ namespace lanxc
       function *lhs = this, *rhs = &other;
       if (lhs == rhs)
         return;
-      if (lhs->m_caller != noop_function)
+      if (*lhs)
       {
-        if (lhs->m_caller != noop_function)
+        if (*rhs)
         {
           std::swap(lhs->m_caller, rhs->m_caller);
           detail::functor_padding tmp;
@@ -491,7 +491,7 @@ namespace lanxc
           std::swap(lhs, rhs);
       }
 
-      if (rhs->m_caller != noop_function)
+      if (*rhs)
       {
         std::swap(lhs->m_caller, rhs->m_caller);
         auto rhs_implement = rhs->cast()->m_implement;
