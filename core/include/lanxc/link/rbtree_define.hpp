@@ -38,25 +38,35 @@ namespace lanxc
        * @{
        */
 
-      /** @brief Policy that deny a node being inserted into a tree if there is
-       * equivalent node in it */
+      /**
+       * @brief Policy that deny a node being inserted into a tree if there
+       * is equivalent node in it
+       */
       struct conflict {};
 
-      /** @brief Policy that remove any equivalent node before a node is
-       * inserted.  **/
+      /**
+       * @brief Policy that remove any equivalent node before a node is
+       * inserted.
+       */
       struct unique {};
 
-      /** @brief Pick the first node in equals range when doing lookup or
-       * place node as front as possible when doing insert */
+      /**
+       * @brief Pick the first node in equals range when doing lookup or
+       * place node as front as possible when doing insert
+       */
       struct frontmost {};
 
-      /** @brief Pick the last node in equals range when doing lookup or
-       * place node as back as possible when doing insert */
+      /**
+       * @brief Pick the last node in equals range when doing lookup or
+       * place node as back as possible when doing insert
+       */
       struct backmost {};
 
-      /** @brief Pick the node found in first time when doing lookup; Or
+      /**
+       * @brief Pick the node found in first time when doing lookup; Or
        * place node as soon as possible once proper position was found,
-       * despiting the position of other equivalent nodes, when doing insert*/
+       * despiting the position of other equivalent nodes, when doing insert
+       */
       struct nearest {};
 
       /** @} */
@@ -107,7 +117,7 @@ namespace lanxc
     template<typename Tag>
     class rbtree_config;
 
-    template<typename Index, typename Node, typename Tag = void, typename ...Tags>
+    template<typename Index, typename Node, typename Tag = void, typename ...>
     class rbtree_node;
 
     template<typename Index, typename Node, typename Tag = void>
