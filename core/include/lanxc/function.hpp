@@ -129,7 +129,7 @@ namespace lanxc
     };
 
     template<typename Result, typename ... Arguments>
-    static Result invalid_function(manager *, Arguments &&...)
+    static Result invalid_function(manager *, Arguments ...)
     { throw bad_function_call(); }
 
     template<typename Function>
@@ -183,7 +183,7 @@ namespace lanxc
       }
 
       template<typename Result, typename ...Arguments>
-      static Result call(manager *mgr, Arguments &&...args)
+      static Result call(manager *mgr, Arguments ...args)
       {
         auto self = static_cast<manager_implement *>(mgr);
         return self->m_function(std::forward<Arguments>(args)...);
@@ -343,7 +343,7 @@ namespace lanxc
                 (std::declval<Arguments>()...)),
             Result>::value>::type;
 
-    using caller_type = Result (*)(detail::manager *, Arguments &&...);
+    using caller_type = Result (*)(detail::manager *, Arguments ...);
 
     constexpr static caller_type noop_function
       = detail::template invalid_function<Result, Arguments...>;
@@ -460,7 +460,7 @@ namespace lanxc
     /**
      * @brief Invoke this function
      */
-    Result operator () (Arguments &&...args)
+    Result operator () (Arguments ...args)
     {
       return (*m_caller)(cast(), std::forward<Arguments>(args)...);
     }
