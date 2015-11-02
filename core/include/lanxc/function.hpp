@@ -218,7 +218,7 @@ namespace lanxc
       static const std::type_info &typeinfo;
 
       template<typename Result, typename ...Arguments>
-      static Result call(manager *mgr, Arguments &&...args)
+      static Result call(manager *mgr, Arguments ...args)
       {
         auto self = static_cast<manager_implement *>(mgr);
         return (*self->m_function)(std::forward<Arguments>(args)...);
