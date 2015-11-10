@@ -69,6 +69,7 @@ add_library(lanxc-core-dummy STATIC EXCLUDE_FROM_ALL
 	"include/lanxc/type_traits.hpp"
 	"include/lanxc/function.hpp"
 	"include/lanxc/functional.hpp"
+    "include/lanxc/unique_tuple.hpp"
 	"include/lanxc/link.hpp"
 	"include/lanxc/link/forward_list_config.hpp"
 	"include/lanxc/link/forward_list_define.hpp"
