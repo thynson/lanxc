@@ -19,6 +19,7 @@
 #define LANXC_UNIQUE_TUPLE_HPP_INCLUDED
 
 #include <utility>
+#include <type_traits>
 
 namespace lanxc
 {
