@@ -117,7 +117,7 @@ namespace lanxc
     template<typename Tag>
     class rbtree_config;
 
-    template<typename Index, typename Node, typename Tag = void, typename ...>
+    template<typename Index, typename Node, typename ...Tags>
     class rbtree_node;
 
     template<typename Index, typename Node, typename Tag = void>
