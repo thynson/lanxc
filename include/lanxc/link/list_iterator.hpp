@@ -28,7 +28,8 @@ namespace lanxc
   {
     template<typename Node, typename Tag>
     class list_iterator
-      : public std::iterator<std::bidirectional_iterator_tag, Node>
+      : public std::iterator<std::bidirectional_iterator_tag, Node,
+          std::ptrdiff_t, Node *, Node &>
     {
       using node_type = list_node<Node, Tag>;
 
@@ -85,7 +86,8 @@ namespace lanxc
 
     template<typename Node, typename Tag>
     class list_const_iterator
-      : public std::iterator<std::bidirectional_iterator_tag, const Node>
+      : public std::iterator<std::bidirectional_iterator_tag, const Node,
+          std::ptrdiff_t, const Node *, const Node &>
     {
       using node_type = const list_node<Node, Tag>;
     public:

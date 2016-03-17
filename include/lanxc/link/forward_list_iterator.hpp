@@ -29,7 +29,8 @@ namespace lanxc
   {
     template<typename Node, typename Tag>
     class forward_list_iterator
-      : public std::iterator<std::forward_iterator_tag, Node>
+      : public std::iterator<std::forward_iterator_tag, Node,
+          std::ptrdiff_t, Node *, Node &>
     {
       using node_type = forward_list_node<Node, Tag>;
     public:
@@ -76,7 +77,8 @@ namespace lanxc
 
     template<typename Node, typename Tag>
     class forward_list_const_iterator
-      : public std::iterator<std::forward_iterator_tag, const Node>
+      : public std::iterator<std::forward_iterator_tag, const Node,
+          std::ptrdiff_t, const Node *, const Node &>
     {
       using node_type = const forward_list_node<Node, Tag>;
     public:
