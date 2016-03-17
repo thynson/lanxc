@@ -28,16 +28,22 @@ namespace lanxc
   {
 
     template<>
-    class list_node<void>
+    class list_node<void, void>
     {
       template<typename, typename>
       friend class list_node;
+
+    public:
 
       template<typename Node, typename Tag,
           typename = typename std::conditional<
               list_config<Tag>::allow_constant_time_unlink,
                   std::true_type, std::false_type>::type>
-      class enable_unlink;
+      class enable_unlink
+      {
+      public:
+        using size_type = std::size_t;
+      };
 
       template<typename Node, typename Tag>
       class enable_unlink<Node, Tag, typename std::enable_if<
@@ -67,7 +73,7 @@ namespace lanxc
      * @ingroup intrusive_list
      */
     template<typename Node, typename Tag>
-    class list_node : public list_node<void>::enable_unlink<Node, Tag>
+    class list_node : public list_node<void, void>::enable_unlink<Node, Tag>
     {
       using config = list_config<Tag>;
       using node_pointer = typename config::template pointer<list_node>;

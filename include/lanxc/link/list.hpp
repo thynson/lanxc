@@ -126,11 +126,11 @@ namespace lanxc
      * @ingroup intrusive_list
      */
     template<typename Node, typename Tag>
-    class list : private list<void>::enable_counter<Node, Tag>
+    class list : private list<void, void>::enable_counter<Node, Tag>
     {
       using config                  = list_config<Tag>;
       using node_type               = list_node<Node, Tag>;
-      using enable_counter          = list<void>::enable_counter<Node, Tag>;
+      using enable_counter          = list<void, void>::enable_counter<Node, Tag>;
     public:
       using iterator                = list_iterator<Node, Tag>;
       using const_iterator          = list_const_iterator<Node, Tag>;
@@ -240,14 +240,14 @@ namespace lanxc
        */
       void insert(iterator pos, reference ref) noexcept
       {
-        node_type &nref = ref;
+        node_type &node_ref = ref;
 
         // Unlink first
-        nref.unlink_internal();
-        nref.m_prev = pos->m_prev;
-        nref.m_prev->m_next = &nref;
-        pos->m_prev = &nref;
-        nref.m_next = &(*pos);
+        node_ref.unlink_internal();
+        node_ref.m_prev = pos->m_prev;
+        node_ref.m_prev->m_next = &node_ref;
+        pos->m_prev = &node_ref;
+        node_ref.m_next = &(*pos);
         this->increase();
       }
 
@@ -283,14 +283,14 @@ namespace lanxc
 
       /**
        * @brief Insert a elements to the front of this list
-       * @param ref The refernce to the element to be inserted
+       * @param ref The reference to the element to be inserted
        */
       void push_front(reference ref) noexcept
       { insert(begin(), ref); }
 
       /**
        * @brief Insert a elements to the back of this list
-       * @param ref The refernce to the element to be inserted
+       * @param ref The reference to the element to be inserted
        */
       void push_back(reference ref) noexcept
       { insert(end(), ref); }
@@ -312,18 +312,18 @@ namespace lanxc
        *
        * @note Unlink std::list::remove, this function doest not requires
        * operator = for value_type be implemented. So this function removes
-       * exacly the node that passed as argument from the list.
+       * exactly the node that passed as argument from the list.
        * @see remove_if
        */
       template<typename BinaryPredicate=equals_to<Node>>
       void remove(const_reference val,
-          BinaryPredicate &&binpred = BinaryPredicate()) noexcept
+          BinaryPredicate &&predicate = BinaryPredicate()) noexcept
       {
         auto b = begin(), e = end();
         while (b != e)
         {
           auto c = b++;
-          if (binpred(val, *c))
+          if (predicate(val, *c))
             erase(c);
         }
       }
@@ -477,9 +477,9 @@ namespace lanxc
        * @param l The list which part of it will be merged @param b Begin of
        * element to be merged
        * @param e End of element to be merged
-       * @param comp The specified comparer
+       * @param comp The specified comparator
        * @note both of this list and the part to be merged should be
-       * sorted with specified comparer, and b and e should be iterators of
+       * sorted with specified comparator, and b and e should be iterators of
        * distinct list
        */
       template<typename Comparator=less<Node>>
@@ -507,9 +507,10 @@ namespace lanxc
       /**
        * @brief Merge another sorted list with comparator @p c
        * @param l The list to be merged
-       * @param comp The specified strict weak ordering comparer
+       * @param comp The specified strict weak ordering comparator
        * @note both of this list and the part to be merged should be sorted
-       * with specified comparer, and b and e should be iterators of distinct list
+       * with specified comparator, and b and e should be iterators of
+       * distinct list
        */
       template<typename Comparator=less<Node>>
       void merge(list &l, Comparator &&c = Comparator())
@@ -518,16 +519,16 @@ namespace lanxc
 
       /**
        * @brief Erase duplicate elements with specified binary predicate
-       * @param binpred The specified binary predicate
+       * @param predicate The specified binary predicate
        */
       template<typename BinaryPredicate=equals_to<Node>>
-      void unique(BinaryPredicate && binpred = BinaryPredicate())
+      void unique(BinaryPredicate && predicate = BinaryPredicate())
         noexcept(noexcept(std::declval<list>().unique
               (std::declval<iterator>(), std::declval<iterator>(),
-               std::forward<BinaryPredicate>(binpred))))
+               std::forward<BinaryPredicate>(predicate))))
       {
         unique(begin(), end(),
-            std::forward<BinaryPredicate>(binpred));
+            std::forward<BinaryPredicate>(predicate));
       }
 
 
@@ -575,21 +576,21 @@ namespace lanxc
 
       /**
        * @brief Erase duplicate elements with specified binary predicate in
-       * rnage [b, e)
+       * range [b, e)
        * @param b Begin of the range
        * @param e End of the range
-       * @param binpred The specified binary predicate
+       * @param predicate The specified binary predicate
        */
       template<typename BinaryPredicate>
       void unique(iterator b, iterator e,
-          BinaryPredicate &&binpred = BinaryPredicate())
-        noexcept(noexcept(binpred(*b, *e)))
+          BinaryPredicate &&predicate = BinaryPredicate())
+        noexcept(noexcept(predicate(*b, *e)))
       {
         if (b == e) return;
         auto n = b;
         while(++n != b)
         {
-          if (binpred(*b, *n))
+          if (predicate(*b, *n))
             erase(n);
           else
             b = n;

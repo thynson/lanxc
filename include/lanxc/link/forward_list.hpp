@@ -265,7 +265,7 @@ namespace lanxc
       }
 
       template<typename BinaryPredicate>
-      void remove(const_reference &val, BinaryPredicate &&binpred)
+      void remove(const_reference &val, BinaryPredicate &&predicate)
       {
         auto i = before_begin();
         for ( ; ; )
@@ -273,7 +273,7 @@ namespace lanxc
           auto n = iterator(i->forward_list_node<Node, Tag>::m_next);
           if (n == end())
             return;
-          if (binpred(val, *n))
+          if (predicate(val, *n))
             erase_after(i);
           else
             i = n;
@@ -281,7 +281,7 @@ namespace lanxc
       }
 
       template<typename Predicate>
-      void remove_if(Predicate &&pred)
+      void remove_if(Predicate &&predicate)
       {
         auto i = before_begin();
         for ( ; ; )
@@ -289,7 +289,7 @@ namespace lanxc
           auto n = iterator(i->forward_list_node<Node, Tag>::m_next);
           if (n == end())
             return;
-          if (pred(*n))
+          if (predicate(*n))
             erase_after(i);
           else
             i = n;
@@ -309,25 +309,26 @@ namespace lanxc
       }
 
       template<typename BinaryPredicate>
-      void unique(BinaryPredicate &&binpred = BinaryPredicate())
-        noexcept(noexcept(binpred(std::declval<Node&>(),
+      void unique(BinaryPredicate &&predicate = BinaryPredicate())
+        noexcept(noexcept(predicate(std::declval<Node&>(),
                 std::declval<Node&>())))
       {
-        unique(before_begin(), end(), std::forward<BinaryPredicate>(binpred));
+        unique(before_begin(), end(),
+               std::forward<BinaryPredicate>(predicate));
       }
 
       template<typename BinaryPredicate>
-      void unique(iterator b, BinaryPredicate &&binpred = BinaryPredicate())
-        noexcept(noexcept(binpred(std::declval<Node&>(),
+      void unique(iterator b, BinaryPredicate &&predicate = BinaryPredicate())
+        noexcept(noexcept(predicate(std::declval<Node&>(),
                 std::declval<Node&>())))
       {
-        unique(b, end(), std::forward<BinaryPredicate>(binpred));
+        unique(b, end(), std::forward<BinaryPredicate>(predicate));
       }
 
       template<typename BinaryPredicate>
       void unique(iterator b, iterator e,
-          BinaryPredicate &&binpred = BinaryPredicate())
-        noexcept(noexcept(binpred(std::declval<Node&>(),
+          BinaryPredicate &&predicate = BinaryPredicate())
+        noexcept(noexcept(predicate(std::declval<Node&>(),
                 std::declval<Node&>())))
       {
         if (b == e) return;
@@ -338,7 +339,7 @@ namespace lanxc
           if (c == e)
             return ;
 
-          if (std::forward<BinaryPredicate>(binpred)(*b, *c))
+          if (std::forward<BinaryPredicate>(predicate)(*b, *c))
           {
             erase_after(c);
             b = ++c;
