@@ -82,5 +82,23 @@ namespace lanxc
   struct result_of : result_of<void>::detail<T>
   { };
 
+  template<typename T, typename ...Arguments>
+  struct is_constructible_with
+  {
+  private:
+    template<typename> struct helper {};
+
+    template<typename U>
+    static constexpr bool sfinae(helper<decltype(U(std::declval<Arguments>()...))> *)
+    { return true; }
+
+    template<typename U>
+    static constexpr bool sfinae(...)
+    { return false; }
+
+
+  public:
+    static constexpr bool value = sfinae<T>(nullptr);
+  };
 }
 #endif
