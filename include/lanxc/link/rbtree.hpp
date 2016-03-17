@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 LAN Xingcan
+ * Copyright (C) 2015 - 2016 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -40,10 +40,11 @@ namespace lanxc
     {
       using detail                  = rbtree_node<void, void>;
       using config                  = rbtree_config<Tag>;
-      using node_type               = rbtree_node<void, void>::node<Index, Node, Tag>;
       using default_insert_policy   = typename config::default_insert_policy;
       using default_lookup_policy   = typename config::default_lookup_policy;
 
+      using node_type
+          = rbtree_node<void, void>::node<Index, Node, Tag>;
       /**
        * @brief SFINAE check for lookup policy
        * @tparam Policy Type of lookup policy
@@ -132,27 +133,27 @@ namespace lanxc
       const_reverse_iterator crbegin() const noexcept
       { return const_reverse_iterator(end()); }
 
-      /**@breif Get an iterator point to the end of this tree */
+      /**@brief Get an iterator point to the end of this tree */
       iterator end() noexcept
       { return iterator(&m_container_node); }
 
-      /**@breif Get a const iterator point to the end of this tree */
+      /**@brief Get a const iterator point to the end of this tree */
       const_iterator end() const noexcept
       { return const_iterator(&m_container_node); }
 
-      /**@breif Get a const iterator point to the end of this tree */
+      /**@brief Get a const iterator point to the end of this tree */
       const_iterator cend() const noexcept
       { return const_iterator(&m_container_node); }
 
-      /**@breif Get an iterator point to the reverse end of this tree */
+      /**@brief Get an iterator point to the reverse end of this tree */
       reverse_iterator rend() noexcept
       { return reverse_iterator(begin()); }
 
-      /**@breif Get a const iterator point to the reverse end of this tree */
+      /**@brief Get a const iterator point to the reverse end of this tree */
       const_reverse_iterator rend() const noexcept
       { return const_reverse_iterator(begin()); }
 
-      /**@breif Get a const iterator point to the reverse end of this tree */
+      /**@brief Get a const iterator point to the reverse end of this tree */
       const_reverse_iterator crend() const noexcept
       { return const_reverse_iterator(begin()); }
 
@@ -440,7 +441,7 @@ namespace lanxc
        * @tparam InsertPolicy Insert policy
        * @param val The element will be inserted
        * @param p policy
-       * @returns If the element is successfuly inserted into this tree,
+       * @returns If the element is successfully inserted into this tree,
        *          the iterator for @p e is returned, otherwise, the
        *          iterator for the element which conflict with this element
        *          is returned
@@ -459,7 +460,7 @@ namespace lanxc
        *             of tree, may affects performance depends on the position
        *             between search result and @p hint
        * @param p policy
-       * @returns If the element is successfuly inserted into this tree,
+       * @returns If the element is successfully inserted into this tree,
        *          the iterator for @p e is returned, otherwise, the
        *          iterator for the element which conflict with this element
        *          is returned
@@ -565,7 +566,7 @@ namespace lanxc
         *this = std::move(tmp);
       }
 
-      /** @brif Remove all elements from this tree */
+      /** @brief Remove all elements from this tree */
       void clear() noexcept
       { m_container_node.unlink_container(); }
 
