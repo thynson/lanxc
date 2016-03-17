@@ -573,6 +573,63 @@ namespace lanxc
     private:
       rbtree_node<void, void>::container<Index, Node, Tag> m_container_node;
     };
+
+    template<typename Index, typename Node, typename Tag>
+    inline bool operator == (const rbtree<Index, Node, Tag> &l
+        , const rbtree<Index, Node, Tag> &r)
+        noexcept(rbtree_node<Index, Node, Tag>::is_comparator_noexcept)
+    {
+      auto i = l.begin(), j = r.begin(), m = l.end(), n = r.end();
+      while (i != m && j != n && *i == *j)
+      {
+        i++;
+        j++;
+      }
+      return i == m && j == n;
+    };
+
+    template<typename Index, typename Node, typename Tag>
+    inline bool operator != (const rbtree<Index, Node, Tag> &l
+        , const rbtree<Index, Node, Tag> &r)
+        noexcept(rbtree_node<Index, Node, Tag>::is_comparator_noexcept)
+    {
+      return !(l == r);
+    };
+
+    template<typename Index, typename Node, typename Tag>
+    inline bool operator < (const rbtree<Index, Node, Tag> &l
+        , const rbtree<Index, Node, Tag> &r)
+        noexcept(rbtree_node<Index, Node, Tag>::is_comparator_noexcept)
+    {
+      if (&l == &r) return false;
+      return std::lexicographical_compare(l.begin(), l.end(),
+                                          r.begin(), r.end());
+    };
+
+    template<typename Index, typename Node, typename Tag>
+    inline bool operator <= (const rbtree<Index, Node, Tag> &l
+        , const rbtree<Index, Node, Tag> &r)
+        noexcept(rbtree_node<Index, Node, Tag>::is_comparator_noexcept)
+    {
+      return !(r < l);
+    };
+
+    template<typename Index, typename Node, typename Tag>
+    inline bool operator > (const rbtree<Index, Node, Tag> &l
+        , const rbtree<Index, Node, Tag> &r)
+        noexcept(rbtree_node<Index, Node, Tag>::is_comparator_noexcept)
+    {
+      return r < l;
+    };
+
+    template<typename Index, typename Node, typename Tag>
+    inline bool operator >= (const rbtree<Index, Node, Tag> &l
+        , const rbtree<Index, Node, Tag> &r)
+        noexcept(rbtree_node<Index, Node, Tag>::is_comparator_noexcept)
+    {
+      return !(l < r);
+    };
+
   }
 }
 #endif
