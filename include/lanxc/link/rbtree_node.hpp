@@ -150,7 +150,7 @@ namespace lanxc
       private:
 
 
-        struct nrcomparator_type
+        struct cr_comparator_type
         {
           bool operator ()(const Index &lhs, const Index &rhs) const
           noexcept(is_comparator_noexcept)
@@ -164,8 +164,8 @@ namespace lanxc
         static bool equal_test(const Index &lhs, const Index &rhs)
         {
           comparator_type c;
-          nrcomparator_type nrc;
-          return c(lhs, rhs) != nrc(lhs, rhs);
+          cr_comparator_type crc;
+          return c(lhs, rhs) != crc(lhs, rhs);
         }
 
         constexpr node(container_tag) noexcept
@@ -412,7 +412,7 @@ namespace lanxc
           }
         }
 
-        void lrotate() noexcept
+        void rotate_left() noexcept
         {
           pointer y = m_r;
           if (y->m_has_l)
@@ -436,7 +436,7 @@ namespace lanxc
           m_p = y;
         }
 
-        void rrotate() noexcept
+        void rotate_right() noexcept
         {
           pointer y = m_l;
           if (y->m_has_r)
@@ -485,11 +485,11 @@ namespace lanxc
                 if (parent->m_r == node)
                 {
                   node = parent;
-                  node->lrotate();
+                  node->rotate_left();
                   parent = node->m_p;
                 }
 
-                parent->m_p->rrotate();
+                parent->m_p->rotate_right();
                 parent->m_is_red = false;
                 parent->m_r->m_is_red = true;
               }
@@ -509,11 +509,11 @@ namespace lanxc
                 if (parent->m_l == node)
                 {
                   node = parent;
-                  node->rrotate();
+                  node->rotate_right();
                   parent = node->m_p;
                 }
 
-                parent->m_p->lrotate();
+                parent->m_p->rotate_left();
                 parent->m_is_red = false;
                 parent->m_l->m_is_red = true;
 
@@ -547,7 +547,7 @@ namespace lanxc
               if (w->m_is_red)
                 // case 1:
               {
-                parent->lrotate();
+                parent->rotate_left();
                 parent->m_is_red = true;
                 parent->m_p->m_is_red = false;
                 w = parent->m_r;
@@ -560,14 +560,13 @@ namespace lanxc
               {
                 w->m_is_red = true;
                 node = parent;
-                parent = node->m_p;
               }
               else
               {
                 if (!w->m_has_r || !w->m_r->m_is_red)
                   // case 3:
                 {
-                  w->rrotate();
+                  w->rotate_right();
                   w->m_p->m_is_red = false;
                   w->m_is_red = true;
                   w = parent->m_r;
@@ -576,7 +575,7 @@ namespace lanxc
                 // case 4:
 
                 w->m_is_red = parent->m_is_red;
-                parent->lrotate();
+                parent->rotate_left();
                 parent->m_is_red = false;
                 w->m_r->m_is_red = false;
                 break;
@@ -589,7 +588,7 @@ namespace lanxc
               if (w->m_is_red)
                 // case 1:
               {
-                parent->rrotate();
+                parent->rotate_right();
                 parent->m_is_red = true;
                 parent->m_p->m_is_red = false;
                 w = parent->m_l;
@@ -602,14 +601,13 @@ namespace lanxc
               {
                 w->m_is_red = true;
                 node = parent;
-                parent = node->m_p;
               }
               else
               {
                 if (!w->m_has_l || !w->m_l->m_is_red)
                   // case 3:
                 {
-                  w->lrotate();
+                  w->rotate_left();
                   w->m_is_red = true;
                   w->m_p->m_is_red = false;
                   w = parent->m_l;
@@ -618,7 +616,7 @@ namespace lanxc
                 // case 4:
 
                 w->m_is_red = parent->m_is_red;
-                parent->rrotate();
+                parent->rotate_right();
                 parent->m_is_red = false;
                 w->m_l->m_is_red = false;
                 break;
@@ -674,7 +672,7 @@ namespace lanxc
 
         /**
          * @brief Insert a node as root node
-         * @note User is responible to ensure this node is container node
+         * @note User is responsible to ensure this node is container node
          */
         void insert_root_node(pointer node) noexcept
         {
@@ -710,7 +708,7 @@ namespace lanxc
 
 
         /**
-         * @brief Insert node as parent's chlid, left child or right chlid are
+         * @brief Insert node as parent's child, left child or right child are
          * all possible.
          * @param entry The node want child
          * @param node The node want to be inserted
@@ -953,15 +951,15 @@ namespace lanxc
           };
 
 
-          auto rcmp = [&index] (Reference &node) noexcept -> bool
+          auto cr_cmp = [&index] (Reference &node) noexcept -> bool
           {
-            return nrcomparator_type()(node.internal_get_index(), index);
+            return cr_comparator_type()(node.internal_get_index(), index);
           };
 
           auto result = cmp(*p);
-          auto rresult = rcmp(*p);
+          auto cr_result = cr_cmp(*p);
 
-          if (result != rresult)
+          if (result != cr_result)
             return std::make_pair(p, p);
           else if (result)
           {
@@ -970,7 +968,7 @@ namespace lanxc
               if (p == p->m_p->m_l)
               {
                 auto x = cmp(*p->m_p);
-                auto y = rcmp(*p->m_p);
+                auto y = cr_cmp(*p->m_p);
                 if (x != y)
                   return std::make_pair(p->m_p, p->m_p);
                 else if (x)
@@ -981,7 +979,7 @@ namespace lanxc
               else if (!p->m_r->m_is_container)
               {
                 auto x = cmp(*p->m_r);
-                auto y = rcmp(*p->m_r);
+                auto y = cr_cmp(*p->m_r);
                 if (x != y)
                   return std::make_pair(p->m_r, p->m_r);
                 if (x)
@@ -1004,7 +1002,7 @@ namespace lanxc
               if (p == p->m_p->m_r)
               {
                 auto x = cmp(*p->m_p);
-                auto y = rcmp(*p->m_p);
+                auto y = cr_cmp(*p->m_p);
                 if (x != y)
                   return std::make_pair(p->m_p, p->m_p);
                 else if (!x)
@@ -1015,7 +1013,7 @@ namespace lanxc
               else if (!p->m_l->m_is_container)
               {
                 auto x = cmp(*p->m_l);
-                auto y = rcmp(*p->m_l);
+                auto y = cr_cmp(*p->m_l);
                 if (x != y)
                   return std::make_pair(p->m_l, p->m_l);
                 if (!x)
@@ -1046,14 +1044,14 @@ namespace lanxc
               return std::make_pair(p->m_l, p);
 
             result = cmp(*p);
-            rresult = rcmp(*p);
-            if (result != rresult)
+            cr_result = cr_cmp(*p);
+            if (result != cr_result)
               return std::make_pair(p, p);
           }
         }
 
         /**
-         * @brief Find the boundry defined by @p index and @p comparator
+         * @brief Find the boundary defined by @p index and @p comparator
          * @tparam Reference Type of reference to rbtree_node, should be
          * `rbtree_node &` or `const rbtree_node &`.
          * @tparam Comparator Type of comparator
@@ -1061,16 +1059,17 @@ namespace lanxc
          * @param index The specified index to find the boundary
          * @param comparator The comparator used to define the boundary
          *
-         * The boundry is defined in such way:  each node in the left part
+         * The boundary is defined in such way:  each node in the left part
          * has a index value `v` where `comparator(v, index)` is `true`; while
          * each node in right part has index value `v` where
          * `comparator(v, * index)` is `false`
          */
         template<typename Reference, typename Comparator>
-        static auto boundry(Reference &entry, const Index &index,
+        static auto boundary(Reference &entry, const Index &index,
                             const Comparator &comparator)
-        noexcept(is_comparator_noexcept)
-        -> std::pair<decltype(std::addressof(entry)), decltype(std::addressof(entry))>
+            noexcept(is_comparator_noexcept)
+            -> std::pair<decltype(std::addressof(entry)),
+                         decltype(std::addressof(entry))>
         {
           auto *p = &entry;
 
@@ -1082,12 +1081,12 @@ namespace lanxc
               p = p->get_root_node_from_container_node();
           }
 
-          auto cmper = [&index, &comparator] (Reference &node) noexcept -> bool
+          auto cmp = [&index, &comparator] (Reference &node) noexcept -> bool
           {
             return comparator(node.internal_get_index(), index);
           };
 
-          bool hint_result = cmper(*p);
+          bool hint_result = cmp(*p);
 
           if (hint_result)
           {
@@ -1095,7 +1094,7 @@ namespace lanxc
             {
               if (p == p->m_p->m_l)
               {
-                if (cmper(*p->m_p))
+                if (cmp(*p->m_p))
                 {
                   p = p->m_p;
                   continue;
@@ -1104,7 +1103,7 @@ namespace lanxc
 
               if (!p->m_r->m_is_container)
               {
-                if (cmper(*p->m_r)) p = p->m_r;
+                if (cmp(*p->m_r)) p = p->m_r;
                 else break;
               }
               else
@@ -1119,7 +1118,7 @@ namespace lanxc
             {
               if (p == p->m_p->m_r)
               {
-                if (!cmper(*p->m_p))
+                if (!cmp(*p->m_p))
                 {
                   p = p->m_p;
                   continue;
@@ -1128,7 +1127,7 @@ namespace lanxc
 
               if (!p->m_l->m_is_container)
               {
-                if (!cmper(*p->m_l)) p = p->m_l;
+                if (!cmp(*p->m_l)) p = p->m_l;
                 else break;
               }
               else
@@ -1150,7 +1149,7 @@ namespace lanxc
               if (p->m_has_l) p = p->m_l;
               else return std::make_pair(p->m_l, p);
             }
-            hint_result = cmper(*p);
+            hint_result = cmp(*p);
           }
         }
 
@@ -1158,7 +1157,7 @@ namespace lanxc
         find(const_reference e, const Index &i, index_policy::backmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, nrcomparator_type()).first;
+          auto *p = boundary(e, i, cr_comparator_type()).first;
 
           if (equal_test(p->internal_get_index(), i))
             return p;
@@ -1170,7 +1169,7 @@ namespace lanxc
         find(const_reference e, const Index &i, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, comparator_type()).second;
+          auto *p = boundary(e, i, comparator_type()).second;
 
           if (equal_test(p->internal_get_index(), i))
             return p;
@@ -1194,7 +1193,7 @@ namespace lanxc
         find(reference e, const Index &i, index_policy::backmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, nrcomparator_type()).first;
+          auto *p = boundary(e, i, cr_comparator_type()).first;
 
           if (equal_test(p->internal_get_index(), i))
             return p;
@@ -1206,7 +1205,7 @@ namespace lanxc
         find(reference e, const Index &i, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto *p = boundry(e, i, comparator_type()).second;
+          auto *p = boundary(e, i, comparator_type()).second;
 
           if (equal_test(p->internal_get_index(), i))
             return p;
@@ -1230,45 +1229,45 @@ namespace lanxc
          * @brief Get the first node in the tree whose index is not less than
          * specified value
          * @param entry Entry node for search
-         * @param index The specified value for searching the lower boundry
+         * @param index The specified value for searching the lower boundary
          */
         static pointer
         lower_bound(reference entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, comparator_type()).second; }
+        { return boundary(entry, index, comparator_type()).second; }
 
         /**
          * @brief Get the first node in the tree whose index is not less than
          * specified value
          * @param entry Entry node for search
-         * @param index The specified value for searching the lower boundry
+         * @param index The specified value for searching the lower boundary
          */
         static const_pointer
         lower_bound(const_reference entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, comparator_type()).second; }
+        { return boundary(entry, index, comparator_type()).second; }
 
         /**
          * @brief Get the first node in the tree whose index is greater than
          * specified value
          * @param entry Entry node for search
-         * @param index The specified value for searching the upper boundry
+         * @param index The specified value for searching the upper boundary
          */
         static pointer
         upper_bound(reference &entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, nrcomparator_type()).second; }
+        { return boundary(entry, index, cr_comparator_type()).second; }
 
         /**
          * @brief Get the first node in the tree whose index is greater than
          * specified value
          * @param entry Entry node for search
-         * @param index The specified value for searching the upper boundry
+         * @param index The specified value for searching the upper boundary
          */
         static const_pointer
         upper_bound(const_reference entry, const Index &index)
         noexcept(is_comparator_noexcept)
-        { return boundry(entry, index, nrcomparator_type()).second; }
+        { return boundary(entry, index, cr_comparator_type()).second; }
 
         /**
          * @brief Insert @p n to a tree via @p e
@@ -1283,8 +1282,8 @@ namespace lanxc
         insert(reference e, reference n, index_policy::backmost)
         noexcept(is_comparator_noexcept)
         {
-          auto p = boundry(e, n.internal_get_index(),
-                           nrcomparator_type());
+          auto p = boundary(e, n.internal_get_index(),
+                           cr_comparator_type());
           if (p.first == p.second)
             p.first->insert_root_node(&n);
           else
@@ -1305,7 +1304,7 @@ namespace lanxc
         insert(reference e, reference n, index_policy::frontmost)
         noexcept(is_comparator_noexcept)
         {
-          auto p = boundry(e, n.internal_get_index(), comparator_type());
+          auto p = boundary(e, n.internal_get_index(), comparator_type());
           if (p.first == p.second)
             p.first->insert_root_node(&n);
           else
@@ -1320,7 +1319,7 @@ namespace lanxc
          * @returns pointer to @p n
          * @note User code is responsible to ensure @p e is already inserted
          * into a rbtree or is the container node of an rbtree. @n will be
-         * inserted once a suitable position is found without checkng index
+         * inserted once a suitable position is found without checking index
          * duplication
          */
         static pointer
@@ -1403,7 +1402,7 @@ namespace lanxc
         node_pointer m_r;           /** < @brief Right child or successor */
         bool m_is_red;              /** < @brief Is red node */
         const bool m_is_container;  /** < @brief Is container node */
-        bool m_has_l;               /** < @breef If this node has left chlid */
+        bool m_has_l;               /** < @brief If this node has left child */
         bool m_has_r;               /** < @brief If this node has right child */
       };
 
@@ -1541,10 +1540,6 @@ namespace lanxc
       using tag_sfinae
           = typename std::enable_if<std::is_base_of<
               base_node<tag>, rbtree_node>::value, base_node<tag>>::type;
-
-      template<typename ...>
-      struct helper_tuple
-      { };
 
       template<typename Policy>
       constexpr static bool check_policy_list(Policy)
