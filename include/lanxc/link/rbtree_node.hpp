@@ -1478,16 +1478,16 @@ namespace lanxc
               typename base_node::config::default_insert_policy());
       }
 
-      template<typename InsertPolicy, typename ...Arguments>
+      template<typename InsertPolicy>
       insert_policy_sfinae<InsertPolicy>
-      set_index_explicit(InsertPolicy policy, Arguments && ...arguments)
+      set_index_explicit(Index index)
       noexcept
       {
         auto hint = base_node::unlink_for_hint();
         detail::index<Index>::m_index
-          = Index(std::forward<Arguments>(arguments)...);
+          = Index(std::move(index));
         if (hint)
-          base_node::insert(*hint, *this, policy);
+          base_node::insert(*hint, *this, InsertPolicy());
       }
 
       base_node &get_node() noexcept
@@ -1644,9 +1644,9 @@ namespace lanxc
           = Index(std::forward<Arguments>(arguments)...);
       }
 
-      template<typename ...Policies, typename ...Arguments>
+      template<typename ...Policies>
       auto
-      set_index_explicit(std::tuple<Policies...>, Arguments && ...arguments)
+      set_index_explicit(Index index)
       noexcept -> typename std::enable_if<
           sizeof...(Policies) == (sizeof...(Tags))
           && check_policy_tuple(std::tuple<Policies...>())>::type
@@ -1654,8 +1654,8 @@ namespace lanxc
         index_explicit_setter<
             std::tuple<Tags...>,
             std::tuple<Policies...>,
-            Arguments...
-        >::execute(*this, std::forward<Arguments>(arguments)...);
+            Index
+        >::execute(*this, std::move(index));
       }
 
     private:

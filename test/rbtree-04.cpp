@@ -59,7 +59,7 @@ int main()
 
   for (node &x : vn)
   {
-    x.set_index_explicit(std::tuple<index_policy::frontmost, index_policy::backmost>(), engine());
+    x.set_index_explicit<index_policy::frontmost, index_policy::backmost>(engine());
   }
   assert(std::is_sorted(tree.begin(), tree.end()));
   assert(std::is_sorted(tree2.begin(), tree2.end()));
