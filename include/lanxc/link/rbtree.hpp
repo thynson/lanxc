@@ -25,6 +25,7 @@
 
 #include <iterator>
 #include <type_traits>
+#include <algorithm>
 
 namespace lanxc
 {
