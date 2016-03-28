@@ -49,12 +49,14 @@ namespace lanxc
     noexcept(std::is_nothrow_move_assignable<T>::value)
     {
       m_value = std::move(other.m_value);
+      return *this;
     }
 
     unique_tuple & operator = (const unique_tuple &other)
     noexcept(std::is_nothrow_move_assignable<T>::value)
     {
       m_value = std::move(other.m_value);
+      return *this;
     }
 
     static T &get(unique_tuple<T> &x) noexcept
@@ -78,20 +80,18 @@ namespace lanxc
   {
 
   private:
-    template<bool P, bool ...Q>
-    struct helper
-    {
-      constexpr static bool value = P && helper<Q...>::value;
-    };
-    template<bool P>
-    struct helper<P>
-    {
-      constexpr static bool value = P;
-    };
+    template<typename T>
+    constexpr bool nothrow_helper(T)
+    { return std::is_nothrow_constructible<T>::value;}
+
+    template<typename T, typename ...R>
+    constexpr bool helper(T t, R...r)
+    { return nothrow_helper(t) && nothrow_helper(r...); }
+
 
   public:
     unique_tuple(T ...value)
-    noexcept(helper<std::is_nothrow_move_constructible<T>::value...>::value)
+    noexcept(nothrow_helper(value...))
         : unique_tuple<T>(value)...
     { }
 
