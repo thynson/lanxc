@@ -485,7 +485,7 @@ namespace lanxc
        * @param p policy
        */
       template<typename InputIterator, typename InsertPolicy = default_insert_policy>
-      insert_policy_sfinae<InsertPolicy, iterator>
+      insert_policy_sfinae<InsertPolicy>
       insert(InputIterator b, InputIterator e, InsertPolicy p = InsertPolicy())
           noexcept(node_type::is_comparator_noexcept)
       {
