@@ -32,7 +32,7 @@
  * @brief Function Object
  * @author LAN Xingcan
  *
- * This file implements a morden function object against standard
+ * This file implements a modern function object against standard
  * std::function
  */
 
@@ -62,9 +62,9 @@ namespace lanxc
 
     /*
      * The size of function object is equals to size of 4 pointers. The first
-     * memeber of function will be a pointer point to a function which
-     * forwards arguments to the real functor; the second member is a implment
-     * function pointer the remains space is equals to size of 2 pointers.
+     * member will be a pointer point to a function which forwards arguments
+     * to the real functor; the second member is a pointer point to implement
+     * details. And the remains space is equals to size of 2 pointers.
      */
 
     using functor_padding = void *[3];
@@ -310,22 +310,22 @@ namespace lanxc
 
   /**
    * @brief An implementation of function object alternative (but not
-   *        compatitable) to std::function in spirit of morden C++
+   *        compatible) to std::function in spirit of modern C++
    * @author LAN Xingcan
    *
    * Since @p std::function was born in pre-C++11 era, where concept of
-   * move-sematics construction was not yet presented, it requires functor
-   * satisify copy-construtible rather than move-construtible. While in C++14,
+   * move-semantic construction was not yet presented, it requires functor
+   * satisfy copy-constructible rather than move-constructible. While in C++14,
    * lambda capture initialization expression was introduced, a lambda
    * captured an move-constructible but not copy-constructible object can not
    *  be accepted by @p std::function.
    * @code
-   * MoveConstrutible obj; // but not copy-constructible
+   * MoveConstructible obj; // but not copy-constructible
    * std::function<void()> = [obj=std::move(obj)] () { obj(); };   // error
    * lanxc::function<void()> = [obj=std::move(obj)] () { obj(); }; // fine
    * @endcode
    * This implementation avoid the std::function design defect, which requires
-   * functor be move-construtible instead.
+   * functor be move-constructible instead.
    *
    * @ingroup functor
    */
@@ -421,16 +421,16 @@ namespace lanxc
     }
 
     /**
-     * @breif Move constructor
+     * @brief Move constructor
      */
     function(function &&other) noexcept
-        : function(nullptr)
+        : function()
     { swap(other); }
 
     function(const function &) = delete;
 
     /**
-     * @breif Destructor
+     * @brief Destructor
      */
     ~function()
     {
@@ -452,7 +452,7 @@ namespace lanxc
     function &operator =(const function &other) = delete;
 
     /**
-     * @breif Test if this function is initialized
+     * @brief Test if this function is initialized
      */
     explicit operator bool() const noexcept
     { return m_caller != noop_function; }
@@ -501,7 +501,7 @@ namespace lanxc
     }
 
     /**
-     * @breif Reconstruct this function from functor object or (member)
+     * @brief Reconstruct this function from functor object or (member)
      * function pointer with specified allocator
      */
     template<typename Function, typename Allocator=std::allocator<void>>
