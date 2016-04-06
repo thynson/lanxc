@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_INTRUS_HPP_INCLUDED
-#define LANXC_INTRUS_HPP_INCLUDED
+#ifndef LANXC_LINK_HPP_INCLUDED
+#define LANXC_LINK_HPP_INCLUDED
 
 /**
  * @defgroup intrusive_data_structure Intrusive Data Structure
