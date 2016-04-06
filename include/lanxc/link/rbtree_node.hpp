@@ -1537,9 +1537,13 @@ namespace lanxc
           = typename detail::insert_policy_sfinae<Policy, Result>;
 
       template<typename tag>
-      using tag_sfinae
-          = typename std::enable_if<std::is_base_of<
-              base_node<tag>, rbtree_node>::value, base_node<tag>>::type;
+      static constexpr bool check_tag() noexcept
+      { return std::is_base_of<base_node<tag>, rbtree_node>::value; }
+
+      template<typename tag>
+      using base_node_sfinae
+          = typename std::enable_if<check_tag<tag>(),
+              base_node<tag>>::type;
 
       template<typename Policy>
       constexpr static bool check_policy_list(Policy)
@@ -1624,10 +1628,7 @@ namespace lanxc
       {}
 
       template<typename tag>
-      typename std::enable_if<
-        std::is_base_of<base_node<tag>, rbtree_node>::value,
-        base_node<tag>>::type &
-      get_node() noexcept
+      base_node_sfinae<tag> &get_node() noexcept
       { return *this; }
 
 
@@ -1677,9 +1678,12 @@ namespace lanxc
           = typename detail::insert_policy_sfinae<Policy, Result>;
 
       template<typename tag>
-      using tag_sfinae
-          = typename std::enable_if<std::is_base_of<
-              base_node<tag>, rbtree_node>::value, base_node<tag>>::type;
+      static constexpr bool check_tag() noexcept
+      { return std::is_base_of<base_node<tag>, rbtree_node>::value; }
+
+      template<typename tag>
+      using base_node_sfinae
+          = typename std::enable_if<check_tag<tag>(), base_node<tag>>::type;
 
     public:
 
@@ -1690,10 +1694,7 @@ namespace lanxc
       {}
 
       template<typename tag>
-      typename std::enable_if<
-        std::is_base_of<base_node<tag>, rbtree_node>::value,
-        base_node<tag>>::type &
-      get_node() noexcept
+      base_node_sfinae<tag> &get_node() noexcept
       { return *this; }
     };
 
