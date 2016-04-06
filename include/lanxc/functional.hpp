@@ -434,12 +434,16 @@ namespace lanxc
     Function m_function;
 
     template<typename ...Arguments>
+    constexpr static bool is_valid_arguments() noexcept
+    { return (sizeof...(Arguments) >= sizeof...(OmittedArgument))
+         && test<std::tuple<OmittedArgument...>,
+            typename helper<sizeof...(Arguments) - sizeof...(OmittedArgument),
+                Arguments...>::type>::value;
+    }
+
+    template<typename ...Arguments>
     using omit_argument_sfinae
-      = typename std::enable_if<
-          sizeof ...(Arguments) >= sizeof ... (OmittedArgument)
-            && test<std::tuple<OmittedArgument...>,
-              typename helper<sizeof...(Arguments) - sizeof...(OmittedArgument),
-                  Arguments...>::type>::value,
+      = typename std::enable_if<is_valid_arguments<Arguments...>(),
           typename invoke_helper<
               sizeof...(Arguments) - sizeof...(OmittedArgument),
               Function,
