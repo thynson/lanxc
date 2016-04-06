@@ -1228,7 +1228,7 @@ namespace lanxc
         /**
          * @brief Get the first node in the tree whose index is not less than
          * specified value
-         * @param entry Entry node for search
+         * @param entry Entry node where search begins
          * @param index The specified value for searching the lower boundary
          */
         static pointer
@@ -1239,7 +1239,7 @@ namespace lanxc
         /**
          * @brief Get the first node in the tree whose index is not less than
          * specified value
-         * @param entry Entry node for search
+         * @param entry Entry node where search begins
          * @param index The specified value for searching the lower boundary
          */
         static const_pointer
@@ -1250,7 +1250,7 @@ namespace lanxc
         /**
          * @brief Get the first node in the tree whose index is greater than
          * specified value
-         * @param entry Entry node for search
+         * @param entry Entry node where search begins
          * @param index The specified value for searching the upper boundary
          */
         static pointer
@@ -1261,7 +1261,7 @@ namespace lanxc
         /**
          * @brief Get the first node in the tree whose index is greater than
          * specified value
-         * @param entry Entry node for search
+         * @param entry Entry node where search begins
          * @param index The specified value for searching the upper boundary
          */
         static const_pointer
