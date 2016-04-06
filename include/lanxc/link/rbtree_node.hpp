@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 LAN Xingcan
+ * Copyright (C) 2015,2016 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -1154,7 +1154,7 @@ namespace lanxc
         }
 
         static const_pointer
-        find(const_reference e, const Index &i, index_policy::backmost)
+        find(const_reference e, const Index &i, index_policy::back)
         noexcept(is_comparator_noexcept)
         {
           auto *p = boundary(e, i, cr_comparator_type()).first;
@@ -1166,7 +1166,7 @@ namespace lanxc
         }
 
         static const_pointer
-        find(const_reference e, const Index &i, index_policy::frontmost)
+        find(const_reference e, const Index &i, index_policy::front)
         noexcept(is_comparator_noexcept)
         {
           auto *p = boundary(e, i, comparator_type()).second;
@@ -1190,7 +1190,7 @@ namespace lanxc
         }
 
         static pointer
-        find(reference e, const Index &i, index_policy::backmost)
+        find(reference e, const Index &i, index_policy::back)
         noexcept(is_comparator_noexcept)
         {
           auto *p = boundary(e, i, cr_comparator_type()).first;
@@ -1202,7 +1202,7 @@ namespace lanxc
         }
 
         static pointer
-        find(reference e, const Index &i, index_policy::frontmost)
+        find(reference e, const Index &i, index_policy::front)
         noexcept(is_comparator_noexcept)
         {
           auto *p = boundary(e, i, comparator_type()).second;
@@ -1279,7 +1279,7 @@ namespace lanxc
          * duplicates others, @n will be put in a place behind them
          */
         static pointer
-        insert(reference e, reference n, index_policy::backmost)
+        insert(reference e, reference n, index_policy::back)
         noexcept(is_comparator_noexcept)
         {
           auto p = boundary(e, n.internal_get_index(),
@@ -1301,7 +1301,7 @@ namespace lanxc
          * duplicates others, @n will be put in a place in front of them
          */
         static pointer
-        insert(reference e, reference n, index_policy::frontmost)
+        insert(reference e, reference n, index_policy::front)
         noexcept(is_comparator_noexcept)
         {
           auto p = boundary(e, n.internal_get_index(), comparator_type());

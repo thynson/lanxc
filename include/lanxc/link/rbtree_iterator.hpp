@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 LAN Xingcan
+ * Copyright (C) 2015,2016 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -28,7 +28,7 @@ namespace lanxc
   {
 
     /**
-     * @brief Iterator for rbtrree
+     * @brief Iterator for rbtree
      * @ingroup intrusive_rbtree
      */
     template<typename Index, typename Node, typename Tag>

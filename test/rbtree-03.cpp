@@ -57,14 +57,14 @@ int main()
   rbtree<int, node> t;
 
   for (auto &n : l)
-    t.insert(n, index_policy::backmost());
+    t.insert(n, index_policy::back());
 
   for (int i = 0; i < N/M; i++)
   {
     cout << "finding: " << i << endl;
     for (auto iter = t.cbegin(); iter != t.cend(); ++iter)
     {
-      auto x = t.find(iter, i, index_policy::frontmost());
+      auto x = t.find(iter, i, index_policy::front());
       assert (x != t.end());
       assert (x->get_index() == i);
     }
@@ -86,7 +86,7 @@ int main()
     cout << "finding: " << i << endl;
     for (auto iter = t.cbegin(); iter != t.cend(); ++iter)
     {
-      auto x = t.find(iter, i, index_policy::backmost());
+      auto x = t.find(iter, i, index_policy::back());
       assert (x != t.end());
       assert (x->get_index() == i);
     }

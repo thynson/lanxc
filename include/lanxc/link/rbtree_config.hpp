@@ -37,7 +37,7 @@ namespace lanxc
     class rbtree_config<void>
     {
     public:
-      /** @brief Comparator adapter, must meets requiement of strict weak
+      /** @brief Comparator adapter, must meets requirement of strict weak
        * ordering binary predicate */
       template<typename T> using comparator = less<T>;
 

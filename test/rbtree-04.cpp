@@ -50,8 +50,8 @@ int main()
   std::mt19937 engine;
   for (node &x : vn)
   {
-    tree.insert(x, index_policy::backmost());
-    tree2.insert(x, index_policy::frontmost());
+    tree.insert(x, index_policy::back());
+    tree2.insert(x, index_policy::front());
   }
 
   assert(std::is_sorted(tree.begin(), tree.end()));
@@ -59,7 +59,7 @@ int main()
 
   for (node &x : vn)
   {
-    x.set_index_explicit<index_policy::frontmost, index_policy::backmost>(engine());
+    x.set_index_explicit<index_policy::front, index_policy::back>(engine());
   }
   assert(std::is_sorted(tree.begin(), tree.end()));
   assert(std::is_sorted(tree2.begin(), tree2.end()));

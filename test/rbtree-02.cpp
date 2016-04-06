@@ -46,7 +46,7 @@ int main()
   node vn[100];
   std::mt19937 engine;
   for (node &x : vn)
-    tree.insert(x, index_policy::backmost());
+    tree.insert(x, index_policy::back());
 
   for (node &x : vn)
   {
@@ -57,7 +57,7 @@ int main()
   tree.clear();
 
   for (node &x : vn)
-    tree.insert(x, index_policy::frontmost());
+    tree.insert(x, index_policy::front());
   for (node &x : vn)
     x.set_index(engine());
   assert(std::is_sorted(tree.begin(), tree.end()));

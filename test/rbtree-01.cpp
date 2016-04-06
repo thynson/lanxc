@@ -83,18 +83,18 @@ void test_insert_policy()
 
   t.clear();
 
-  t.insert(l, index_policy::backmost());
-  t.insert(m, index_policy::backmost());
-  t.insert(n, index_policy::backmost());
+  t.insert(l, index_policy::back());
+  t.insert(m, index_policy::back());
+  t.insert(n, index_policy::back());
 
   assert (t.size() == 3);
   assert (&t.front() == &l && &t.back() == &n);
 
   t.clear();
 
-  t.insert(n, index_policy::frontmost());
-  t.insert(m, index_policy::frontmost());
-  t.insert(l, index_policy::frontmost());
+  t.insert(n, index_policy::front());
+  t.insert(m, index_policy::front());
+  t.insert(l, index_policy::front());
 
   assert (&t.front() == &l && &t.back() == &n);
 

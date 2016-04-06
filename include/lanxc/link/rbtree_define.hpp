@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 LAN Xingcan
+ * Copyright (C) 2015,2016 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -54,25 +54,25 @@ namespace lanxc
        * @brief Pick the first node in equals range when doing lookup or
        * place node as front as possible when doing insert
        */
-      struct frontmost {};
+      struct front {};
 
       /**
        * @brief Pick the last node in equals range when doing lookup or
        * place node as back as possible when doing insert
        */
-      struct backmost {};
+      struct back {};
 
       /**
        * @brief Pick the node found in first time when doing lookup; Or
        * place node as soon as possible once proper position was found,
-       * despiting the position of other equivalent nodes, when doing insert
+       * in spite of the position of other equivalent nodes, when doing insert
        */
       struct nearest {};
 
       /** @} */
 
 
-      /** @brief policy varifier */
+      /** @brief policy validator */
       template<typename InsertPolicy>
       struct is_insert_policy
       { static constexpr bool value = false; };
@@ -90,11 +90,11 @@ namespace lanxc
       { static constexpr bool value = true; };
 
       template<>
-      struct is_insert_policy<frontmost>
+      struct is_insert_policy<front>
       { static constexpr bool value = true; };
 
       template<>
-      struct is_insert_policy<backmost>
+      struct is_insert_policy<back>
       { static constexpr bool value = true; };
 
       template<>
@@ -102,11 +102,11 @@ namespace lanxc
       { static constexpr bool value = true; };
 
       template<>
-      struct is_lookup_policy<frontmost>
+      struct is_lookup_policy<front>
       { static constexpr bool value = true; };
 
       template<>
-      struct is_lookup_policy<backmost>
+      struct is_lookup_policy<back>
       { static constexpr bool value = true; };
 
       template<>
