@@ -24,7 +24,6 @@
 #include <type_traits>
 #include <functional>
 #include <exception>
-#include <typeinfo>
 #include <memory>
 
 /**
@@ -112,7 +111,6 @@ namespace lanxc
     {
       move,
       destroy,
-      typeinfo,
       target,
       const_target,
     };
@@ -158,7 +156,6 @@ namespace lanxc
             is_inplace_allocated<Function>::value, std::true_type>::type> : manager
     {
       Function m_function;
-      static const std::type_info &typeinfo;
 
       static std::pair<void *, const void *>
       implement(manager *mgr, const manager *cmgr,  void *args, command cmd) noexcept
@@ -172,8 +169,6 @@ namespace lanxc
         case command::destroy:
           self->~manager_implement();
           return std::pair<void *, const void*>(nullptr, nullptr);;
-        case command::typeinfo:
-          return std::pair<void *, const void*>(nullptr, &typeinfo);
         case command::target:
           return std::pair<void *, const void*>(&self->m_function, nullptr);
         case command::const_target:
@@ -239,8 +234,6 @@ namespace lanxc
         case command::destroy:
           self->~manager_implement();
           return std::pair<void *, const void *>(nullptr, nullptr);
-        case command::typeinfo:
-          return std::pair<void *, const void*>(nullptr, &typeinfo);
         case command::target:
           return std::pair<void *, const void*>(&self->m_function, nullptr);
         case command::const_target:
@@ -295,18 +288,6 @@ namespace lanxc
     };
 
   };
-
-  template<typename Function, typename Allocator>
-  const std::type_info &function<void>::manager_implement<
-    Function, Allocator, typename std::enable_if<
-        function<void>::is_inplace_allocated<Function>::value,
-            std::true_type>::type>::typeinfo = typeid(Function);
-
-  template<typename Function, typename Allocator>
-  const std::type_info &function<void>::manager_implement<
-    Function, Allocator, typename std::enable_if<
-        !function<void>::is_inplace_allocated<Function>::value,
-            std::false_type>::type>::typeinfo = typeid(Function);
 
   /**
    * @brief An implementation of function object alternative (but not
@@ -371,7 +352,7 @@ namespace lanxc
      * Construct an uninitialized function object
      */
     function() noexcept
-        : function(nullptr)
+        : m_caller(noop_function)
     { }
 
     /**
@@ -379,7 +360,7 @@ namespace lanxc
      * Construct an uninitialized function object
      */
     function(std::nullptr_t) noexcept
-        : m_caller(noop_function)
+        : function()
     { }
 
     /**
@@ -388,7 +369,7 @@ namespace lanxc
      */
     template<typename Allocator>
     function(std::allocator_arg_t, const Allocator &, std::nullptr_t) noexcept
-        : function(nullptr)
+        : function()
     { }
 
     /**
@@ -509,48 +490,6 @@ namespace lanxc
       noexcept(detail::is_inplace_allocated<Function>::value)
     {
       function(std::allocator_arg, a, std::move(f)).swap(*this);
-    }
-
-    /**
-     * @brief Get type info of underlying functor or function pointer
-     */
-    const std::type_info &target_type() const noexcept
-    {
-      if (m_caller == noop_function)
-        return typeid(nullptr);
-      auto ret = (*cast()->m_implement)(nullptr, nullptr, nullptr,
-          detail::command::typeinfo).second;
-      return *static_cast<const std::type_info *>(ret);
-    }
-
-    /**
-     * @brief Get pointer to underlying functor or function pointer
-     */
-    template<typename Target>
-    const Target *target() const noexcept
-    {
-      if (m_caller == noop_function)
-        return nullptr;
-      if (typeid(Target) == target_type())
-        return nullptr;
-      auto ret = (*cast()->m_implement)(nullptr, nullptr, nullptr,
-          detail::command::const_target).second;
-      return static_cast<const Target *>(ret);
-    }
-
-    /**
-     * @brief Get pointer to underlying functor or function pointer
-     */
-    template<typename Target>
-    Target *target() noexcept
-    {
-      if (m_caller == noop_function)
-        return nullptr;
-      if (typeid(Target) == target_type())
-        return nullptr;
-      auto ret = (*cast()->m_implement)(nullptr, nullptr, nullptr,
-          detail::command::const_target).first;
-      return static_cast<Target *>(ret);
     }
 
   private:
