@@ -27,7 +27,7 @@ namespace lanxc
 
 
     /**
-     * @brief Bidirectional linked list default configurationb
+     * @brief Bidirectional linked list default configurations
      * @ingroup intrusive_list
      */
     template<>
