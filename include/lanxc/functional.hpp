@@ -27,9 +27,9 @@
  * @author LAN Xingcan
  *
  * This file provides provides alternative functors implementations against
- * standard one, which is lack of noexcept deduction, as well as C++14
- * Transparent Operator Functor (N3421) feature added; and some interesting
- * stuff for functional programming will also be introduced here.
+ * standard one, which adds noexcept deduction, constexpr specifier, as well
+ * as C++14 Transparent Operator Functor (N3421) feature added; and some
+ * interesting stuff for functional programming will also be introduced here.
  *
  * @defgroup functional Functors improved
  * @{
@@ -41,16 +41,16 @@ namespace lanxc
   template<typename T = void>
     struct less : public std::binary_function<T, T, bool>
     {
-      bool operator () (const T &lhs, const T &rhs)
+      constexpr bool operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs < rhs))
       { return lhs < rhs; }
     };
 
   template<>
-    struct less<void> : public std::binary_function<void, void, bool>
+    struct less<void>
     {
       template<typename LeftType, typename RightType>
-      bool operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr bool operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs < rhs))
       { return lhs < rhs; }
     };
@@ -64,10 +64,10 @@ namespace lanxc
     };
 
   template<>
-    struct greater<void> : public std::binary_function<void, void, bool>
+    struct greater<void>
     {
       template<typename LeftType, typename RightType>
-      bool operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr bool operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs > rhs))
       { return lhs > rhs; }
     };
@@ -75,16 +75,16 @@ namespace lanxc
   template<typename T = void>
     struct less_equal : public std::binary_function<T, T, bool>
     {
-      bool operator () (const T &lhs, const T &rhs)
+      constexpr bool operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs <= rhs))
       { return lhs <= rhs; }
     };
 
   template<>
-    struct less_equal<void> : public std::binary_function<void, void, bool>
+    struct less_equal<void>
     {
       template<typename LeftType, typename RightType>
-      bool operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr bool operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs <= rhs))
       { return lhs <= rhs; }
     };
@@ -92,16 +92,16 @@ namespace lanxc
   template<typename T = void>
     struct greater_equal : public std::binary_function<T, T, bool>
     {
-      bool operator () (const T &lhs, const T &rhs)
+      constexpr bool operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs >= rhs))
       { return lhs >= rhs; }
     };
 
   template<>
-    struct greater_equal<void> : public std::binary_function<void, void, bool>
+    struct greater_equal<void>
     {
       template<typename LeftType, typename RightType>
-      bool operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr bool operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs >= rhs))
       { return lhs >= rhs; }
     };
@@ -109,7 +109,7 @@ namespace lanxc
   template<typename T = void>
     struct equals_to : public std::binary_function<T, T, bool>
     {
-      bool operator () (const T &lhs, const T &rhs)
+      constexpr bool operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs == rhs))
       { return lhs == rhs; }
     };
@@ -118,7 +118,7 @@ namespace lanxc
     struct equals_to<void>
     {
       template<typename LeftType, typename RightType>
-      bool operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr bool operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs == rhs))
       { return lhs == rhs; }
     };
@@ -126,16 +126,16 @@ namespace lanxc
   template<typename T = void>
     struct not_equals_to : public std::binary_function<T, T, bool>
     {
-      bool operator () (const T &lhs, const T &rhs)
+      constexpr bool operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs != rhs))
       { return lhs != rhs; }
     };
 
   template<>
-    struct not_equals_to<void> : public std::binary_function<void, void, void>
+    struct not_equals_to<void>
     {
       template<typename LeftType, typename RightType>
-      bool operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr bool operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs != rhs))
       { return lhs != rhs; }
     };
@@ -143,16 +143,16 @@ namespace lanxc
   template<typename T = void>
     struct plus : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs + rhs))
       { return lhs + rhs; }
     };
 
   template<>
-    struct plus<void> : public std::binary_function<void, void, void>
+    struct plus<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs + rhs))
         -> decltype(lhs + rhs)
       { return lhs + rhs; }
@@ -162,16 +162,16 @@ namespace lanxc
   template<typename T = void>
     struct minus : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs - rhs))
       { return lhs - rhs; }
     };
 
   template<>
-    struct minus<void> : public std::binary_function<void, void, void>
+    struct minus<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs - rhs))
         -> decltype(lhs - rhs)
       { return lhs - rhs; }
@@ -180,16 +180,16 @@ namespace lanxc
   template<typename T = void>
     struct multiplies : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs * rhs))
       { return lhs * rhs; }
     };
 
   template<>
-    struct multiplies<void> : public std::binary_function<void, void, void>
+    struct multiplies<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs * rhs))
         -> decltype(lhs * rhs)
       { return lhs * rhs; }
@@ -198,16 +198,16 @@ namespace lanxc
   template<typename T = void>
     struct devides : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs / rhs))
       { return lhs / rhs; }
     };
 
   template<>
-    struct devides<void> : public std::binary_function<void, void, void>
+    struct devides<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs / rhs))
         -> decltype(lhs / rhs)
       { return lhs / rhs; }
@@ -216,16 +216,16 @@ namespace lanxc
   template<typename T = void>
     struct modules : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs % rhs))
       { return lhs % rhs; }
     };
 
   template<>
-    struct modules<void> : public std::binary_function<void, void, void>
+    struct modules<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs % rhs))
         -> decltype(lhs % rhs)
       { return lhs % rhs; }
@@ -234,16 +234,16 @@ namespace lanxc
   template<typename T = void>
     struct negate: public std::unary_function<T, T>
     {
-      T operator () (const T &x)
+      constexpr T operator () (const T &x)
         const noexcept(noexcept(-x))
       { return -x; }
     };
 
   template<>
-    struct negate<void> : public std::unary_function<void, void>
+    struct negate<void>
     {
       template<typename T>
-      auto operator () (const T &x)
+      constexpr auto operator () (const T &x)
         const noexcept(noexcept(-x))
         -> decltype(-x)
       { return -x; }
@@ -252,17 +252,17 @@ namespace lanxc
   template<typename T = void>
     struct logical_and : public std::binary_function<T, T, bool>
     {
-      T operator () (const T &lhs,
+      constexpr T operator () (const T &lhs,
                                const T &rhs)
         const noexcept(noexcept(lhs && rhs))
       { return lhs && rhs; }
     };
 
   template<>
-    struct logical_and<void> : public std::binary_function<void, void, bool>
+    struct logical_and<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs && rhs))
         -> decltype(lhs && rhs)
       { return lhs && rhs; }
@@ -271,16 +271,16 @@ namespace lanxc
   template<typename T = void>
     struct logical_or : public std::binary_function<T, T, bool>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs || rhs))
       { return lhs || rhs; }
     };
 
   template<>
-    struct logical_or<void> : public std::binary_function<void, void, bool>
+    struct logical_or<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs || rhs))
         -> decltype(lhs || rhs)
       { return lhs || rhs; }
@@ -289,16 +289,16 @@ namespace lanxc
   template<typename T = void>
     struct logical_not : public std::unary_function<T, bool>
     {
-      T operator () (const T &x)
+      constexpr T operator () (const T &x)
         const noexcept(noexcept(!x))
       { return !x; }
     };
 
   template<>
-    struct logical_not<void> : public std::unary_function<void, bool>
+    struct logical_not<void>
     {
       template<typename T>
-      auto operator () (const T &x)
+      constexpr auto operator () (const T &x)
         const noexcept(noexcept(!x))
         -> decltype(!x)
       { return !x; }
@@ -307,16 +307,16 @@ namespace lanxc
   template<typename T = void>
     struct bit_and : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs & rhs))
       { return lhs & rhs; }
     };
 
   template<>
-    struct bit_and<void> : public std::binary_function<void, void, void>
+    struct bit_and<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs & rhs))
         -> decltype(lhs & rhs)
       { return lhs & rhs; }
@@ -325,16 +325,16 @@ namespace lanxc
   template<typename T = void>
     struct bit_or : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs | rhs))
       { return lhs | rhs; }
     };
 
   template<>
-    struct bit_or<void> : public std::binary_function<void, void, void>
+    struct bit_or<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs | rhs))
         -> decltype(lhs | rhs)
       { return lhs | rhs; }
@@ -343,16 +343,16 @@ namespace lanxc
   template<typename T = void>
     struct bit_xor : public std::binary_function<T, T, T>
     {
-      T operator () (const T &lhs, const T &rhs)
+      constexpr T operator () (const T &lhs, const T &rhs)
         const noexcept(noexcept(lhs ^ rhs))
       { return lhs ^ rhs; }
     };
 
   template<>
-    struct bit_xor<void> : public std::binary_function<void, void, void>
+    struct bit_xor<void>
     {
       template<typename LeftType, typename RightType>
-      auto operator () (const LeftType &lhs, const RightType &rhs)
+      constexpr auto operator () (const LeftType &lhs, const RightType &rhs)
         const noexcept(noexcept(lhs ^ rhs))
         -> decltype(lhs ^ rhs)
       { return lhs ^ rhs; }
