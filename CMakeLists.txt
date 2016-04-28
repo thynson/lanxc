@@ -19,25 +19,25 @@ target_compile_features(lanxc-core INTERFACE
     )
 
 target_include_directories(lanxc-core INTERFACE
-	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
-	)
+    )
 install(DIRECTORY include/lanxc DESTINATION include/lanxc)
 
 include(CMakePackageConfigHelpers)
 
 # Write version file to build dir
 write_basic_package_version_file(
-	"${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
-	VERSION 1.0
-	COMPATIBILITY AnyNewerVersion
-	)
+    "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
+    VERSION 1.0
+    COMPATIBILITY AnyNewerVersion
+    )
 
 # Install version file
 install(FILES
-	"${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
-	DESTINATION lib/cmake/lanxc-core
-	)
+    "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
+    DESTINATION lib/cmake/lanxc-core
+    )
 
 # Export targets
 install(TARGETS lanxc-core
@@ -45,10 +45,10 @@ install(TARGETS lanxc-core
     ARCHIVE DESTINATION lib)
 
 install(EXPORT lanxc-core-targets
-	FILE lanxc-core-targets.cmake
-	NAMESPACE lanxc::
-	DESTINATION lib/cmake/lanxc-core
-	)
+    FILE lanxc-core-targets.cmake
+    NAMESPACE lanxc::
+    DESTINATION lib/cmake/lanxc-core
+    )
 install(DIRECTORY include/lanxc DESTINATION include)
 
 # Package config file
@@ -56,35 +56,36 @@ configure_file("lanxc-core-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core
 
 # Install package config file
 install(FILES lanxc-core-config.cmake
-	DESTINATION lib/cmake/lanxc-core
-	)
+    DESTINATION lib/cmake/lanxc-core
+    )
 
 
 
 
 ##### Dummy target to makes IDEA happy
 add_library(lanxc-core-dummy STATIC EXCLUDE_FROM_ALL
-	"include/lanxc/type_traits.hpp"
-	"include/lanxc/function.hpp"
-	"include/lanxc/functional.hpp"
+    "include/lanxc/type_traits.hpp"
+    "include/lanxc/function.hpp"
+    "include/lanxc/future.hpp"
+    "include/lanxc/functional.hpp"
     "include/lanxc/unique_tuple.hpp"
-	"include/lanxc/link.hpp"
-	"include/lanxc/link/forward_list_config.hpp"
-	"include/lanxc/link/forward_list_define.hpp"
-	"include/lanxc/link/forward_list_node.hpp"
-	"include/lanxc/link/forward_list_iterator.hpp"
-	"include/lanxc/link/forward_list.hpp"
-	"include/lanxc/link/list_config.hpp"
-	"include/lanxc/link/list_define.hpp"
-	"include/lanxc/link/list_node.hpp"
-	"include/lanxc/link/list_iterator.hpp"
-	"include/lanxc/link/list.hpp"
-	"include/lanxc/link/rbtree_config.hpp"
-	"include/lanxc/link/rbtree_define.hpp"
-	"include/lanxc/link/rbtree_node.hpp"
-	"include/lanxc/link/rbtree_iterator.hpp"
-	"include/lanxc/link/rbtree.hpp"
-	"dummy.cpp")
+    "include/lanxc/link.hpp"
+    "include/lanxc/link/forward_list_config.hpp"
+    "include/lanxc/link/forward_list_define.hpp"
+    "include/lanxc/link/forward_list_node.hpp"
+    "include/lanxc/link/forward_list_iterator.hpp"
+    "include/lanxc/link/forward_list.hpp"
+    "include/lanxc/link/list_config.hpp"
+    "include/lanxc/link/list_define.hpp"
+    "include/lanxc/link/list_node.hpp"
+    "include/lanxc/link/list_iterator.hpp"
+    "include/lanxc/link/list.hpp"
+    "include/lanxc/link/rbtree_config.hpp"
+    "include/lanxc/link/rbtree_define.hpp"
+    "include/lanxc/link/rbtree_node.hpp"
+    "include/lanxc/link/rbtree_iterator.hpp"
+    "include/lanxc/link/rbtree.hpp"
+    "dummy.cpp")
 
 set_target_properties(lanxc-core-dummy PROPERTIES LINK_LANGUAGE CXX)
 
