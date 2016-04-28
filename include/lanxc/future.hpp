@@ -55,10 +55,22 @@ namespace lanxc
   public:
     const char *what() const noexcept override
     {
-      return "this future is invalid, possibly because .then() or .caught()"
-        " was already called for this future.";
+      return "this future is invalid, possibly because .then(), .caught()"
+        " or .commit() was already called for this future.";
     }
   };
+
+  class invalid_promise : public std::exception
+  {
+  public:
+    const char *what() const noexcept override
+    {
+      return "this promise is invalid, possibly because .set_result(),"
+          " .set_exception() or .set_exception_ptr() was called for"
+          " this promise.";
+    }
+  };
+
 
   template<typename T>
   struct is_future
@@ -85,18 +97,22 @@ namespace lanxc
 
     /**
      * @brief Fulfill this promise
+     * @note After calling this function, this promise becomes invalid
+     * @throws invalid_promise if this promise is invalid
      */
     inline void set_result(T ...value)
     {
-      if (!m_detail) return;
+      if (!m_detail) throw invalid_promise();
       m_detail->set_result(std::move(value)...);
       m_detail = nullptr;
     }
 
     /**
-     * @brief Cancel this promise with exception
+     * @brief Cancel this promise with an exception as reason
      * @tparam E Type of the exception
      * @param e The exception
+     * @note After calling this function, this promise becomes invalid
+     * @throws invalid_promise if this promise is invalid
      *
      * This function will cancel this promise and convert @p e into a
      * @a std::exception_ptr which can be caught by the corresponding
@@ -105,12 +121,23 @@ namespace lanxc
     template<typename E>
     inline void set_exception(E e)
     {
-      set_exception_ptr(std::make_exception_ptr(e));
+      if (!m_detail) throw invalid_promise();
+      m_detail->set_exception_ptr(std::make_exception_ptr(e));
+      m_detail = nullptr;
     }
 
+    /**
+     * @brief Cancel this promise with an exception pointer as reason
+     * @param e The exception pointer
+     * @note After calling this function, this promise becomes invalid
+     * @throws invalid_promise if this promise is invalid
+     *
+     * This function will cancel this promise and @p e will be caught
+     * by the corresponding `future`.
+     */
     inline void set_exception_ptr(std::exception_ptr e)
     {
-      if (!m_detail) return;
+      if (!m_detail) throw invalid_promise();
       m_detail->set_exception_ptr(e);
       m_detail = nullptr;
     }
@@ -151,7 +178,6 @@ namespace lanxc
 
       void set_exception_ptr(std::exception_ptr e) noexcept
       {
-        //m_disposer = [this, e]{ m_error_handler(e); };
         if (m_error_handler)
         {
           m_error_handler(e);
@@ -616,9 +642,9 @@ namespace lanxc
      * @param f The functor
      * @returns Returns a future
      * @note After calling this function, this future becomes invalid
-     * @throws Throw @a invalid_future if this future is invalid
+     * @throws invalid_future if this future is invalid
      *
-     * @f should be able to be called with arguments of `T...`
+     * @p f should be able to be called with arguments of `T...`
      *
      * Assuming return value of functor @p f has type of `U`
      * * if `U` is `void`, this function returns `future<>`;
@@ -642,9 +668,9 @@ namespace lanxc
      * @param f The functor
      * @returns Returns a future
      * @note After calling this function, this future becomes invalid
-     * @throws Throw @a invalid_future if this future is invalid
+     * @throws invalid_future if this future is invalid
      *
-     * @f should be able to be called with one arguments of
+     * @p f should be able to be called with one arguments of
      * `std::exception_ptr`
      *
      * Assuming return value of functor @p f has type of `U`
@@ -663,8 +689,14 @@ namespace lanxc
                                      std::forward<F>(f)));
     }
 
+    /**
+     * @brief Starting to resolve this future.
+     * @note After calling this method this future becomes invalid
+     * @throws invalid_future if this future is invalid
+     */
     void commit()
     {
+      if (!m_promise) throw invalid_future();
       promise<T...>::resolve_promise(std::move(m_promise));
     }
 
