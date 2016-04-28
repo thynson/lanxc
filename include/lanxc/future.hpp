@@ -405,7 +405,8 @@ namespace lanxc
         auto *ptr = m_detail->m_future.m_promise.get();
         ptr->m_fulfill_handler = [this](T ...value)
         {
-          m_detail->m_next_promise.set_result(m_detail->m_function(std::move(value)...));
+          m_detail->m_next_promise
+                  .set_result(m_detail->m_function(std::move(value)...));
         };
         ptr->m_error_handler = [this](std::exception_ptr e)
         {
@@ -434,7 +435,8 @@ namespace lanxc
       };
 
       std::unique_ptr<detail> m_detail;
-      caught_value_functor(future<T...> f, function<R(std::exception_ptr)> routine)
+      caught_value_functor(future<T...> f,
+                           function<R(std::exception_ptr)> routine)
           : m_detail(new detail(std::move(f), std::move(routine)))
       { }
 
@@ -536,7 +538,8 @@ namespace lanxc
       };
 
       std::unique_ptr<detail> m_detail;
-      caught_void_functor(future<T...> f, function<void(std::exception_ptr)> routine)
+      caught_void_functor(future<T...> f,
+                          function<void(std::exception_ptr)> routine)
           : m_detail(new detail(std::move(f), std::move(routine)))
       { }
 
@@ -558,32 +561,38 @@ namespace lanxc
       }
     };
 
+    template<typename U>
+    using is_void_sfinae = typename std::enable_if
+        <std::is_void<U>::value>::type;
+
+    template<typename U>
+    using is_future_sfinae = typename std::enable_if
+        <is_future<U>::value>::type;
+
+    template<typename F>
+    using then_result_type = typename result_of<F(T...)>::type;
+
+    template<typename F>
+    using caught_result_type = typename result_of
+        <F(std::exception_ptr)>::type;
 
     template<typename F,typename=void>
     struct do_then
     {
-      using functor = then_value_functor<typename result_of<F(T...)>::type>;
-      using result = future<typename result_of<F(T...)>::type>;
+      using functor = then_value_functor<then_result_type<F>>;
+      using result = future<then_result_type<F>>;
     };
 
     template<typename F>
-    struct do_then
-      < F, typename std::enable_if
-        <std::is_void<typename result_of<F(T...)>::type>::value>::type
-      >
+    struct do_then<F, is_void_sfinae<then_result_type<F>>>
     {
-
       using functor = then_void_functor;
       using result = future<>;
     };
 
     template<typename F>
-    struct do_then
-      <F, typename std::enable_if
-        <is_future<typename result_of<F(T...)>::type>::value>::type
-      >
+    struct do_then<F, is_future_sfinae<then_result_type<F>>>
     {
-
       using functor = then_future_functor<typename result_of<F(T...)>::type>;
       using result = typename result_of<F(T...)>::type;
     };
@@ -593,31 +602,20 @@ namespace lanxc
     template<typename F,typename=void>
     struct do_caught
     {
-      using functor = caught_value_functor
-          <typename result_of<F(std::exception_ptr)>::type>;
-
-      using result = future<typename result_of<F(std::exception_ptr)>::type>;
+      using functor = caught_value_functor<caught_result_type<F>>;
+      using result = future<caught_result_type<F>>;
     };
 
     template<typename F>
-    struct do_caught
-        < F, typename std::enable_if
-            <std::is_void<
-                typename result_of<F(std::exception_ptr)>::type>::value>::type
-        >
+    struct do_caught<F, is_void_sfinae<caught_result_type<F>>>
     {
-
       using functor = caught_void_functor;
       using result = future<>;
     };
 
     template<typename F>
-    struct do_caught
-        <F, typename std::enable_if
-            <is_future<typename result_of<F(std::exception_ptr)>::type>::value>::type
-        >
+    struct do_caught<F, is_future_sfinae<caught_result_type<F>>>
     {
-
       using functor = caught_future_functor
           <typename result_of<F(std::exception_ptr)>::type>;
       using result = typename result_of<F(std::exception_ptr)>::type;
