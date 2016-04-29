@@ -30,7 +30,7 @@ namespace lanxc
   template<>
   struct result_of<void>
   {
-  private:
+
     template<class F, class... Args>
     static inline auto invoke(F &&f, Args &&... args) ->
     decltype(std::forward<F>(f)(std::forward<Args>(args)...))
@@ -66,7 +66,6 @@ namespace lanxc
       return ((*std::forward<Pointer>(ptr)).*std::forward<PMF>(pmf))(std::forward<Args>(args)...);
     }
 
-  public:
     template<typename, typename = void>
     struct detail
     { };
