@@ -19,7 +19,6 @@
 #ifndef LANXC_FUNCTION_HPP_INCLUDED
 #define LANXC_FUNCTION_HPP_INCLUDED
 
-#include <tuple>
 #include <utility>
 #include <type_traits>
 #include <functional>
@@ -165,16 +164,17 @@ namespace lanxc
         {
         case command::move:
           new(args) manager_implement(std::move(*self));
-          return std::pair<void *, const void*>(nullptr, nullptr);
+          break;
         case command::destroy:
           self->~manager_implement();
-          return std::pair<void *, const void*>(nullptr, nullptr);;
+          break;
         case command::target:
           return std::pair<void *, const void*>(&self->m_function, nullptr);
         case command::const_target:
           return std::pair<void *, const void*>(nullptr,
               &static_cast<const manager_implement *>(cmgr)->m_function);
         }
+        return std::make_pair<void *, const void*>(nullptr, nullptr);
       }
 
       template<typename Result, typename ...Arguments>
@@ -230,16 +230,17 @@ namespace lanxc
         {
         case command::move:
           new(args) manager_implement(std::move(*self));
-          return std::pair<void *, const void *>(nullptr, nullptr);
+          break;
         case command::destroy:
           self->~manager_implement();
-          return std::pair<void *, const void *>(nullptr, nullptr);
+          break;
         case command::target:
           return std::pair<void *, const void*>(&self->m_function, nullptr);
         case command::const_target:
           return std::pair<void *, const void*>(nullptr,
               &static_cast<const manager_implement *>(cmgr)->m_function);
         }
+        return std::make_pair<void *, const void*>(nullptr, nullptr);
       }
 
       manager_implement(Function &function, const Allocator &alloc) noexcept
@@ -326,8 +327,7 @@ namespace lanxc
 
     using caller_type = Result (*)(detail::manager *, Arguments ...);
 
-    constexpr static caller_type noop_function
-      = detail::template invalid_function<Result, Arguments...>;
+    static const caller_type noop_function;
 
     template<typename Allocator, typename Function>
     static caller_type get_caller(const Function &f) noexcept
@@ -342,10 +342,6 @@ namespace lanxc
 
     /** @brief Length of parameter list */
     static constexpr std::size_t parameter_length = sizeof ... (Arguments);
-
-    /** @brief Type of N-th parameter */
-    template<std::size_t N>
-    using parameter = typename std::tuple_element<N, std::tuple<Arguments...>>::type;
 
     /**
      * @brief Default constructor
@@ -502,6 +498,11 @@ namespace lanxc
     caller_type m_caller;
     detail::functor_padding m_store;
   };
+
+  template<typename R, typename ...A>
+  const typename function<R(A...)>::caller_type
+    function<R(A...)>::noop_function
+    = function<void>::template invalid_function<R, A...>;
 
 }
 
