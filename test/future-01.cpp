@@ -12,22 +12,20 @@ int main()
 
     auto f = [](int value) { std::cout << value << std::endl; };
     int i = 0;
+
     lanxc::future<int> f1([&i](lanxc::promise<int> p)
     {
       std::cout << "i=" << i++ << std::endl;
       p.set_result(1);
     });
-
-    auto f2 = f1.then([](int value)->lanxc::future<>
+    auto func = [](int value)->lanxc::future<>
     {
       std::cout << value << std::endl;
       return lanxc::future<>([](lanxc::promise<> p) {
         p.set_result();
       });
-    });
-
-
-
+    };
+    auto f2 = f1.then(std::move(func));
 
     auto f3 = f2.then([]()->lanxc::future<float, int>
     {

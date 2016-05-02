@@ -60,18 +60,6 @@ namespace lanxc
     }
   };
 
-  class invalid_promise : public std::exception
-  {
-  public:
-    const char *what() const noexcept override
-    {
-      return "this promise is invalid, possibly because .set_result(),"
-          " .set_exception() or .set_exception_ptr() was called for"
-          " this promise.";
-    }
-  };
-
-
   template<typename T>
   struct is_future
   {
@@ -89,57 +77,80 @@ namespace lanxc
   {
   public:
 
-    promise(promise &&p) noexcept = default;
-    promise &operator = (promise &&p) noexcept = default;
+    promise(promise &&p)
+        : m_detail()
+    {
+      m_detail.swap(p.m_detail);
+    }
+
+    promise &operator = (promise &&p)
+    {
+      this->~promise();
+      new (this) promise(std::move(p));
+      return *this;
+    }
+
 
     promise(const promise &p) = delete;
     promise &operator = (const promise &p) = delete;
 
     /**
      * @brief Fulfill this promise
-     * @note After calling this function, this promise becomes invalid
-     * @throws invalid_promise if this promise is invalid
+     * @retval true Success to fulfill the corresponding @a future
+     * @retval false The corresponding @a future may have been cancelled,
+     * or #set_result, #set_exception or #set_exception_ptr has already
+     * been called for this promise.
      */
-    inline void set_result(T ...value)
+    inline bool set_result(T ...value)
     {
-      if (!m_detail) throw invalid_promise();
-      m_detail->set_result(std::move(value)...);
-      m_detail = nullptr;
+      auto p = m_detail.lock();
+      if (!p) return false;
+      m_detail.reset();
+      p->set_result(std::move(value)...);
+      return true;
     }
 
     /**
      * @brief Cancel this promise with an exception as reason
      * @tparam E Type of the exception
      * @param e The exception
-     * @note After calling this function, this promise becomes invalid
-     * @throws invalid_promise if this promise is invalid
+     * @retval true Success to cancel the corresponding @a future
+     * @retval false The corresponding @a future may have been cancelled,
+     * or #set_result, #set_exception or #set_exception_ptr has already
+     * been called for this promise.
      *
-     * This function will cancel this promise and convert @p e into a
-     * @a std::exception_ptr which can be caught by the corresponding
+     * This function will cancel the corresponding future and convert @p e
+     * into a @a std::exception_ptr which can be caught by the corresponding
      * `future`.
      */
     template<typename E>
-    inline void set_exception(E e)
+    inline bool set_exception(E e)
     {
-      if (!m_detail) throw invalid_promise();
-      m_detail->set_exception_ptr(std::make_exception_ptr(e));
-      m_detail = nullptr;
+      auto p = m_detail.lock();
+      if (!p) return false;
+      m_detail.reset();
+      p->set_exception_ptr(std::make_exception_ptr(e));
+      return true;
     }
 
     /**
      * @brief Cancel this promise with an exception pointer as reason
      * @param e The exception pointer
-     * @note After calling this function, this promise becomes invalid
-     * @throws invalid_promise if this promise is invalid
+     * @retval true Success to cancel the corresponding @a future
+     * @retval false The corresponding @a future may have been cancelled,
+     * or #set_result, #set_exception or #set_exception_ptr has already
+     * been called for this promise.
      *
      * This function will cancel this promise and @p e will be caught
      * by the corresponding `future`.
      */
-    inline void set_exception_ptr(std::exception_ptr e)
+    inline bool set_exception_ptr(std::exception_ptr e)
     {
-      if (!m_detail) throw invalid_promise();
-      m_detail->set_exception_ptr(e);
-      m_detail = nullptr;
+      auto p = m_detail.lock();
+      if (!p) return false;
+      m_detail.reset();
+      p->set_exception_ptr(std::move(e));
+      return true;
     }
 
 
@@ -191,12 +202,11 @@ namespace lanxc
       function<void(T...)> m_fulfill_handler;
     };
 
-    promise(std::unique_ptr<detail> p)
-        : m_detail(std::move(p))
+    promise(std::shared_ptr<detail> p)
+        : m_detail(p)
     { }
 
-
-    static void resolve_promise(std::unique_ptr<detail> p)
+    static void resolve_promise(std::shared_ptr<detail> p)
     {
       if (!p->m_error_handler)
         p->m_error_handler = [](std::exception_ptr) {};
@@ -209,7 +219,7 @@ namespace lanxc
       tmp(promise<T...>(std::move(p)));
     }
 
-    std::unique_ptr<detail> m_detail;
+    std::weak_ptr<detail> m_detail;
   };
 
   template<typename ...T>
@@ -223,11 +233,6 @@ namespace lanxc
     static function<void(T...)> cascade_fulfill_handler(promise<T...> *p)
     {
       return [p](T...args) { p->set_result(std::move(args)...); };
-    }
-
-    static function<void(T...)> cascade_error_handler(promise<T...> *p)
-    {
-      return [p](T...args) { std::swap(*p, promise<T...>(nullptr)); };
     }
 
     template<typename Future>
@@ -621,6 +626,14 @@ namespace lanxc
       using result = typename result_of<F(std::exception_ptr)>::type;
     };
 
+    void check()
+    {
+      if (!m_promise
+          || m_promise->m_fulfill_handler
+          || m_promise->m_error_handler)
+        throw invalid_future();
+    }
+
 
   public:
 
@@ -639,24 +652,24 @@ namespace lanxc
      * @tparam F Type of the functor
      * @param f The functor
      * @returns Returns a future
-     * @note After calling this function, this future becomes invalid
-     * @throws invalid_future if this future is invalid
+     * @throws invalid_future If #then, #caught or #commit has already been
+     * called for this future
      *
      * @p f should be able to be called with arguments of `T...`
      *
-     * Assuming return value of functor @p f has type of `U`
-     * * if `U` is `void`, this function returns `future<>`;
-     * * if `U` is `future<V...>`, this functions returns `future<V...>`
-     * * otherwise returns `future<U>`
+     * Assuming return value of functor @p f has type of `U`:
+     * * if `U` is `void`, this function returns @a future<>;
+     * * if `U` is @a future<V...>, this functions returns @a future<V...>
+     * * otherwise returns @a future<U>
      */
     template<typename F>
     auto then(F &&f)
       -> typename do_then<typename std::remove_reference<F>::type>::result
     {
       using then_t = do_then<typename std::remove_reference<F>::type>;
-      if (!m_promise) throw invalid_future();
+      check();
       return typename then_t::result(
-          typename then_t::functor(std::move(*this),
+          typename then_t::functor(future(m_promise),
                                    std::forward<F>(f)));
     }
 
@@ -665,36 +678,36 @@ namespace lanxc
      * @tparam F Type of the functor
      * @param f The functor
      * @returns Returns a future
-     * @note After calling this function, this future becomes invalid
-     * @throws invalid_future if this future is invalid
+     * @throws invalid_future If #then, #caught or #commit has already been
+     * called for this future
      *
      * @p f should be able to be called with one arguments of
      * `std::exception_ptr`
      *
-     * Assuming return value of functor @p f has type of `U`
-     * * if `U` is `void`, this function returns `future<>`;
-     * * if `U` is `future<V...>`, this functions returns `future<V...>`
-     * * otherwise returns `future<U>`
+     * Assuming return value of functor @p f has type of `U`:
+     * * if `U` is `void`, this function returns @a future<>;
+     * * if `U` is @a future<V...>, this functions returns @a future<V...>
+     * * otherwise returns @a future<U>
      */
     template<typename F>
     auto caught(F &&f)
       -> typename do_caught<typename std::remove_reference<F>::type>::result
     {
       using caught_t = do_caught<typename std::remove_reference<F>::type>;
-      if (!m_promise) throw invalid_future();
+      check();
       return typename caught_t::result(
-          typename caught_t::functor(std::move(*this),
+          typename caught_t::functor(future(m_promise),
                                      std::forward<F>(f)));
     }
 
     /**
      * @brief Starting to resolve this future.
-     * @note After calling this method this future becomes invalid
-     * @throws invalid_future if this future is invalid
+     * @throws invalid_future If #then, #caught or #commit has already been
+     * called for this future
      */
     void commit()
     {
-      if (!m_promise) throw invalid_future();
+      check();
       promise<T...>::resolve_promise(std::move(m_promise));
     }
 
@@ -704,13 +717,17 @@ namespace lanxc
         : m_promise(nullptr)
     { }
 
+    future(std::shared_ptr<typename promise<T...>::detail> ptr) noexcept
+        : m_promise(ptr)
+    { }
+
     template<typename...>
     friend class promise;
 
     template<typename ...>
     friend class future;
 
-    std::unique_ptr<typename promise<T...>::detail> m_promise;
+    std::shared_ptr<typename promise<T...>::detail> m_promise;
   };
 }
 
