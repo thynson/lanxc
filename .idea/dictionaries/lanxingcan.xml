@@ -16,6 +16,7 @@
       <w>nothrow</w>
       <w>rbegin</w>
       <w>rebalance</w>
+      <w>retval</w>
       <w>tortious</w>
       <w>tparam</w>
       <w>variadic</w>
