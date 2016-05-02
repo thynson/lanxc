@@ -681,7 +681,7 @@ namespace lanxc
      * @throws invalid_future If #then, #caught or #commit has already been
      * called for this future
      *
-     * @p f should be able to be called with one arguments of
+     * @p f should be able to be called with one argument of
      * `std::exception_ptr`
      *
      * Assuming return value of functor @p f has type of `U`:
