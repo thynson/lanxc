@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.1)
-project(lanxc-core)
-add_library(lanxc-core INTERFACE)
+cmake_minimum_required(VERSION 3.2)
+project(lanxc-core CXX)
+add_library(core INTERFACE)
+add_library(lanxc::core ALIAS core)
 
-target_compile_features(lanxc-core INTERFACE
+target_compile_features(core INTERFACE
     cxx_alias_templates
     cxx_auto_type
     cxx_constexpr
@@ -18,7 +19,7 @@ target_compile_features(lanxc-core INTERFACE
     cxx_variadic_templates
     )
 
-target_include_directories(lanxc-core INTERFACE
+target_include_directories(core INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
@@ -40,7 +41,7 @@ install(FILES
     )
 
 # Export targets
-install(TARGETS lanxc-core
+install(TARGETS core
     EXPORT lanxc-core-targets
     ARCHIVE DESTINATION lib)
 
@@ -63,7 +64,7 @@ install(FILES lanxc-core-config.cmake
 
 
 ##### Dummy target to makes IDEA happy
-add_library(lanxc-core-dummy STATIC EXCLUDE_FROM_ALL
+add_library(core-dummy STATIC EXCLUDE_FROM_ALL
     "include/lanxc/type_traits.hpp"
     "include/lanxc/function.hpp"
     "include/lanxc/future.hpp"
@@ -87,9 +88,9 @@ add_library(lanxc-core-dummy STATIC EXCLUDE_FROM_ALL
     "include/lanxc/link/rbtree.hpp"
     "dummy.cpp")
 
-set_target_properties(lanxc-core-dummy PROPERTIES LINK_LANGUAGE CXX)
+set_target_properties(core-dummy PROPERTIES LINK_LANGUAGE CXX)
 
-target_link_libraries(lanxc-core-dummy lanxc-core)
+target_link_libraries(core-dummy core)
 #### End of dummy target
 
 enable_testing()
