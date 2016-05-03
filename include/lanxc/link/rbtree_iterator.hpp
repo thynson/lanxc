@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_RBTREE_ITERATOR_HPP_INLCUDED
-#define LANXC_LINK_RBTREE_ITERATOR_HPP_INLCUDED
+#ifndef LANXC_LINK_RBTREE_ITERATOR_HPP_INCLUDED
+#define LANXC_LINK_RBTREE_ITERATOR_HPP_INCLUDED
 
 #include "rbtree_node.hpp"
 
@@ -104,7 +104,7 @@ namespace lanxc
 
 
     /**
-     * @brief Constant iterator for rbtrree
+     * @brief Constant iterator for rbtree
      * @ingroup intrusive_rbtree
      */
     template<typename Index, typename Node, typename Tag>

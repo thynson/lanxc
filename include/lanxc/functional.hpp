@@ -459,7 +459,7 @@ namespace lanxc
         Arguments &&...>;
 
     /**
-     * Helper function to determin if it's noexcept when invoke the
+     * Helper function to determine if it's noexcept when invoke the
      * underlying function with such arguments.
      */
     template<typename ...Arguments>
