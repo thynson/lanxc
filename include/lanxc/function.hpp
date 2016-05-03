@@ -41,7 +41,7 @@ namespace lanxc
   template<typename>
   class function;
 
-  struct bad_function_call : std::exception
+  struct bad_function_call final: std::exception
   {
     const char *what() const noexcept override
     {
@@ -51,7 +51,7 @@ namespace lanxc
 
   /** @brief implementation detail */
   template<>
-  class function<void>
+  class function<void> final
   {
   private:
 
@@ -108,16 +108,14 @@ namespace lanxc
      */
     enum class command
     {
-      move,
+      construct,
       destroy,
-      target,
-      const_target,
     };
 
     struct manager
     {
-      using implement_type = std::pair<void*, const void*>
-        (*)(manager *, const manager *, void *, command);
+      using implement_type =
+        void (*)(manager *, void *, command);
 
       const implement_type m_implement;
       manager(implement_type implement) noexcept
@@ -152,29 +150,24 @@ namespace lanxc
     template<typename Function, typename Allocator>
     struct manager_implement<Function, Allocator,
         typename std::enable_if<
-            is_inplace_allocated<Function>::value, std::true_type>::type> : manager
+            is_inplace_allocated<Function>::value, std::true_type>::type>
+        final : manager
     {
       Function m_function;
 
-      static std::pair<void *, const void *>
-      implement(manager *mgr, const manager *cmgr,  void *args, command cmd) noexcept
+      static void
+      implement(manager *mgr, void *args, command cmd) noexcept
       {
         auto self = static_cast<manager_implement *>(mgr);
         switch (cmd)
         {
-        case command::move:
+        case command::construct:
           new(args) manager_implement(std::move(*self));
           break;
         case command::destroy:
           self->~manager_implement();
           break;
-        case command::target:
-          return std::pair<void *, const void*>(&self->m_function, nullptr);
-        case command::const_target:
-          return std::pair<void *, const void*>(nullptr,
-              &static_cast<const manager_implement *>(cmgr)->m_function);
         }
-        return std::make_pair<void *, const void*>(nullptr, nullptr);
       }
 
       template<typename Result, typename ...Arguments>
@@ -204,7 +197,8 @@ namespace lanxc
     template<typename Function, typename Allocator>
     struct manager_implement<Function, Allocator,
         typename std::enable_if<
-            !is_inplace_allocated<Function>::value, std::false_type>::type> : manager
+            !is_inplace_allocated<Function>::value, std::false_type>::type>
+      final : manager
     {
       using allocator_type = typename std::allocator_traits<Allocator>
         ::template rebind_alloc<Function>;
@@ -213,8 +207,6 @@ namespace lanxc
       allocator_type m_allocator;
       Function *m_function;
 
-      static const std::type_info &typeinfo;
-
       template<typename Result, typename ...Arguments>
       static Result call(manager *mgr, Arguments ...args)
       {
@@ -222,28 +214,21 @@ namespace lanxc
         return (*self->m_function)(std::forward<Arguments>(args)...);
       }
 
-
-      static std::pair<void*, const void *>
-      implement(manager *mgr, const manager *cmgr, void *args, command cmd)
+      static void
+      implement(manager *mgr, void *args, command cmd)
       noexcept
       {
         auto self = static_cast<manager_implement *>(mgr);
 
         switch (cmd)
         {
-        case command::move:
+        case command::construct:
           new(args) manager_implement(std::move(*self));
           break;
         case command::destroy:
           self->~manager_implement();
           break;
-        case command::target:
-          return std::pair<void *, const void*>(&self->m_function, nullptr);
-        case command::const_target:
-          return std::pair<void *, const void*>(nullptr,
-              &static_cast<const manager_implement *>(cmgr)->m_function);
         }
-        return std::make_pair<void *, const void*>(nullptr, nullptr);
       }
 
       manager_implement(Function &function, const Allocator &alloc) noexcept
@@ -272,27 +257,6 @@ namespace lanxc
       manager_implement &operator = (const manager_implement &) = delete;
     };
 
-  public:
-
-    template<typename Result, typename...>
-    struct member_type_definition
-    {
-      using result_type =  Result;
-    };
-    template<typename Result, typename Argument>
-    struct member_type_definition<Result, Argument>
-    {
-      using result_type = Result;
-      using argument_type = Argument;
-    };
-    template<typename Result, typename FirstArgument, typename SecondArgument>
-    struct member_type_definition<Result, FirstArgument, SecondArgument>
-    {
-      using result_type = Result;
-      using first_argument_type = FirstArgument;
-      using second_argument_type = SecondArgument;
-    };
-
   };
 
   /**
@@ -305,20 +269,19 @@ namespace lanxc
    * satisfy copy-constructible rather than move-constructible. While in C++14,
    * lambda capture initialization expression was introduced, a lambda
    * captured an move-constructible but not copy-constructible object can not
-   *  be accepted by @p std::function.
+   * be accepted by @a std::function.
    * @code
    * MoveConstructible obj; // but not copy-constructible
    * std::function<void()> = [obj=std::move(obj)] () { obj(); };   // error
    * lanxc::function<void()> = [obj=std::move(obj)] () { obj(); }; // fine
    * @endcode
-   * This implementation avoid the std::function design defect, which requires
-   * functor be move-constructible instead.
+   * This implementation avoid the @a std::function design defect, which
+   * requires functor be move-constructible instead.
    *
    * @ingroup functor
    */
   template<typename Result, typename... Arguments>
-  class function<Result(Arguments...)>
-      : public function<void>::member_type_definition<Result, Arguments...>
+  class function<Result(Arguments...)> final
   {
     using detail = function<void>;
 
@@ -345,8 +308,8 @@ namespace lanxc
 
   public:
 
-    /** @brief Length of parameter list */
-    static constexpr std::size_t parameter_length = sizeof ... (Arguments);
+    using result = Result;
+    using arguments = std::tuple<Arguments...>;
 
     /**
      * @brief Default constructor
@@ -419,7 +382,7 @@ namespace lanxc
       if (m_caller == noop_function)
         return;
       auto impl = cast()->m_implement;
-      impl(cast(), nullptr, nullptr, detail::command::destroy);
+      impl(cast(), nullptr, detail::command::destroy);
     }
 
     /**
@@ -462,11 +425,12 @@ namespace lanxc
           std::swap(lhs->m_caller, rhs->m_caller);
           detail::functor_padding tmp;
           auto imp = rhs->cast()->m_implement;
-          imp(rhs->cast(), nullptr, &tmp, detail::command::move);
-          lhs->cast()->m_implement(rhs->cast(), nullptr, &rhs->m_store,
-              detail::command::move);
-          imp(reinterpret_cast<detail::manager *>(&tmp), nullptr, this->m_store,
-              detail::command::move);
+          imp(rhs->cast(), &tmp, detail::command::construct);
+          lhs->cast()->m_implement(rhs->cast(), &rhs->m_store,
+              detail::command::construct);
+          imp(reinterpret_cast<detail::manager *>(&tmp),
+              &this->m_store,
+              detail::command::construct);
           return;
         }
         else
@@ -477,8 +441,8 @@ namespace lanxc
       {
         std::swap(lhs->m_caller, rhs->m_caller);
         auto rhs_implement = rhs->cast()->m_implement;
-        rhs_implement(rhs->cast(), nullptr, &lhs->m_store,
-            detail::command::move);
+        rhs_implement(rhs->cast(), &lhs->m_store,
+            detail::command::construct);
       }
     }
 
@@ -494,6 +458,7 @@ namespace lanxc
     }
 
   private:
+
     detail::manager *cast() noexcept
     { return reinterpret_cast<detail::manager *>(&m_store); }
 
