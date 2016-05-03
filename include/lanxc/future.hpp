@@ -358,7 +358,7 @@ namespace lanxc
         m_detail->m_next_promise = std::move(p);
         auto *ptr = m_detail->m_future.m_promise.get();
 
-        ptr->m_fulfill_handler = [this](T...args)
+        ptr->m_fulfill_handler = [this](T...)
         {
           m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
@@ -461,7 +461,7 @@ namespace lanxc
       {
         m_detail->m_next_promise = std::move(p);
         auto *ptr = m_detail->m_future.m_promise.get();
-        ptr->m_fulfill_handler = [this](T ...value)
+        ptr->m_fulfill_handler = [this](T ...)
         {
           m_detail->m_next_promise = promise<R>(nullptr);
         };
@@ -552,7 +552,7 @@ namespace lanxc
       {
         m_detail->m_next_promise = std::move(p);
         auto *ptr = m_detail->m_future.m_promise.get();
-        ptr->m_fulfill_handler = [this](T ...value)
+        ptr->m_fulfill_handler = [this](T ...)
         {
           m_detail->m_next_promise = promise<>(nullptr);
         };

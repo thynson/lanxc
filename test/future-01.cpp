@@ -8,9 +8,6 @@ int main()
 {
   try
   {
-
-
-    auto f = [](int value) { std::cout << value << std::endl; };
     int i = 0;
 
     lanxc::future<int> f1([&i](lanxc::promise<int> p)
