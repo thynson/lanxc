@@ -164,6 +164,8 @@ namespace lanxc
 
       detail(function<void(promise<T...>)> initiator) noexcept
           : m_initiator(std::move(initiator))
+          , m_error_handler()
+          , m_fulfill_handler()
       { }
 
       ~detail()

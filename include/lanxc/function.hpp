@@ -195,6 +195,9 @@ namespace lanxc
       { }
 
       ~manager_implement() = default;
+
+      manager_implement(const manager_implement &) = delete;
+      manager_implement &operator = (const manager_implement &) = delete;
     };
 
 
@@ -265,6 +268,8 @@ namespace lanxc
         allocator_traits::destroy(m_allocator, m_function);
         allocator_traits::deallocate(m_allocator, m_function, 1);
       }
+      manager_implement(const manager_implement &) = delete;
+      manager_implement &operator = (const manager_implement &) = delete;
     };
 
   public:
