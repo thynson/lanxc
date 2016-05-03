@@ -281,7 +281,7 @@ namespace lanxc
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
         };
-        f.commit();
+        Future::promise_type::resolve_promise(f.m_promise);
       }
 
 
@@ -298,7 +298,7 @@ namespace lanxc
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
         };
-        m_detail->m_future.commit();
+        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
       }
     };
 
@@ -350,7 +350,7 @@ namespace lanxc
         {
           this->m_detail->m_next_promise.set_exception_ptr(ex);
         };
-        f.commit();
+        Future::promise_type::resolve_promise(f.m_promise);
       }
 
       void operator () (typename Future::promise_type p)
@@ -366,7 +366,7 @@ namespace lanxc
         {
           caught(e);
         };
-        m_detail->m_future.commit();
+        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
       }
     };
 
@@ -418,7 +418,7 @@ namespace lanxc
           this->m_detail->m_next_promise.set_exception_ptr(e);
         };
 
-        m_detail->m_future.commit();
+        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
       }
 
     };
@@ -471,7 +471,7 @@ namespace lanxc
           m_detail->m_next_promise.set_result(m_detail->m_function(e));
         };
 
-        m_detail->m_future.commit();
+        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
       }
     };
 
@@ -523,7 +523,7 @@ namespace lanxc
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
         };
-        m_detail->m_future.commit();
+        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
       }
     };
 
@@ -562,7 +562,7 @@ namespace lanxc
           m_detail->m_function(e);
           m_detail->m_next_promise.set_result();
         };
-        m_detail->m_future.commit();
+        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
       }
     };
 
@@ -708,7 +708,7 @@ namespace lanxc
     void commit()
     {
       check();
-      promise<T...>::resolve_promise(std::move(m_promise));
+      promise<T...>::resolve_promise(m_promise);
     }
 
   private:
