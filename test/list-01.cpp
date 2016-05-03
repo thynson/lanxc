@@ -16,6 +16,9 @@
  */
 
 #include <lanxc/link.hpp>
+#include <random>
+#include <array>
+
 struct X;
 struct Y;
 
@@ -41,16 +44,46 @@ namespace lanxc
 
 struct X : public lanxc::link::list_node<X, X>
 {
-
+  unsigned int x;
+  X(unsigned int x=0): x(x) {}
 };
+
+std::mt19937 engine(uint_fast32_t(time(nullptr)));
+
+bool operator < (const X &lhs, const X &rhs)
+{ return lhs.x < rhs.x; }
 
 struct Y : public lanxc::link::list_node<Y, Y>
 {
 
+  unsigned int x;
+  Y(unsigned int x=0): x(x) {}
 };
+bool operator < (const Y &lhs, const Y &rhs)
+{ return lhs.x < rhs.x; }
 
-static_assert(sizeof(lanxc::link::list<Y, Y>) >  2 * sizeof(Y), "");
-static_assert(sizeof(lanxc::link::list<X, X>) == 2 * sizeof(X), "");
+static_assert(sizeof(lanxc::link::list<Y, Y>) >  4 * sizeof(void*), "");
+static_assert(sizeof(lanxc::link::list<X, X>) == 4 * sizeof(void*), "");
+
+
+template<typename T>
+void test_list()
+{
+
+  std::array<T, 1000> x;
+  lanxc::link::list<T, T> l;
+
+  for (auto i = x.begin(); i != x.end(); ++i)
+  {
+    i->x = engine();
+    l.push_back(*i);
+  }
+
+  l.sort();
+
+  assert(std::is_sorted(l.begin(), l.end()));
+
+}
 
 
 int main()
@@ -62,5 +95,8 @@ int main()
   m.push_back(x);
   n.push_back(y);
   assert(x.is_linked());
+
+  test_list<X>();
+  test_list<Y>();
   return 0;
 }
