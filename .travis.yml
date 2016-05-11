@@ -35,6 +35,13 @@ matrix:
           packages:
             - clang-3.7
       env: COMPILER=clang++-3.7
+addons:
+  apt:
+    sources:
+      - george-edison55-precise-backports # cmake 3.2.3 / doxygen 1.8.3
+    packages:
+      - cmake
+      - cmake-data
 
 before_script: mkdir build && cd build && CXX=g++-4.9 cmake ..
 script: make && make test
