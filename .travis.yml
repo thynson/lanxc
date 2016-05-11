@@ -67,6 +67,8 @@ matrix:
 before_script:
   - export CC=${TRAVIS_CC}${TRAVIS_TOOLCHAIN_VERSION}
   - export CXX=${TRAVIS_CXX}${TRAVIS_TOOLCHAIN_VERSION}
+  - ${CC} -v
+  - ${CXX} -v
   - mkdir build && cd build && cmake ..
 script: make VERBOSE=1 && make VERBOSE=1 test
 
