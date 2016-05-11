@@ -30,56 +30,53 @@ namespace lanxc
   template<>
   struct result_of<void>
   {
-
-    template<class F, class... Args>
-    static inline auto invoke(F &&f, Args &&... args) ->
-    decltype(std::forward<F>(f)(std::forward<Args>(args)...))
+  private:
+    struct implement
     {
-      return std::forward<F>(f)(std::forward<Args>(args)...);
-    }
+      template<class F, class... A>
+      static inline auto
+      invoke(F &&f, A &&... args) ->
+      decltype(std::forward<F>(f)(std::forward<A>(args)...));
 
-    template<class Base, class T, class Derived>
-    static inline auto invoke(T Base::*pmd, Derived &&ref) ->
-    decltype(std::forward<Derived>(ref).*pmd)
-    {
-      return std::forward<Derived>(ref).*pmd;
-    }
+      template<class B, class T, class D>
+      static inline auto
+      invoke(T B::*pmd, D &&ref) ->
+      decltype(std::forward<D>(ref).*pmd);
 
-    template<class PMD, class Pointer>
-    static inline auto invoke(PMD &&pmd, Pointer &&ptr) ->
-    decltype((*std::forward<Pointer>(ptr)).*std::forward<PMD>(pmd))
-    {
-      return (*std::forward<Pointer>(ptr)).*std::forward<PMD>(pmd);
-    }
+      template<class PMD, class P>
+      static inline auto invoke(PMD &&pmd, P &&ptr) ->
+      decltype((*std::forward<P>(ptr)).*std::forward<PMD>(pmd));
 
-    template<class Base, class T, class Derived, class... Args>
-    static inline auto invoke(T Base::*pmf, Derived &&ref, Args &&... args) ->
-    decltype((std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...))
-    {
-      return (std::forward<Derived>(ref).*pmf)(std::forward<Args>(args)...);
-    }
+      template<class B, class T, class D, class... Args>
+      static inline auto invoke(T B::*pmf, D &&ref, Args &&... args) ->
+      decltype((std::forward<D>(ref).*pmf)(std::forward<Args>(args)...));
 
-    template<class PMF, class Pointer, class... Args>
-    static inline auto invoke(PMF &&pmf, Pointer &&ptr, Args &&... args) ->
-    decltype(((*std::forward<Pointer>(ptr)).*std::forward<PMF>(pmf))(std::forward<Args>(args)...))
-    {
-      return ((*std::forward<Pointer>(ptr)).*std::forward<PMF>(pmf))(std::forward<Args>(args)...);
-    }
+      template<class PMF, class P, class... A>
+      static inline auto invoke(PMF &&pmf, P &&ptr, A &&... args) ->
+      decltype(((*std::forward<P>(ptr)).*std::forward<PMF>(pmf))
+          (std::forward<A>(args)...));
 
-    template<typename, typename = void>
-    struct detail
-    { };
+      template<typename, typename = void>
+      struct detail
+      { };
 
-    template<typename F, typename...Args>
-    struct detail<F(Args...), decltype(void(invoke(std::declval<F>(), std::declval<Args>()...)))>
-    {
-      using type = decltype(invoke(std::declval<F>(), std::declval<Args>()...));
+      template<typename F, typename...Args>
+      struct detail
+        <
+          F(Args...),
+          decltype(void(invoke(std::declval<F>(), std::declval<Args>()...)))
+        >
+      {
+        using type = decltype(invoke(std::declval<F>(), std::declval<Args>()...));
+      };
     };
-
+  public:
+    template<typename T>
+    using sfinae = implement::detail<T>;
   };
 
   template<typename T>
-  struct result_of : result_of<void>::detail<T>
+  struct result_of : result_of<void>::sfinae<T>
   { };
 
   template<typename T, typename ...Arguments>
@@ -89,7 +86,8 @@ namespace lanxc
     template<typename> struct helper {};
 
     template<typename U>
-    static constexpr bool sfinae(helper<decltype(U(std::declval<Arguments>()...))> *)
+    static constexpr bool
+    sfinae(helper<decltype(U(std::declval<Arguments>()...))> *)
     { return true; }
 
     template<typename U>
