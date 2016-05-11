@@ -15,7 +15,7 @@ matrix:
       env:
         - TRAVIS_CC=gcc
         - TRAVIS_CXX=g++
-        - TRAVIS_TOOLCHAIN_VER=-4.9
+        - TRAVIS_TOOLCHAIN_VERSION=-4.9
     - compiler: gcc
       addons:
         apt:
@@ -30,7 +30,7 @@ matrix:
       env:
         - TRAVIS_CC=gcc
         - TRAVIS_CXX=g++
-        - TRAVIS_TOOLCHAIN_VER=-5
+        - TRAVIS_TOOLCHAIN_VERSION=-5
     - compiler: clang
       addons:
         apt:
@@ -46,7 +46,7 @@ matrix:
       env:
         - TRAVIS_CC=clang
         - TRAVIS_CXX=clang++
-        - TRAVIS_TOOLCHAIN_VER=-3.6
+        - TRAVIS_TOOLCHAIN_VERSION=-3.6
     - compiler: clang
       addons:
         apt:
@@ -62,7 +62,7 @@ matrix:
       env:
         - TRAVIS_CC=clang
         - TRAVIS_CXX=clang++
-        - TRAVIS_TOOLCHAIN_VER=-3.7
+        - TRAVIS_TOOLCHAIN_VERSION=-3.7
 
 before_script:
   - export CC=${TRAVIS_CC}-${TRAVIS_TOOLCHAIN_VERSION}
