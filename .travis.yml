@@ -64,12 +64,10 @@ matrix:
         - TRAVIS_CXX=clang++
         - TRAVIS_TOOLCHAIN_VERSION=-3.7
 
-before_script:
-  - export CC=${TRAVIS_CC}${TRAVIS_TOOLCHAIN_VERSION}
-  - export CXX=${TRAVIS_CXX}${TRAVIS_TOOLCHAIN_VERSION}
-  - ${CC} -v
-  - ${CXX} -v
-  - mkdir build && cd build && cmake ..
+before_script: |
+  export CC=${TRAVIS_CC}${TRAVIS_TOOLCHAIN_VERSION}
+  export CXX=${TRAVIS_CXX}${TRAVIS_TOOLCHAIN_VERSION}
+  mkdir build && cd build && cmake ..
 script: make VERBOSE=1 && make VERBOSE=1 test
 
 
