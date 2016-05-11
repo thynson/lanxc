@@ -65,8 +65,8 @@ matrix:
         - TRAVIS_TOOLCHAIN_VER=-3.7
 
 before_script:
-  - export CC=$(TRAVIS_CC)-$(TRAVIS_TOOLCHAIN_VERSION)
-  - export CXX=$(TRAVIS_CXX)-$(TRAVIS_TOOLCHAIN_VERSION)
+  - export CC=${TRAVIS_CC}-${TRAVIS_TOOLCHAIN_VERSION}
+  - export CXX=${TRAVIS_CXX}-${TRAVIS_TOOLCHAIN_VERSION}
   - mkdir build && cd build && cmake ..
 script: make && make test
 
