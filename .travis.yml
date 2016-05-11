@@ -52,7 +52,7 @@ matrix:
             - doxygen
       env: COMPILER=clang++-3.7
 
-before_script: mkdir build && cd build && CXX=g++-4.9 cmake ..
+before_script: mkdir build && cd build && cmake ..
 script: make && make test
 
 
