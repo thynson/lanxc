@@ -507,7 +507,7 @@ namespace lanxc
       /**
        * @brief Merge another sorted list with comparator @p c
        * @param l The list to be merged
-       * @param comp The specified strict weak ordering comparator
+       * @param c The specified strict weak ordering comparator
        * @note both of this list and the part to be merged should be sorted
        * with specified comparator, and b and e should be iterators of
        * distinct list
