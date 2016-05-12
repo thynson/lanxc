@@ -8,6 +8,21 @@ matrix:
             - ubuntu-toolchain-r-test
             - george-edison55-precise-backports
           packages:
+            - g++-4.8
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=gcc
+        - TRAVIS_CXX=g++
+        - TRAVIS_TOOLCHAIN_VERSION=-4.8
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
             - g++-4.9
             - cmake
             - cmake-data
@@ -31,6 +46,53 @@ matrix:
         - TRAVIS_CC=gcc
         - TRAVIS_CXX=g++
         - TRAVIS_TOOLCHAIN_VERSION=-5
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
+            - g++-6
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=gcc
+        - TRAVIS_CXX=g++
+        - TRAVIS_TOOLCHAIN_VERSION=-6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.4
+            - george-edison55-precise-backports
+          packages:
+            - clang-3.4
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=clang
+        - TRAVIS_CXX=clang++
+        - TRAVIS_TOOLCHAIN_VERSION=-3.4
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.5
+            - george-edison55-precise-backports
+          packages:
+            - clang-3.5
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=clang
+        - TRAVIS_CXX=clang++
+        - TRAVIS_TOOLCHAIN_VERSION=-3.5
     - compiler: clang
       addons:
         apt:
@@ -63,6 +125,22 @@ matrix:
         - TRAVIS_CC=clang
         - TRAVIS_CXX=clang++
         - TRAVIS_TOOLCHAIN_VERSION=-3.7
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+            - george-edison55-precise-backports
+          packages:
+            - clang-3.8
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=clang
+        - TRAVIS_CXX=clang++
+        - TRAVIS_TOOLCHAIN_VERSION=-3.8
 
 before_script: |
   export CC=${TRAVIS_CC}${TRAVIS_TOOLCHAIN_VERSION}
