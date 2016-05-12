@@ -105,12 +105,6 @@ namespace lanxc
       list_node(const list_node &) = delete;
       list_node &operator = (const list_node &) = delete;
 
-      //typename std::enable_if<config::allow_constant_time_unlink, bool>::type
-      //unlink() noexcept
-      //{
-      //  unlink_internal();
-      //}
-
       bool is_linked() const noexcept
       { return m_next != nullptr && m_prev != nullptr; }
 

@@ -1443,6 +1443,10 @@ namespace lanxc
 
     };
 
+    /**
+     * @brief RBTree Node, specialized for mutable index and single link
+     * @ingroup intrusive_rbtree
+     */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<Index, Node, Tag>
       : public rbtree_node<void, void>::index<Index>
@@ -1495,6 +1499,10 @@ namespace lanxc
 
     };
 
+    /**
+     * @brief RBTree Node, specialized for constant index and single link
+     * @ingroup intrusive_rbtree
+     */
     template<typename Index, typename Node, typename Tag>
     class rbtree_node<const Index, Node, Tag>
       : public rbtree_node<void, void>::index<Index>
@@ -1522,6 +1530,10 @@ namespace lanxc
     };
 
 
+    /**
+     * @brief RBTree Node, specialized for mutable index and multiple link
+     * @ingroup intrusive_rbtree
+     */
     template<typename Index, typename Node, typename ...Tags>
     class rbtree_node
       : public rbtree_node<void, void>::index<Index>
@@ -1666,6 +1678,10 @@ namespace lanxc
 
     };
 
+    /**
+     * @brief RBTree Node, specialized for constant index and multiple link
+     * @ingroup intrusive_rbtree
+     */
     template<typename Index, typename Node, typename ...Tags>
     class rbtree_node<const Index, Node, Tags...>
       : public rbtree_node<void, void>::index<Index>
@@ -1682,7 +1698,8 @@ namespace lanxc
 
       template<typename tag>
       struct check_tag {
-        constexpr static bool value = std::is_base_of<base_node<tag>, rbtree_node>::value;
+        constexpr static bool value
+            = std::is_base_of<base_node<tag>, rbtree_node>::value;
       };
 
       template<typename tag>
@@ -1705,6 +1722,10 @@ namespace lanxc
       { return *this; }
     };
 
+    /**
+     * @brief Alias (via inheriance) for #rbtree_node<Index, Node, void>
+     * @ingroup intrusive_rbtree
+     */
     template<typename Index, typename Node>
     class rbtree_node<Index, Node> : public rbtree_node<Index, Node, void>
     {

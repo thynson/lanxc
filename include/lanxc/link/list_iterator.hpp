@@ -26,6 +26,11 @@ namespace lanxc
 {
   namespace link
   {
+
+    /**
+     * @brief List iterator
+     * @ingroup intrusive_list
+     */
     template<typename Node, typename Tag>
     class list_iterator
       : public std::iterator<std::bidirectional_iterator_tag, Node,
