@@ -358,6 +358,71 @@ namespace lanxc
       { return lhs ^ rhs; }
     };
 
+  template<typename Function, typename ...OmittedArgument>
+  class extend_parameter;
+
+  template<>
+  class extend_parameter<void>
+  {
+    template<typename ...T>
+    struct tuple
+    {
+      template<typename F>
+      using type = decltype(std::declval<F>()(std::declval<T>()...));
+      template<typename R>
+      using append = tuple<T...,R>;
+      template<typename R>
+      using prepend= tuple<R, T...>;
+
+      template<typename F, typename ...R>
+      static type<F> invoke(F &&f, T &&...args, R &&...)
+      noexcept(noexcept(std::forward<F>(f)(std::forward<T>(args)...)))
+      {
+        return std::forward<F>(f)(std::forward<T>(args)...);
+      }
+    };
+
+    template<unsigned long N, typename ...Argument>
+    struct helper;
+
+    template<typename Current, typename ...Argument>
+    struct helper<0, Current, Argument...>
+    {
+      using type = tuple<Current, Argument...>;
+    };
+
+    template<unsigned long N, typename Current, typename ...Argument>
+    struct helper<N, Current, Argument...> : helper<N - 1, Argument...>
+    { };
+
+    template<typename , typename ...>
+    struct test;
+
+    template<typename Tuple>
+    struct test<Tuple>
+    {
+      static constexpr bool value = true;
+    };
+    template<typename T, typename ...A, typename R, typename ...B>
+    struct test<tuple<T, A...>, R, B...>
+    {
+      static constexpr bool value = (sizeof...(A)) == (sizeof...(B))
+        ? (std::is_convertible<T, R>::value) && test<tuple<A...>, B...>::value
+        : false;
+    };
+
+
+    template<unsigned long N, typename T, typename S, typename ...R>
+    struct invoke_helper //assume T is tuple<...>
+        : invoke_helper<N - 1, typename T::template append<S>, R...>
+    { };
+
+    template<typename T, typename S, typename ...R>
+    struct invoke_helper<0UL, T, S, R...> : T //assume T is tuple<...>
+    {
+    };
+
+  };
 
   /**
    * Extends parameter for functor
@@ -372,90 +437,39 @@ namespace lanxc
    * @endcode
    */
   template<typename Function, typename ...OmittedArgument>
-  class extend_parameter
+  class extend_parameter : extend_parameter<void>
   {
-    /** @brief Convert variadic template pack to tuple */
-    template<unsigned long N, typename ...Argument>
-    struct helper;
-
-    template<typename Current, typename ...Argument>
-    struct helper<0, Current, Argument...>
-    {
-      using type = std::tuple<Current, Argument...>;
-    };
-
-    template<unsigned long N, typename Current, typename ...Argument>
-    struct helper<N, Current, Argument...> : helper<N - 1, Argument...>
-    { };
-
-    /** @brief Test if types in @p TupleA is convertible to @p TupleB */
-    template<typename TupleA, typename TupleB>
-    struct test;
-
-    template<typename A, typename B>
-    struct test<std::tuple<A>, std::tuple<B>>
-    {
-      static constexpr bool value = std::is_convertible<A, B>::value;
-    };
-
-    template<typename A, typename ...T, typename B, typename ...R>
-    struct test<std::tuple<A, T...>, std::tuple<B, R...>>
-    {
-      static constexpr bool value
-        = (sizeof ... (T) == sizeof ...(R))
-          ? (std::is_convertible<A, B>::value
-             && (sizeof ...(T) == 0
-                 || test<std::tuple<T...>, std::tuple<R...>>::value))
-          : false;
-    };
-
-    template<unsigned long N, typename F, typename T, typename ...R>
-    struct invoke_helper
-    { };
-
-    template<typename F, typename ...A, typename T, typename ...R>
-    struct invoke_helper<0UL, F, std::tuple<A...>, T, R...>
-    {
-      using type = decltype(std::declval<F>()(std::declval<A>()...));
-
-      static type invoke(F &f, A &&...args, T &&, R &&...)
-      noexcept(noexcept(f(std::forward<A>(args)...)))
-      {
-        return f(std::forward<A>(args)...);
-      }
-    };
-
-    template<unsigned long N, typename F, typename ...A, typename T,
-        typename ...R>
-    struct invoke_helper<N, F, std::tuple<A...>, T, R...>
-        : invoke_helper<N - 1, F, std::tuple<A..., T>, R...>
-    { };
 
     Function m_function;
 
     template<typename ...Arguments>
-    constexpr static bool is_valid_arguments() noexcept
-    { return (sizeof...(Arguments) >= sizeof...(OmittedArgument))
-         && test<std::tuple<OmittedArgument...>,
-            typename helper<sizeof...(Arguments) - sizeof...(OmittedArgument),
-                Arguments...>::type>::value;
-    }
+    using tuple_type = typename helper
+        <
+            sizeof...(Arguments) - sizeof...(OmittedArgument),
+            Arguments...
+        >::type;
+
+
 
     template<typename ...Arguments>
     using omit_argument_sfinae
-      = typename std::enable_if<is_valid_arguments<Arguments...>(),
-          typename invoke_helper<
+      = typename std::enable_if
+        <
+          (sizeof ...(Arguments) >= sizeof ...(OmittedArgument))
+              && test<tuple_type<Arguments...>, OmittedArgument...>::value,
+          typename invoke_helper
+            <
               sizeof...(Arguments) - sizeof...(OmittedArgument),
-              Function,
-              std::tuple<>,
-              Arguments &&...>::type>::type;
+              tuple<>,
+              Arguments &&...
+            >::template type<Function>
+        >::type;
 
     template<typename ...Arguments>
     using invoker
       = invoke_helper<
         sizeof...(Arguments) - sizeof...(OmittedArgument),
-        Function,
-        std::tuple<>,
+        tuple<>,
         Arguments &&...>;
 
     /**
