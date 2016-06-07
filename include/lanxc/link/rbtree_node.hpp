@@ -1684,8 +1684,8 @@ namespace lanxc
      */
     template<typename Index, typename Node, typename ...Tags>
     class rbtree_node<const Index, Node, Tags...>
-      : public rbtree_node<void, void>::index<Index>
-      , public rbtree_node<void, void>::node<Index, Node, Tags>...
+        : public rbtree_node<void, void>::index<Index>
+          , public rbtree_node<void, void>::node<Index, Node, Tags> ...
     {
 
       using detail = rbtree_node<void, void>;

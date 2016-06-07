@@ -1,9 +1,33 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(lanxc-core CXX)
-add_library(core INTERFACE)
-add_library(lanxc::core ALIAS core)
+add_library(lanxc-core
+        include/lanxc/type_traits.hpp
+        include/lanxc/function.hpp
+        include/lanxc/future.hpp
+        include/lanxc/functional.hpp
+        include/lanxc/unique_tuple.hpp
+        include/lanxc/link.hpp
+        include/lanxc/link/forward_list_config.hpp
+        include/lanxc/link/forward_list_define.hpp
+        include/lanxc/link/forward_list_node.hpp
+        include/lanxc/link/forward_list_iterator.hpp
+        include/lanxc/link/forward_list.hpp
+        include/lanxc/link/list_config.hpp
+        include/lanxc/link/list_define.hpp
+        include/lanxc/link/list_node.hpp
+        include/lanxc/link/list_iterator.hpp
+        include/lanxc/link/list.hpp
+        include/lanxc/link/rbtree_config.hpp
+        include/lanxc/link/rbtree_define.hpp
+        include/lanxc/link/rbtree_node.hpp
+        include/lanxc/link/rbtree_iterator.hpp
+        include/lanxc/link/rbtree.hpp
+        include/lanxc/task.hpp
+        src/task.cpp)
 
-target_compile_features(core INTERFACE
+add_library(lanxc::lanxc-core ALIAS lanxc-core)
+
+target_compile_features(lanxc-core PUBLIC
     cxx_alias_templates
     cxx_auto_type
     cxx_constexpr
@@ -19,7 +43,7 @@ target_compile_features(core INTERFACE
     cxx_variadic_templates
     )
 
-target_include_directories(core INTERFACE
+target_include_directories(lanxc-core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
@@ -41,9 +65,9 @@ install(FILES
     )
 
 # Export targets
-install(TARGETS core
+install(TARGETS lanxc-core
     EXPORT lanxc-core-targets
-    ARCHIVE DESTINATION lib)
+    DESTINATION lib)
 
 install(EXPORT lanxc-core-targets
     FILE lanxc-core-targets.cmake
@@ -60,38 +84,6 @@ install(FILES lanxc-core-config.cmake
     DESTINATION lib/cmake/lanxc-core
     )
 
-
-
-
-##### Dummy target to makes IDEA happy
-add_library(core-dummy STATIC EXCLUDE_FROM_ALL
-    "include/lanxc/type_traits.hpp"
-    "include/lanxc/function.hpp"
-    "include/lanxc/future.hpp"
-    "include/lanxc/functional.hpp"
-    "include/lanxc/unique_tuple.hpp"
-    "include/lanxc/link.hpp"
-    "include/lanxc/link/forward_list_config.hpp"
-    "include/lanxc/link/forward_list_define.hpp"
-    "include/lanxc/link/forward_list_node.hpp"
-    "include/lanxc/link/forward_list_iterator.hpp"
-    "include/lanxc/link/forward_list.hpp"
-    "include/lanxc/link/list_config.hpp"
-    "include/lanxc/link/list_define.hpp"
-    "include/lanxc/link/list_node.hpp"
-    "include/lanxc/link/list_iterator.hpp"
-    "include/lanxc/link/list.hpp"
-    "include/lanxc/link/rbtree_config.hpp"
-    "include/lanxc/link/rbtree_define.hpp"
-    "include/lanxc/link/rbtree_node.hpp"
-    "include/lanxc/link/rbtree_iterator.hpp"
-    "include/lanxc/link/rbtree.hpp"
-    "dummy.cpp")
-
-set_target_properties(core-dummy PROPERTIES LINK_LANGUAGE CXX)
-
-target_link_libraries(core-dummy core)
-#### End of dummy target
 
 enable_testing()
 add_subdirectory(test)
