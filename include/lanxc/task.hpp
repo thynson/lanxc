@@ -56,16 +56,19 @@ namespace lanxc
     friend class scheduler;
   public:
 
-    task_monitor(task_monitor &&tm) = default;
-    task_monitor &operator = (task_monitor &&tm) & = default;
+    task_monitor(const task_monitor &tm) = delete;
+    task_monitor &operator = (const task_monitor &tm) =delete;
+
+    task_monitor(task_monitor &&tm);
+    task_monitor &operator = (task_monitor &&tm);
 
     virtual void set_progress(unsigned current, unsigned total);
     virtual ~task_monitor();
 
   private:
     task_monitor(scheduler &s, task_listener &t);
-    struct detail;
-    std::unique_ptr<detail> m_detail;
+    scheduler *m_scheduler;
+    task_listener *m_listener;
   };
 
   class task : public task_listener

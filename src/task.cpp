@@ -27,29 +27,37 @@ namespace lanxc
 
   task_listener::~task_listener() = default;
 
-  struct task_monitor::detail
+  task_monitor::task_monitor(task_monitor &&tm)
+      : m_scheduler(nullptr)
+      , m_listener(nullptr)
   {
-    detail(scheduler &s, task_listener &l)
-        : m_scheduler(s)
-        , m_task_listener(l)
-    { }
-    scheduler &m_scheduler;
-    task_listener &m_task_listener;
-  };
+    std::swap(m_scheduler, tm.m_scheduler);
+    std::swap(m_listener, tm.m_listener);
+  }
+
+  task_monitor &task_monitor::operator =(task_monitor &&tm)
+  {
+    this->~task_monitor();
+    new (this) task_monitor(std::move(tm));
+    return *this;
+  }
 
   task_monitor::task_monitor(scheduler &s, task_listener &l)
-      : m_detail { new detail { s, l } }
+      : m_scheduler(&s)
+      , m_listener(&l)
   { }
 
   task_monitor::~task_monitor()
   {
-    m_detail->m_scheduler.notify_finished(m_detail->m_task_listener);
+    if (m_scheduler && m_listener)
+      m_scheduler->notify_finished(*m_listener);
   }
 
   void task_monitor::set_progress(unsigned current, unsigned total)
   {
-    m_detail->m_scheduler.notify_progress(m_detail->m_task_listener,
-                                             current, total);
+
+    if (m_scheduler && m_listener)
+      m_scheduler->notify_progress(*m_listener, current, total);
   }
 
   scheduler::~scheduler() = default;
