@@ -451,7 +451,7 @@ namespace lanxc
           m_detail->m_next_promise = promise<R>(nullptr);
         };
 
-        promise<T...>::start(scheduler, std::move(m_detail->m_future.m_detail));
+        promise<T...>::start(scheduler, m_detail->m_future.m_detail);
       }
 
     };
