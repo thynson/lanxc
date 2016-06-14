@@ -47,6 +47,8 @@ target_include_directories(lanxc-core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
+target_link_libraries(lanxc-core PUBLIC pthread)
+
 install(DIRECTORY include/lanxc DESTINATION include/lanxc)
 
 include(CMakePackageConfigHelpers)
