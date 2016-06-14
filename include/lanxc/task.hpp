@@ -70,6 +70,9 @@ namespace lanxc
     virtual void set_progress(unsigned current, unsigned total);
     virtual ~task_monitor();
 
+    scheduler &get_scheduler() const noexcept
+    { return *m_scheduler; }
+
   private:
     task_monitor(scheduler &s, task_listener &t) noexcept ;
     scheduler *m_scheduler;
