@@ -56,17 +56,22 @@ namespace lanxc
     friend class scheduler;
   public:
 
+    constexpr task_monitor () noexcept
+        : m_scheduler{nullptr}
+        , m_listener{nullptr}
+    { }
+
     task_monitor(const task_monitor &tm) = delete;
     task_monitor &operator = (const task_monitor &tm) =delete;
 
-    task_monitor(task_monitor &&tm);
-    task_monitor &operator = (task_monitor &&tm);
+    task_monitor(task_monitor &&tm) noexcept ;
+    task_monitor &operator = (task_monitor &&tm) noexcept ;
 
     virtual void set_progress(unsigned current, unsigned total);
     virtual ~task_monitor();
 
   private:
-    task_monitor(scheduler &s, task_listener &t);
+    task_monitor(scheduler &s, task_listener &t) noexcept ;
     scheduler *m_scheduler;
     task_listener *m_listener;
   };

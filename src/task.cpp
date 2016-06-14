@@ -27,7 +27,7 @@ namespace lanxc
 
   task_listener::~task_listener() = default;
 
-  task_monitor::task_monitor(task_monitor &&tm)
+  task_monitor::task_monitor(task_monitor &&tm) noexcept
       : m_scheduler(nullptr)
       , m_listener(nullptr)
   {
@@ -35,14 +35,14 @@ namespace lanxc
     std::swap(m_listener, tm.m_listener);
   }
 
-  task_monitor &task_monitor::operator =(task_monitor &&tm)
+  task_monitor &task_monitor::operator =(task_monitor &&tm) noexcept
   {
     this->~task_monitor();
     new (this) task_monitor(std::move(tm));
     return *this;
   }
 
-  task_monitor::task_monitor(scheduler &s, task_listener &l)
+  task_monitor::task_monitor(scheduler &s, task_listener &l) noexcept
       : m_scheduler(&s)
       , m_listener(&l)
   { }
@@ -50,7 +50,11 @@ namespace lanxc
   task_monitor::~task_monitor()
   {
     if (m_scheduler && m_listener)
+    {
       m_scheduler->notify_finished(*m_listener);
+      m_scheduler = nullptr;
+      m_listener = nullptr;
+    }
   }
 
   void task_monitor::set_progress(unsigned current, unsigned total)
@@ -197,42 +201,45 @@ namespace lanxc
 
   void thread_pool_scheduler::start()
   {
-    std::unique_lock<std::mutex> lg(m_detail->m_mutex);
+    {
+      std::unique_lock<std::mutex> lg(m_detail->m_mutex);
 
-    if (!m_detail->m_threads.empty()) return;
+      if (!m_detail->m_threads.empty()) return;
 
-    for (auto i = 0U; i < std::thread::hardware_concurrency(); ++i)
-      m_detail->m_threads.emplace_back([this] {m_detail->routine();});
+      for (auto i = 0U; i < std::thread::hardware_concurrency(); ++i)
+        m_detail->m_threads.emplace_back([this] {m_detail->routine();});
 
+    }
+
+    detail::task_notify_queue finish_queue;
+    detail::task_progress_table progress_table;
     for ( ; ; )
     {
-      bool wait = true;
       if (m_detail->m_exited)
         return;
 
-      if (!m_detail->m_finished_queue.empty())
+      if (!finish_queue.empty())
       {
-        detail::task_notify_queue q { std::move(m_detail->m_finished_queue) };
-        m_detail->m_task_count -= q.size();
-        while(!q.empty())
+        while(!finish_queue.empty())
         {
-
-          auto &r = q.front().get();
-          q.pop();
+          m_detail->m_task_count --;
+          auto &r = finish_queue.front().get();
+          finish_queue.pop();
           do_notify_finished(r);
         }
-        wait = false;
       }
 
-      if (!m_detail->m_task_progresses.empty())
+      if (!progress_table.empty())
       {
-        detail::task_progress_table tbl { std::move(m_detail->m_task_progresses) };
-        for (auto &p : tbl)
+        for (auto &p : progress_table)
         {
           do_notify_progress(p.first.get(), p.second.first, p.second.second);
         }
-        wait = false;
+        progress_table.clear();
       }
+
+
+      std::unique_lock<std::mutex> lg(m_detail->m_mutex);
 
       if (m_detail->m_task_count == 0)
       {
@@ -240,8 +247,14 @@ namespace lanxc
         m_detail->m_condition.notify_one();
         return;
       }
-      if (wait)
+      while(m_detail->m_finished_queue.empty()
+            && m_detail->m_task_progresses.empty())
+      {
+
         m_detail->m_notify_condition.wait(lg);
+      }
+      finish_queue.swap(m_detail->m_finished_queue);
+      progress_table.swap(m_detail->m_task_progresses);
     }
   }
 }
