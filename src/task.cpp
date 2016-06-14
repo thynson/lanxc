@@ -123,7 +123,7 @@ namespace lanxc
     }
 
     detail(thread_pool_scheduler &s)
-        : m_scheduler { s }
+        : m_scheduler(s)
     { }
 
     ~detail()
