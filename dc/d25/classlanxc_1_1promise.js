@@ -1,11 +1,12 @@
 var classlanxc_1_1promise =
 [
-    [ "promise", "dc/d25/classlanxc_1_1promise.html#a4289a048cf07e0521334e6e637685109", null ],
-    [ "promise", "dc/d25/classlanxc_1_1promise.html#a229c1f9227754aaf3060bb9a50f91c41", null ],
-    [ "operator=", "dc/d25/classlanxc_1_1promise.html#a62d14e0666af05519be8965a5c219417", null ],
-    [ "operator=", "dc/d25/classlanxc_1_1promise.html#ae2a45acadd50587154d8f3923f248f51", null ],
-    [ "set_exception", "dc/d25/classlanxc_1_1promise.html#a63a82efa15ee10983c618d13bf8fb13e", null ],
-    [ "set_exception_ptr", "dc/d25/classlanxc_1_1promise.html#aa2f451598b738d11ae4e2d00a0efabed", null ],
-    [ "set_result", "dc/d25/classlanxc_1_1promise.html#a2b562c8843412c6c38d5a9cf8f987da4", null ],
+    [ "promise", "dc/d25/classlanxc_1_1promise.html#a78f7a9866fa1ade1efc5304bdc62baa5", null ],
+    [ "promise", "dc/d25/classlanxc_1_1promise.html#a56bd953f77db8a9d54991ba2f7f95952", null ],
+    [ "~promise", "dc/d25/classlanxc_1_1promise.html#aa41c3ffd0f55f9faeaa73d595720af9b", null ],
+    [ "operator=", "dc/d25/classlanxc_1_1promise.html#a9473974d79baf3558844adfdc6f98d89", null ],
+    [ "operator=", "dc/d25/classlanxc_1_1promise.html#a0d32f343bd8d12afec0a421b1585f832", null ],
+    [ "set_exception", "dc/d25/classlanxc_1_1promise.html#af6bef618bccb9f6dc02811b35837fc07", null ],
+    [ "set_exception_ptr", "dc/d25/classlanxc_1_1promise.html#a2e4a1db3ce9da214f603f009b80d72d3", null ],
+    [ "set_result", "dc/d25/classlanxc_1_1promise.html#abed0724ea7197b7a26e1a787f6eedbff", null ],
     [ "future", "dc/d25/classlanxc_1_1promise.html#acba1c206f9365d980493bbd3520adb25", null ]
 ];

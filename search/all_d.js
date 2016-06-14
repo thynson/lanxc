@@ -30,5 +30,6 @@ var searchData=
   ['result_5fof',['result_of',['../d9/db1/structlanxc_1_1result__of.html',1,'lanxc']]],
   ['result_5fof_3c_20void_20_3e',['result_of&lt; void &gt;',['../d8/dc6/structlanxc_1_1result__of_3_01void_01_4.html',1,'lanxc']]],
   ['reverse',['reverse',['../d6/dc6/classlanxc_1_1link_1_1forward__list.html#ace73532550f1fd8bd84e4af7561ec9d8',1,'lanxc::link::forward_list::reverse()'],['../d2/d49/classlanxc_1_1link_1_1list.html#a310c0bebc002158f5646a91d60e4dc89',1,'lanxc::link::list::reverse()']]],
-  ['reverse_5fiterator',['reverse_iterator',['../d2/d49/classlanxc_1_1link_1_1list.html#adb9a673a4271b497ef05158e05170942',1,'lanxc::link::list::reverse_iterator()'],['../d7/db6/classlanxc_1_1link_1_1rbtree.html#adb9a673a4271b497ef05158e05170942',1,'lanxc::link::rbtree::reverse_iterator()']]]
+  ['reverse_5fiterator',['reverse_iterator',['../d2/d49/classlanxc_1_1link_1_1list.html#adb9a673a4271b497ef05158e05170942',1,'lanxc::link::list::reverse_iterator()'],['../d7/db6/classlanxc_1_1link_1_1rbtree.html#adb9a673a4271b497ef05158e05170942',1,'lanxc::link::rbtree::reverse_iterator()']]],
+  ['routine',['routine',['../d9/dc5/classlanxc_1_1task.html#a890fa168fc79aa7c5837c97f6619a51d',1,'lanxc::task']]]
 ];

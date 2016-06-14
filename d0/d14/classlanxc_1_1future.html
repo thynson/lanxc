@@ -120,8 +120,8 @@ $(document).ready(function(){initNavTree('d0/d14/classlanxc_1_1future.html','../
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6d4d70e3d94adf107e2313f411eef8cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#a6d4d70e3d94adf107e2313f411eef8cb">future</a> (<a class="el" href="../../dc/db8/classlanxc_1_1function.html">function</a>&lt; void(<a class="el" href="../../dc/d25/classlanxc_1_1promise.html">lanxc::promise</a>&lt; T... &gt;)&gt; initiator)</td></tr>
-<tr class="separator:a6d4d70e3d94adf107e2313f411eef8cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec77b442e9beae6828bb6572d6ab75cf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#aec77b442e9beae6828bb6572d6ab75cf">future</a> (<a class="el" href="../../dc/db8/classlanxc_1_1function.html">function</a>&lt; void(<a class="el" href="../../dc/d25/classlanxc_1_1promise.html">promise</a>&lt; T... &gt;)&gt; f)</td></tr>
+<tr class="separator:aec77b442e9beae6828bb6572d6ab75cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2a0f1836b0b72a17e945224f8c632a31"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#a2a0f1836b0b72a17e945224f8c632a31">future</a> (<a class="el" href="../../d0/d14/classlanxc_1_1future.html">future</a> &amp;&amp;f) noexcept=default</td></tr>
 <tr class="separator:a2a0f1836b0b72a17e945224f8c632a31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a17d2ad2e7b40dd5cb69d5121ed7c5de3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d0/d14/classlanxc_1_1future.html">future</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#a17d2ad2e7b40dd5cb69d5121ed7c5de3">operator=</a> (<a class="el" href="../../d0/d14/classlanxc_1_1future.html">future</a> &amp;&amp;f) noexcept=default</td></tr>
@@ -136,34 +136,26 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a15ed4de997c1ca8542f4164ef8dc2afd"><td class="memTemplItemLeft" align="right" valign="top">auto&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd">caught</a> (F &amp;&amp;f) -&gt; typename do_caught&lt; typename std::remove_reference&lt; F &gt;::type &gt;::result        </td></tr>
 <tr class="memdesc:a15ed4de997c1ca8542f4164ef8dc2afd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a callback for receiving error.  <a href="#a15ed4de997c1ca8542f4164ef8dc2afd">More...</a><br /></td></tr>
 <tr class="separator:a15ed4de997c1ca8542f4164ef8dc2afd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad55316f5135cdae6aa6c5a763f6c3473"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#ad55316f5135cdae6aa6c5a763f6c3473">commit</a> ()</td></tr>
-<tr class="memdesc:ad55316f5135cdae6aa6c5a763f6c3473"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starting to resolve this future.  <a href="#ad55316f5135cdae6aa6c5a763f6c3473">More...</a><br /></td></tr>
-<tr class="separator:ad55316f5135cdae6aa6c5a763f6c3473"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae9999e98f32821cd6e4dafc714e7c4ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#ae9999e98f32821cd6e4dafc714e7c4ac">commit</a> (<a class="el" href="../../df/d30/classlanxc_1_1scheduler.html">scheduler</a> &amp;s)</td></tr>
+<tr class="memdesc:ae9999e98f32821cd6e4dafc714e7c4ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starting to resolve this future.  <a href="#ae9999e98f32821cd6e4dafc714e7c4ac">More...</a><br /></td></tr>
+<tr class="separator:ae9999e98f32821cd6e4dafc714e7c4ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:a839a801748e67474a87dfa25b751b349"><td class="memTemplParams" colspan="2">template&lt;typename... &gt; </td></tr>
-<tr class="memitem:a839a801748e67474a87dfa25b751b349"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#a839a801748e67474a87dfa25b751b349">promise</a></td></tr>
-<tr class="separator:a839a801748e67474a87dfa25b751b349"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acba1c206f9365d980493bbd3520adb25"><td class="memTemplParams" colspan="2">template&lt;typename... &gt; </td></tr>
 <tr class="memitem:acba1c206f9365d980493bbd3520adb25"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../d0/d14/classlanxc_1_1future.html#acba1c206f9365d980493bbd3520adb25">future</a></td></tr>
 <tr class="separator:acba1c206f9365d980493bbd3520adb25"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;typename... T&gt;<br />
-class lanxc::future&lt; T &gt;</h3>
-
-<p>Forward declaration </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a6d4d70e3d94adf107e2313f411eef8cb"></a>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a class="anchor" id="aec77b442e9beae6828bb6572d6ab75cf"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="../../d0/d14/classlanxc_1_1future.html">future</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="../../dc/db8/classlanxc_1_1function.html">function</a>&lt; void(<a class="el" href="../../dc/d25/classlanxc_1_1promise.html">lanxc::promise</a>&lt; T... &gt;)&gt;&#160;</td>
-          <td class="paramname"><em>initiator</em></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../dc/db8/classlanxc_1_1function.html">function</a>&lt; void(<a class="el" href="../../dc/d25/classlanxc_1_1promise.html">promise</a>&lt; T... &gt;)&gt;&#160;</td>
+          <td class="paramname"><em>f</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -250,7 +242,7 @@ class lanxc::future&lt; T &gt;</h3>
 <dl class="section return"><dt>Returns</dt><dd>Returns a future </dd></dl>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
-    <tr><td class="paramname"><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></td><td>If <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a5412c74c662777ae1d0a1060547b0dde" title="Set a callback for receiving the promised value. ">then</a>, <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd" title="Set a callback for receiving error. ">caught</a> or <a class="el" href="../../d0/d14/classlanxc_1_1future.html#ad55316f5135cdae6aa6c5a763f6c3473" title="Starting to resolve this future. ">commit</a> has already been called for this future</td></tr>
+    <tr><td class="paramname"><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></td><td>If <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a5412c74c662777ae1d0a1060547b0dde" title="Set a callback for receiving the promised value. ">then</a>, <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd" title="Set a callback for receiving error. ">caught</a> or <a class="el" href="../../d0/d14/classlanxc_1_1future.html#ae9999e98f32821cd6e4dafc714e7c4ac" title="Starting to resolve this future. ">commit</a> has already been called for this future</td></tr>
   </table>
   </dd>
 </dl>
@@ -263,14 +255,15 @@ class lanxc::future&lt; T &gt;</h3>
 
 </div>
 </div>
-<a class="anchor" id="ad55316f5135cdae6aa6c5a763f6c3473"></a>
+<a class="anchor" id="ae9999e98f32821cd6e4dafc714e7c4ac"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void commit </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype"><a class="el" href="../../df/d30/classlanxc_1_1scheduler.html">scheduler</a> &amp;&#160;</td>
+          <td class="paramname"><em>s</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -279,7 +272,7 @@ class lanxc::future&lt; T &gt;</h3>
 <p>Starting to resolve this future. </p>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
-    <tr><td class="paramname"><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></td><td>If <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a5412c74c662777ae1d0a1060547b0dde" title="Set a callback for receiving the promised value. ">then</a>, <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd" title="Set a callback for receiving error. ">caught</a> or <a class="el" href="../../d0/d14/classlanxc_1_1future.html#ad55316f5135cdae6aa6c5a763f6c3473" title="Starting to resolve this future. ">commit</a> has already been called for this future </td></tr>
+    <tr><td class="paramname"><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></td><td>If <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a5412c74c662777ae1d0a1060547b0dde" title="Set a callback for receiving the promised value. ">then</a>, <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd" title="Set a callback for receiving error. ">caught</a> or <a class="el" href="../../d0/d14/classlanxc_1_1future.html#ae9999e98f32821cd6e4dafc714e7c4ac" title="Starting to resolve this future. ">commit</a> has already been called for this future </td></tr>
   </table>
   </dd>
 </dl>
@@ -341,7 +334,7 @@ class lanxc::future&lt; T &gt;</h3>
 <dl class="section return"><dt>Returns</dt><dd>Returns a future </dd></dl>
 <dl class="exception"><dt>Exceptions</dt><dd>
   <table class="exception">
-    <tr><td class="paramname"><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></td><td>If <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a5412c74c662777ae1d0a1060547b0dde" title="Set a callback for receiving the promised value. ">then</a>, <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd" title="Set a callback for receiving error. ">caught</a> or <a class="el" href="../../d0/d14/classlanxc_1_1future.html#ad55316f5135cdae6aa6c5a763f6c3473" title="Starting to resolve this future. ">commit</a> has already been called for this future</td></tr>
+    <tr><td class="paramname"><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></td><td>If <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a5412c74c662777ae1d0a1060547b0dde" title="Set a callback for receiving the promised value. ">then</a>, <a class="el" href="../../d0/d14/classlanxc_1_1future.html#a15ed4de997c1ca8542f4164ef8dc2afd" title="Set a callback for receiving error. ">caught</a> or <a class="el" href="../../d0/d14/classlanxc_1_1future.html#ae9999e98f32821cd6e4dafc714e7c4ac" title="Starting to resolve this future. ">commit</a> has already been called for this future</td></tr>
   </table>
   </dd>
 </dl>
@@ -375,26 +368,6 @@ class lanxc::future&lt; T &gt;</h3>
 
 </div>
 </div>
-<a class="anchor" id="a839a801748e67474a87dfa25b751b349"></a>
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class <a class="el" href="../../dc/d25/classlanxc_1_1promise.html">promise</a></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>lanxc/<a class="el" href="../../db/ddf/future_8hpp_source.html">future.hpp</a></li>
 </ul>
@@ -404,7 +377,7 @@ class lanxc::future&lt; T &gt;</h3>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../d8/d25/namespacelanxc.html">lanxc</a></li><li class="navelem"><a class="el" href="../../d0/d14/classlanxc_1_1future.html">future</a></li>
-    <li class="footer">Generated on Thu May 12 2016 14:36:07 for lanxc-core by
+    <li class="footer">Generated on Tue Jun 14 2016 16:55:46 for lanxc-core by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.11 </li>
   </ul>

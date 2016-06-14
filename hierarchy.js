@@ -58,7 +58,8 @@ var hierarchy =
     [ "function< R(T...)>", "dc/db8/classlanxc_1_1function.html", null ],
     [ "function< Result(Arguments...)>", "d6/d7e/classlanxc_1_1function_3_01Result_07Arguments_8_8_8_08_4.html", null ],
     [ "function< void >", "dd/df6/classlanxc_1_1function_3_01void_01_4.html", null ],
-    [ "function< void(lanxc::lanxc::promise< T... >)>", "dc/db8/classlanxc_1_1function.html", null ],
+    [ "function< void()>", "dc/db8/classlanxc_1_1function.html", null ],
+    [ "function< void(lanxc::promise)>", "dc/db8/classlanxc_1_1function.html", null ],
     [ "function< void(std::exception_ptr)>", "dc/db8/classlanxc_1_1function.html", null ],
     [ "function< void(T...)>", "dc/db8/classlanxc_1_1function.html", null ],
     [ "future< T >", "d0/d14/classlanxc_1_1future.html", null ],
@@ -131,6 +132,13 @@ var hierarchy =
     [ "rbtree_node< void, void >", "d5/da0/classlanxc_1_1link_1_1rbtree__node_3_01void_00_01void_01_4.html", null ],
     [ "result_of< T >", "d9/db1/structlanxc_1_1result__of.html", null ],
     [ "result_of< void >", "d8/dc6/structlanxc_1_1result__of_3_01void_01_4.html", null ],
+    [ "scheduler", "df/d30/classlanxc_1_1scheduler.html", [
+      [ "thread_pool_scheduler", "df/d87/classlanxc_1_1thread__pool__scheduler.html", null ]
+    ] ],
+    [ "task_listener", "d4/d83/classlanxc_1_1task__listener.html", [
+      [ "task", "d9/dc5/classlanxc_1_1task.html", null ]
+    ] ],
+    [ "task_monitor", "d5/d02/classlanxc_1_1task__monitor.html", null ],
     [ "true_type", null, [
       [ "uses_allocator< lanxc::function< Result(Arguments...)>, Allocator >", "d0/de6/structstd_1_1uses__allocator_3_01lanxc_1_1function_3_01Result_07Arguments_8_8_8_08_4_00_01Allocator_01_4.html", null ]
     ] ],

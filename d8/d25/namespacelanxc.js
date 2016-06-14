@@ -55,6 +55,11 @@ var namespacelanxc =
     [ "promise_cancelled", "d5/dfd/classlanxc_1_1promise__cancelled.html", "d5/dfd/classlanxc_1_1promise__cancelled" ],
     [ "result_of", "d9/db1/structlanxc_1_1result__of.html", null ],
     [ "result_of< void >", "d8/dc6/structlanxc_1_1result__of_3_01void_01_4.html", "d8/dc6/structlanxc_1_1result__of_3_01void_01_4" ],
+    [ "scheduler", "df/d30/classlanxc_1_1scheduler.html", "df/d30/classlanxc_1_1scheduler" ],
+    [ "task", "d9/dc5/classlanxc_1_1task.html", "d9/dc5/classlanxc_1_1task" ],
+    [ "task_listener", "d4/d83/classlanxc_1_1task__listener.html", "d4/d83/classlanxc_1_1task__listener" ],
+    [ "task_monitor", "d5/d02/classlanxc_1_1task__monitor.html", "d5/d02/classlanxc_1_1task__monitor" ],
+    [ "thread_pool_scheduler", "df/d87/classlanxc_1_1thread__pool__scheduler.html", "df/d87/classlanxc_1_1thread__pool__scheduler" ],
     [ "unique_tuple", "dd/df8/structlanxc_1_1unique__tuple.html", "dd/df8/structlanxc_1_1unique__tuple" ],
     [ "unique_tuple< T >", "d5/d34/structlanxc_1_1unique__tuple_3_01T_01_4.html", "d5/d34/structlanxc_1_1unique__tuple_3_01T_01_4" ],
     [ "unique_tuple<>", "de/d62/structlanxc_1_1unique__tuple_3_4.html", "de/d62/structlanxc_1_1unique__tuple_3_4" ]

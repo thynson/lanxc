@@ -54,10 +54,11 @@ var dir_d3a7826fbccff3d54c7ab960f4d87e1f =
     ] ],
     [ "future.hpp", "db/ddf/future_8hpp.html", [
       [ "future", "d0/d14/classlanxc_1_1future.html", "d0/d14/classlanxc_1_1future" ],
-      [ "promise_cancelled", "d5/dfd/classlanxc_1_1promise__cancelled.html", "d5/dfd/classlanxc_1_1promise__cancelled" ],
-      [ "invalid_future", "db/d92/classlanxc_1_1invalid__future.html", "db/d92/classlanxc_1_1invalid__future" ],
+      [ "promise", "dc/d25/classlanxc_1_1promise.html", "dc/d25/classlanxc_1_1promise" ],
       [ "is_future", "d8/d20/structlanxc_1_1is__future.html", "d8/d20/structlanxc_1_1is__future" ],
       [ "is_future< future< T... > >", "d9/d94/structlanxc_1_1is__future_3_01future_3_01T_8_8_8_01_4_01_4.html", "d9/d94/structlanxc_1_1is__future_3_01future_3_01T_8_8_8_01_4_01_4" ],
+      [ "promise_cancelled", "d5/dfd/classlanxc_1_1promise__cancelled.html", "d5/dfd/classlanxc_1_1promise__cancelled" ],
+      [ "invalid_future", "db/d92/classlanxc_1_1invalid__future.html", "db/d92/classlanxc_1_1invalid__future" ],
       [ "promise", "dc/d25/classlanxc_1_1promise.html", "dc/d25/classlanxc_1_1promise" ],
       [ "future", "d0/d14/classlanxc_1_1future.html", "d0/d14/classlanxc_1_1future" ],
       [ "detail", "d7/d77/structlanxc_1_1future_1_1then__future__functor_1_1detail.html", "d7/d77/structlanxc_1_1future_1_1then__future__functor_1_1detail" ],
@@ -68,6 +69,13 @@ var dir_d3a7826fbccff3d54c7ab960f4d87e1f =
       [ "detail", "db/d5c/structlanxc_1_1future_1_1caught__void__functor_1_1detail.html", "db/d5c/structlanxc_1_1future_1_1caught__void__functor_1_1detail" ]
     ] ],
     [ "link.hpp", "dc/da2/link_8hpp.html", null ],
+    [ "task.hpp", "d8/da1/task_8hpp.html", [
+      [ "task_listener", "d4/d83/classlanxc_1_1task__listener.html", "d4/d83/classlanxc_1_1task__listener" ],
+      [ "task_monitor", "d5/d02/classlanxc_1_1task__monitor.html", "d5/d02/classlanxc_1_1task__monitor" ],
+      [ "task", "d9/dc5/classlanxc_1_1task.html", "d9/dc5/classlanxc_1_1task" ],
+      [ "scheduler", "df/d30/classlanxc_1_1scheduler.html", "df/d30/classlanxc_1_1scheduler" ],
+      [ "thread_pool_scheduler", "df/d87/classlanxc_1_1thread__pool__scheduler.html", "df/d87/classlanxc_1_1thread__pool__scheduler" ]
+    ] ],
     [ "type_traits.hpp", "dc/d54/type__traits_8hpp.html", [
       [ "result_of", "d9/db1/structlanxc_1_1result__of.html", null ],
       [ "result_of< void >", "d8/dc6/structlanxc_1_1result__of_3_01void_01_4.html", "d8/dc6/structlanxc_1_1result__of_3_01void_01_4" ],
