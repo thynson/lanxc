@@ -19,7 +19,7 @@
 #define LANXC_FUTURE_HPP_INCLUDED
 
 #include <lanxc/type_traits.hpp>
-#include <lanxc/function.hpp>
+#include <lanxc/task.hpp>
 
 #include <exception>
 #include <memory>
@@ -29,12 +29,19 @@
 
 namespace lanxc
 {
-
-  /**
-   *  Forward declaration
-   */
   template<typename ...T>
   class future;
+
+  template<typename ...T>
+  class promise;
+
+  template<typename T>
+  struct is_future
+  { constexpr static bool value = false; };
+
+  template<typename ...T>
+  struct is_future<future<T...>>
+  { constexpr static bool value = true; };
 
   /**
    * Error and Exception
@@ -56,170 +63,134 @@ namespace lanxc
     const char *what() const noexcept override
     {
       return "this future is invalid, possibly because .then(), .caught()"
-        " or .commit() was already called for this future.";
+          " or .commit() was already called for this future.";
     }
   };
-
-  template<typename T>
-  struct is_future
-  {
-    constexpr static bool value = false;
-  };
-  template<typename ...T>
-  struct is_future<future<T...>>
-  {
-    constexpr static bool value = true;
-  };
-
 
   template<typename ...T>
   class promise
   {
+    template<typename ...> friend class future;
   public:
 
-    promise(promise &&p)
-        : m_detail()
-    {
-      m_detail.swap(p.m_detail);
-    }
+    promise(promise &&other) noexcept
+      : m_detail(std::move(other.m_detail))
+    { }
 
-    promise &operator = (promise &&p)
+    promise &operator = (promise &&other) noexcept
     {
       this->~promise();
-      new (this) promise(std::move(p));
+      new (this) promise(std::move(other));
       return *this;
     }
 
+    promise(const promise&) = delete;
+    promise &operator = (const promise &other) = delete;
 
-    promise(const promise &p) = delete;
-    promise &operator = (const promise &p) = delete;
-
-    /**
-     * @brief Fulfill this promise
-     * @retval true Success to fulfill the corresponding @a future
-     * @retval false The corresponding @a future may have been cancelled,
-     * or #set_result, #set_exception or #set_exception_ptr has already
-     * been called for this promise.
-     */
-    inline bool set_result(T ...value)
+    void set_result(T ...value)
     {
-      auto p = m_detail.lock();
-      if (!p) return false;
-      m_detail.reset();
-      p->set_result(std::move(value)...);
-      return true;
+      if (auto ptr = m_detail.lock())
+        ptr->set_result(std::move(value)...);
     }
 
-    /**
-     * @brief Cancel this promise with an exception as reason
-     * @tparam E Type of the exception
-     * @param e The exception
-     * @retval true Success to cancel the corresponding @a future
-     * @retval false The corresponding @a future may have been cancelled,
-     * or #set_result, #set_exception or #set_exception_ptr has already
-     * been called for this promise.
-     *
-     * This function will cancel the corresponding future and convert @p e
-     * into a @a std::exception_ptr which can be caught by the corresponding
-     * `future`.
-     */
+    void set_exception_ptr(std::exception_ptr p)
+    {
+      if (auto ptr = m_detail.lock())
+        ptr->set_exception_ptr(p);
+    }
+
     template<typename E>
-    inline bool set_exception(E e)
+    void set_exception(E e)
     {
-      auto p = m_detail.lock();
-      if (!p) return false;
-      m_detail.reset();
-      p->set_exception_ptr(std::make_exception_ptr(e));
-      return true;
+      if (auto ptr = m_detail.lock())
+        ptr->set_exception_ptr(std::make_exception_ptr<E>(e));
     }
 
-    /**
-     * @brief Cancel this promise with an exception pointer as reason
-     * @param e The exception pointer
-     * @retval true Success to cancel the corresponding @a future
-     * @retval false The corresponding @a future may have been cancelled,
-     * or #set_result, #set_exception or #set_exception_ptr has already
-     * been called for this promise.
-     *
-     * This function will cancel this promise and @p e will be caught
-     * by the corresponding `future`.
-     */
-    inline bool set_exception_ptr(std::exception_ptr e)
+    void update_progress(unsigned current, unsigned total)
     {
-      auto p = m_detail.lock();
-      if (!p) return false;
-      m_detail.reset();
-      p->set_exception_ptr(std::move(e));
-      return true;
+      if (auto ptr = m_detail.lock())
+        ptr->m_task_monitor.set_progress(current, total);
     }
 
+    ~promise()
+    {
+      if (auto ptr = m_detail.lock())
+      {
+        task_monitor tm;
+        std::swap(ptr->m_task_monitor, tm);
+      }
+    }
 
   private:
-    template<typename...>
-    friend class future;
-
-    struct detail
+    struct detail : task, std::enable_shared_from_this<detail>
     {
+      scheduler &m_scheduler;
+      function<void(promise)> m_initiator;
+      function<void(std::exception_ptr)> m_error_handler{};
+      function<void(T...)> m_fulfill_handler{};
+      function<void()> m_finisher{};
+      std::shared_ptr<detail> m_self;
+      task_monitor m_task_monitor;
+
+    protected:
+      virtual void on_progress_changed(unsigned current, unsigned total) override
+      {
+
+      }
+
+      virtual void on_finish() override
+      {
+        m_initiator = nullptr;
+        if (m_finisher)
+          m_finisher();
+      }
+
+      virtual void routine(task_monitor tm) noexcept override
+      {
+        assert(m_self != nullptr);
+        std::swap(m_task_monitor, tm);
+        m_initiator(promise(std::move(m_self)));
+      }
+
     public:
 
-      detail(function<void(promise<T...>)> initiator) noexcept
-          : m_initiator(std::move(initiator))
-          , m_error_handler()
-          , m_fulfill_handler()
+      detail(scheduler &s, function<void(promise)> f)
+          : m_scheduler(s)
+          , m_initiator(std::move(f))
       { }
 
-      ~detail()
+      void set_result(T ...value)
       {
-        if (m_error_handler)
-          m_error_handler(std::make_exception_ptr(promise_cancelled()));
+        function<void()>(
+            std::bind([this](T ...value)
+                      { m_fulfill_handler(std::move(value)...); },
+                      std::move(value)...)
+        ).swap(m_finisher);
       }
 
-      detail(const detail&) = delete;
-      detail(detail&&) = delete;
-      detail &operator = (const detail&) = delete;
-      detail &operator = (detail&&) = delete;
-
-      void set_result(T... value)
+      void set_exception_ptr(std::exception_ptr e)
       {
-        if (m_fulfill_handler)
-        {
-          m_fulfill_handler(std::move(value)...);
-          m_fulfill_handler = nullptr;
-          m_error_handler = nullptr;
-        }
+        function<void()>([this, e](){ m_error_handler(e); })
+            .swap(m_finisher);
       }
 
-      void set_exception_ptr(std::exception_ptr e) noexcept
-      {
-        if (m_error_handler)
-        {
-          m_error_handler(e);
-          m_fulfill_handler = nullptr;
-          m_error_handler = nullptr;
-        }
-      }
-
-      function<void(lanxc::promise<T...>)> m_initiator;
-      function<void(std::exception_ptr)> m_error_handler;
-      function<void(T...)> m_fulfill_handler;
+      virtual ~detail() = default;
     };
 
-    promise(std::shared_ptr<detail> p)
-        : m_detail(p)
-    { }
-
-    static void resolve_promise(std::shared_ptr<detail> p)
+    static void start(std::shared_ptr<detail> ptr)
     {
+      auto p = ptr.get();
       if (!p->m_error_handler)
-        p->m_error_handler = [](std::exception_ptr) {};
-
+        p->m_error_handler = [] (std::exception_ptr) {};
       if (!p->m_fulfill_handler)
-        p->m_fulfill_handler = [](T...){};
-
-      function<void(promise<T...>)> tmp;
-      std::swap(p->m_initiator, tmp);
-      tmp(promise<T...>(std::move(p)));
+        p->m_fulfill_handler = [] (T...) {};
+      p->m_self = std::move(ptr);
+      p->m_scheduler.schedule(*p);
     }
+
+    promise(std::shared_ptr<detail> ptr)
+        : m_detail { ptr }
+    { }
 
     std::weak_ptr<detail> m_detail;
   };
@@ -227,6 +198,9 @@ namespace lanxc
   template<typename ...T>
   class future
   {
+    template<typename ...>
+    friend class future;
+
     using promise_type = promise<T...>;
     static void default_fulfill_handler(T...) {}
 
@@ -234,7 +208,11 @@ namespace lanxc
 
     static function<void(T...)> cascade_fulfill_handler(promise<T...> *p)
     {
-      return [p](T...args) { p->set_result(std::move(args)...); };
+      return [p](T...args)
+      {
+        p->set_result(std::move(args)...);
+        *p = promise<T...>(nullptr);
+      };
     }
 
     template<typename Future>
@@ -276,21 +254,22 @@ namespace lanxc
       {
         Future f = m_detail->m_function(value...);
 
-        f.m_promise->m_fulfill_handler
+        f.m_detail->m_fulfill_handler
             = Future::cascade_fulfill_handler(&this->m_detail->m_next_promise);
 
-        f.m_promise->m_error_handler = [this](std::exception_ptr e)
+        f.m_detail->m_error_handler = [this](std::exception_ptr e)
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
+          this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        Future::promise_type::resolve_promise(f.m_promise);
+        Future::promise_type::start(f.m_detail);
       }
 
 
       void operator () (typename Future::promise_type p)
       {
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_promise.get();
+        auto *ptr = m_detail->m_future.m_detail.get();
 
         ptr->m_fulfill_handler = [this](T...args)
         {
@@ -299,8 +278,9 @@ namespace lanxc
         ptr->m_error_handler = [this](std::exception_ptr e)
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
+          this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
+        promise<T...>::start(m_detail->m_future.m_detail);
       }
     };
 
@@ -345,20 +325,21 @@ namespace lanxc
       {
         Future f = m_detail->m_function(e);
 
-        f.m_promise->m_fulfill_handler
+        f.m_detail->m_fulfill_handler
             = Future::cascade_fulfill_handler(&this->m_detail->m_next_promise);
 
-        f.m_promise->m_error_handler = [this](std::exception_ptr ex)
+        f.m_detail->m_error_handler = [this](std::exception_ptr ex)
         {
           this->m_detail->m_next_promise.set_exception_ptr(ex);
+          this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        Future::promise_type::resolve_promise(f.m_promise);
+        Future::promise_type::start(f.m_detail);
       }
 
       void operator () (typename Future::promise_type p)
       {
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_promise.get();
+        auto *ptr = m_detail->m_future.m_detail.get();
 
         ptr->m_fulfill_handler = [this](T...)
         {
@@ -368,7 +349,7 @@ namespace lanxc
         {
           caught(e);
         };
-        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
+        promise<T...>::start(m_detail->m_future.m_detail);
       }
     };
 
@@ -409,18 +390,20 @@ namespace lanxc
       void operator () (promise<R> p)
       {
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_promise.get();
+        auto *ptr = m_detail->m_future.m_detail.get();
         ptr->m_fulfill_handler = [this](T ...value)
         {
           m_detail->m_next_promise
                   .set_result(m_detail->m_function(std::move(value)...));
+          m_detail->m_next_promise = promise<R>(nullptr);
         };
         ptr->m_error_handler = [this](std::exception_ptr e)
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
+          m_detail->m_next_promise = promise<R>(nullptr);
         };
 
-        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
+        promise<T...>::start(std::move(m_detail->m_future.m_detail));
       }
 
     };
@@ -462,7 +445,7 @@ namespace lanxc
       void operator () (promise<R> p)
       {
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_promise.get();
+        auto *ptr = m_detail->m_future.m_detail.get();
         ptr->m_fulfill_handler = [this](T ...)
         {
           m_detail->m_next_promise = promise<R>(nullptr);
@@ -471,9 +454,10 @@ namespace lanxc
         ptr->m_error_handler = [this](std::exception_ptr e)
         {
           m_detail->m_next_promise.set_result(m_detail->m_function(e));
+          m_detail->m_next_promise = promise<R>(nullptr);
         };
 
-        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
+        promise<T...>::start(m_detail->m_future.m_detail);
       }
     };
 
@@ -514,18 +498,20 @@ namespace lanxc
       void operator () (promise<> p)
       {
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_promise.get();
+        auto *ptr = m_detail->m_future.m_detail.get();
         ptr->m_fulfill_handler = [this](T ...value)
         {
           m_detail->m_function(std::move(value)...);
           this->m_detail->m_next_promise.set_result();
+          this->m_detail->m_next_promise = promise<>(nullptr);
         };
 
         ptr->m_error_handler = [this](std::exception_ptr e)
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
+          this->m_detail->m_next_promise = promise<>(nullptr);
         };
-        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
+        promise<T...>::start(m_detail->m_future.m_detail);
       }
     };
 
@@ -553,7 +539,7 @@ namespace lanxc
       void operator () (promise<> p)
       {
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_promise.get();
+        auto *ptr = m_detail->m_future.m_detail.get();
         ptr->m_fulfill_handler = [this](T ...)
         {
           m_detail->m_next_promise = promise<>(nullptr);
@@ -563,8 +549,9 @@ namespace lanxc
         {
           m_detail->m_function(e);
           m_detail->m_next_promise.set_result();
+          m_detail->m_next_promise = promise<>(nullptr);
         };
-        promise<T...>::resolve_promise(m_detail->m_future.m_promise);
+        promise<T...>::start(m_detail->m_future.m_detail);
       }
     };
 
@@ -630,17 +617,17 @@ namespace lanxc
 
     void check()
     {
-      if (!m_promise
-          || m_promise->m_fulfill_handler
-          || m_promise->m_error_handler)
+      if (!m_detail
+          || m_detail->m_fulfill_handler
+          || m_detail->m_error_handler)
         throw invalid_future();
     }
 
 
   public:
 
-    future(function<void(lanxc::promise<T...>)> initiator)
-        : m_promise(new typename promise<T...>::detail(std::move(initiator)))
+    future(scheduler &s, function<void(promise<T...>)> f)
+        : m_detail(std::make_shared<typename promise<T...>::detail>(s, std::move(f)))
     { }
 
     future(future &&f) noexcept = default;
@@ -666,12 +653,12 @@ namespace lanxc
      */
     template<typename F>
     auto then(F &&f)
-      -> typename do_then<typename std::remove_reference<F>::type>::result
+    -> typename do_then<typename std::remove_reference<F>::type>::result
     {
       using then_t = do_then<typename std::remove_reference<F>::type>;
       check();
-      return typename then_t::result(
-          typename then_t::functor(future(m_promise),
+      return typename then_t::result(m_detail->m_scheduler,
+          typename then_t::functor(future(m_detail),
                                    std::forward<F>(f)));
     }
 
@@ -693,12 +680,12 @@ namespace lanxc
      */
     template<typename F>
     auto caught(F &&f)
-      -> typename do_caught<typename std::remove_reference<F>::type>::result
+    -> typename do_caught<typename std::remove_reference<F>::type>::result
     {
       using caught_t = do_caught<typename std::remove_reference<F>::type>;
       check();
-      return typename caught_t::result(
-          typename caught_t::functor(future(m_promise),
+      return typename caught_t::result(m_detail->m_scheduler,
+          typename caught_t::functor(future(m_detail),
                                      std::forward<F>(f)));
     }
 
@@ -710,27 +697,17 @@ namespace lanxc
     void commit()
     {
       check();
-      promise<T...>::resolve_promise(m_promise);
+      promise<T...>::start(m_detail);
     }
 
+
   private:
-
-    future() noexcept
-        : m_promise(nullptr)
+    future(std::shared_ptr<typename promise<T...>::detail> ptr)
+        : m_detail(std::move(ptr))
     { }
-
-    future(std::shared_ptr<typename promise<T...>::detail> ptr) noexcept
-        : m_promise(ptr)
-    { }
-
-    template<typename...>
-    friend class promise;
-
-    template<typename ...>
-    friend class future;
-
-    std::shared_ptr<typename promise<T...>::detail> m_promise;
+    std::shared_ptr<typename promise<T...>::detail> m_detail;
   };
+
 }
 
 #endif
