@@ -67,16 +67,34 @@ namespace lanxc
     }
   };
 
+  /**
+   * @brief The promise for a future
+   *
+   * A promise guards a process that a future is getting delivered.
+   * When a promise is destructed the corresponding future is either fulfilled
+   * if #set_result has been called or cancelled. The reason that a future get
+   * cancelled is a instance of #invalid_future, or other value provided by
+   * #set_exception_ptr or #set_exception and can be caught as a
+   * std::exception_ptr by the future.
+   */
   template<typename ...T>
   class promise
   {
     template<typename ...> friend class future;
   public:
 
+    /**
+     * Align the future delivering lifecycle to scope of this instance
+     * @param other The original scope guard
+     */
     promise(promise &&other) noexcept
       : m_detail(std::move(other.m_detail))
     { }
 
+    /**
+     * @brief Align the future delivering lifecycle to scope of this instance
+     * @param other The original scope guard
+     */
     promise &operator = (promise &&other) noexcept
     {
       this->~promise();
@@ -87,18 +105,31 @@ namespace lanxc
     promise(const promise&) = delete;
     promise &operator = (const promise &other) = delete;
 
+    /**
+     * @brief Fulfill future future with given value
+     * @param value The original scope guard
+     */
     void set_result(T ...value)
     {
       if (auto ptr = m_detail.lock())
         ptr->set_result(std::move(value)...);
     }
 
+    /**
+     * @brief Cancel the future with given reason @p p
+     * @param p The reason that corresponding future is canncelled
+     */
     void set_exception_ptr(std::exception_ptr p)
     {
       if (auto ptr = m_detail.lock())
         ptr->set_exception_ptr(p);
     }
 
+    /**
+     * @brief Cancel the future with given reason @p p
+     * @tparam E The type of @p p
+     * @param p The reason that corresponding future is canncelled
+     */
     template<typename E>
     void set_exception(E e)
     {
@@ -106,12 +137,12 @@ namespace lanxc
         ptr->set_exception_ptr(std::make_exception_ptr<E>(e));
     }
 
-    void update_progress(unsigned current, unsigned total)
-    {
-      if (auto ptr = m_detail.lock())
-        ptr->m_task_monitor.set_progress(current, total);
-    }
-
+    /**
+     * @brief Destructor indicates the end of future delivering
+     *
+     * When this instance is destructed, the corresponding future is either
+     * fulfilled if
+     */
     ~promise()
     {
       if (auto ptr = m_detail.lock())
@@ -124,7 +155,6 @@ namespace lanxc
   private:
     struct detail : task, std::enable_shared_from_this<detail>
     {
-//      scheduler &m_scheduler;
       function<void(promise)> m_initiator;
       function<void(std::exception_ptr)> m_error_handler{};
       function<void(T...)> m_fulfill_handler{};
@@ -133,29 +163,30 @@ namespace lanxc
       task_monitor m_task_monitor;
 
     protected:
-      virtual void on_progress_changed(unsigned current, unsigned total) override
-      {
+      void on_progress_changed(unsigned current, unsigned total) override
+      { }
 
-      }
-
-      virtual void on_finish() override
+      void on_finish() override
       {
         m_initiator = nullptr;
         if (m_finisher)
           m_finisher();
       }
 
-      virtual void routine(task_monitor tm) noexcept override
+      void routine(task_monitor tm) noexcept override
       {
         assert(m_self != nullptr);
         std::swap(m_task_monitor, tm);
         m_initiator(promise(std::move(m_self)));
       }
 
+      void cancel()
+      { m_error_handler(std::make_exception_ptr(promise_cancelled())); }
     public:
 
-      detail(function<void(promise)> f)
-          : m_initiator(std::move(f))
+      detail(function<void(promise)> f) noexcept
+          : m_initiator { std::move(f) }
+          , m_finisher { [this] { cancel(); } }
       { }
 
       void set_result(T ...value)
