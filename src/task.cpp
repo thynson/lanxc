@@ -21,6 +21,8 @@
 #include <thread>
 #include <map>
 #include <list>
+#include <mutex>
+#include <condition_variable>
 
 namespace lanxc
 {
