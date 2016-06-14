@@ -147,6 +147,8 @@ namespace lanxc
     {
       if (auto ptr = m_detail.lock())
       {
+        if (!ptr->m_finisher)
+          ptr->set_default_cancel_error();
         task_monitor tm;
         std::swap(ptr->m_task_monitor, tm);
       }
@@ -161,6 +163,14 @@ namespace lanxc
       function<void()> m_finisher{};
       std::shared_ptr<detail> m_self;
       task_monitor m_task_monitor;
+
+      void set_default_cancel_error()
+      {
+        m_finisher = [this]()
+        {
+          m_error_handler(std::make_exception_ptr(promise_cancelled()));
+        };
+      }
 
     protected:
       void on_progress_changed(unsigned current, unsigned total) override
@@ -179,14 +189,10 @@ namespace lanxc
         std::swap(m_task_monitor, tm);
         m_initiator(promise(std::move(m_self)));
       }
-
-      void cancel()
-      { m_error_handler(std::make_exception_ptr(promise_cancelled())); }
     public:
 
       detail(function<void(promise)> f) noexcept
           : m_initiator { std::move(f) }
-          , m_finisher { [this] { cancel(); } }
       { }
 
       void set_result(T ...value)
