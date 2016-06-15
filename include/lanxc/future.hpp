@@ -73,7 +73,7 @@ namespace lanxc
    * A promise guards a process that a future is getting delivered.
    * When a promise is destructed the corresponding future is either fulfilled
    * if #set_result has been called or cancelled. The reason that a future get
-   * cancelled is a instance of #invalid_future, or other value provided by
+   * cancelled is a instance of @a invalid_future, or other value provided by
    * #set_exception_ptr or #set_exception and can be caught as a
    * std::exception_ptr by the future.
    */
@@ -127,8 +127,8 @@ namespace lanxc
 
     /**
      * @brief Cancel the future with given reason @p p
-     * @tparam E The type of @p p
-     * @param p The reason that corresponding future is canncelled
+     * @tparam E The type of @p e
+     * @param e The reason that corresponding future is canncelled
      */
     template<typename E>
     void set_exception(E e)
@@ -140,8 +140,8 @@ namespace lanxc
     /**
      * @brief Destructor indicates the end of future delivering
      *
-     * When this instance is destructed, the corresponding future is either
-     * fulfilled if
+     * When this instance is destructed, the delivering process ends and
+     * corresponding future is now either delivered or cancelled
      */
     ~promise()
     {
