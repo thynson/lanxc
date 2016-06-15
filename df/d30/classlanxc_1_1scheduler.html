@@ -139,8 +139,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a62b63bddf378b0e13a4affa3e8e1bedf"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d30/classlanxc_1_1scheduler.html#a62b63bddf378b0e13a4affa3e8e1bedf">start</a> ()</td></tr>
 <tr class="memdesc:a62b63bddf378b0e13a4affa3e8e1bedf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start to run the scheduled tasks.  <a href="#a62b63bddf378b0e13a4affa3e8e1bedf">More...</a><br /></td></tr>
 <tr class="separator:a62b63bddf378b0e13a4affa3e8e1bedf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af669a02ef1a6875d676a4d1e35930e54"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d30/classlanxc_1_1scheduler.html#af669a02ef1a6875d676a4d1e35930e54">~scheduler</a> ()=0</td></tr>
-<tr class="separator:af669a02ef1a6875d676a4d1e35930e54"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3676fc1bd0e4befc631d28c3d3f9fe44"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../df/d30/classlanxc_1_1scheduler.html#a3676fc1bd0e4befc631d28c3d3f9fe44">~scheduler</a> ()=default</td></tr>
+<tr class="separator:a3676fc1bd0e4befc631d28c3d3f9fe44"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -170,7 +170,7 @@ Friends</h2></td></tr>
 <dl class="section note"><dt>Note</dt><dd>This class is concret through but actually design as an abstract class. The default implementation of this class is naive that runs scheduled tasks immediately.</dd></dl>
 <p>The implement of this class should run the scheduled task in any way, e.g. a background thread or defer until event loop is free, and finally notify that if the task finished or failed </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="af669a02ef1a6875d676a4d1e35930e54"></a>
+<a class="anchor" id="a3676fc1bd0e4befc631d28c3d3f9fe44"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -186,7 +186,7 @@ Friends</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">virtual</span><span class="mlabel">default</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -486,7 +486,7 @@ Friends</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../d8/d25/namespacelanxc.html">lanxc</a></li><li class="navelem"><a class="el" href="../../df/d30/classlanxc_1_1scheduler.html">scheduler</a></li>
-    <li class="footer">Generated on Tue Jun 14 2016 16:55:46 for lanxc-core by
+    <li class="footer">Generated on Wed Jun 15 2016 17:23:19 for lanxc-core by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.11 </li>
   </ul>

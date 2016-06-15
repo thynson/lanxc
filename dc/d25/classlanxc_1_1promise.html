@@ -157,7 +157,7 @@ Friends</h2></td></tr>
 class lanxc::promise&lt; T &gt;</h3>
 
 <p>The promise for a future. </p>
-<p>A promise guards a process that a future is getting delivered. When a promise is destructed the corresponding future is either fulfilled if <a class="el" href="../../dc/d25/classlanxc_1_1promise.html#abed0724ea7197b7a26e1a787f6eedbff" title="Fulfill future future with given value. ">set_result</a> has been called or cancelled. The reason that a future get cancelled is a instance of #invalid_future, or other value provided by <a class="el" href="../../dc/d25/classlanxc_1_1promise.html#a2e4a1db3ce9da214f603f009b80d72d3" title="Cancel the future with given reason p. ">set_exception_ptr</a> or <a class="el" href="../../dc/d25/classlanxc_1_1promise.html#af6bef618bccb9f6dc02811b35837fc07" title="Cancel the future with given reason p. ">set_exception</a> and can be caught as a std::exception_ptr by the future. </p>
+<p>A promise guards a process that a future is getting delivered. When a promise is destructed the corresponding future is either fulfilled if <a class="el" href="../../dc/d25/classlanxc_1_1promise.html#abed0724ea7197b7a26e1a787f6eedbff" title="Fulfill future future with given value. ">set_result</a> has been called or cancelled. The reason that a future get cancelled is a instance of <em><a class="el" href="../../db/d92/classlanxc_1_1invalid__future.html">invalid_future</a></em>, or other value provided by <a class="el" href="../../dc/d25/classlanxc_1_1promise.html#a2e4a1db3ce9da214f603f009b80d72d3" title="Cancel the future with given reason p. ">set_exception_ptr</a> or <a class="el" href="../../dc/d25/classlanxc_1_1promise.html#af6bef618bccb9f6dc02811b35837fc07" title="Cancel the future with given reason p. ">set_exception</a> and can be caught as a std::exception_ptr by the future. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a78f7a9866fa1ade1efc5304bdc62baa5"></a>
 <div class="memitem">
@@ -227,7 +227,7 @@ class lanxc::promise&lt; T &gt;</h3>
 </div><div class="memdoc">
 
 <p>Destructor indicates the end of future delivering. </p>
-<p>When this instance is destructed, the corresponding future is either fulfilled if </p>
+<p>When this instance is destructed, the delivering process ends and corresponding future is now either delivered or cancelled </p>
 
 </div>
 </div>
@@ -305,13 +305,13 @@ class lanxc::promise&lt; T &gt;</h3>
 <p>Cancel the future with given reason <code>p</code>. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">E</td><td>The type of <code>p</code> </td></tr>
+    <tr><td class="paramname">E</td><td>The type of <code>e</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">p</td><td>The reason that corresponding future is canncelled </td></tr>
+    <tr><td class="paramname">e</td><td>The reason that corresponding future is canncelled </td></tr>
   </table>
   </dd>
 </dl>
@@ -396,7 +396,7 @@ class lanxc::promise&lt; T &gt;</h3>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../d8/d25/namespacelanxc.html">lanxc</a></li><li class="navelem"><a class="el" href="../../dc/d25/classlanxc_1_1promise.html">promise</a></li>
-    <li class="footer">Generated on Tue Jun 14 2016 16:55:46 for lanxc-core by
+    <li class="footer">Generated on Wed Jun 15 2016 17:23:19 for lanxc-core by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.11 </li>
   </ul>
