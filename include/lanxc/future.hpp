@@ -88,8 +88,8 @@ namespace lanxc
      * @param other The original scope guard
      */
     promise(promise &&other) noexcept
-      : m_detail(std::move(other.m_detail))
-    { }
+      : m_detail()
+    { m_detail.swap(other.m_detail); }
 
     /**
      * @brief Align the future delivering lifecycle to scope of this instance
