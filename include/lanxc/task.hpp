@@ -35,7 +35,7 @@ namespace lanxc
     /**
      * @brief Destructor of a task
      */
-    virtual ~task_listener() = 0;
+    virtual ~task_listener() = default;
 
     /**
      * @brief Function that called when associated task updates its progress
@@ -67,14 +67,14 @@ namespace lanxc
     task_monitor(task_monitor &&tm) noexcept ;
     task_monitor &operator = (task_monitor &&tm) noexcept ;
 
-    virtual void set_progress(unsigned current, unsigned total);
-    virtual ~task_monitor();
+    void set_progress(unsigned current, unsigned total);
+    ~task_monitor();
 
     scheduler &get_scheduler() const noexcept
     { return *m_scheduler; }
 
   private:
-    task_monitor(scheduler &s, task_listener &t) noexcept ;
+    task_monitor(scheduler *s, task_listener *t) noexcept ;
     scheduler *m_scheduler;
     task_listener *m_listener;
   };
@@ -87,7 +87,7 @@ namespace lanxc
     /**
      * @brief Destructor of a task
      */
-    virtual ~task() = 0;
+    virtual ~task() = default;
 
     /**
      * @brief The routine of this task
@@ -125,7 +125,7 @@ namespace lanxc
      */
     virtual void start();
 
-    virtual ~scheduler() = 0;
+    virtual ~scheduler() = default;
 
   protected:
 

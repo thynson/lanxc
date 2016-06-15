@@ -257,12 +257,13 @@ namespace lanxc
       struct detail
       {
         future<T...> m_future;
+        Future m_next_future{};
         typename Future::promise_type m_next_promise;
         function<Future(T...)> m_function;
 
         detail(future<T...> f, function<Future(T...)> routine)
             : m_future(std::move(f))
-            , m_next_promise(nullptr)
+            , m_next_promise{nullptr}
             , m_function(std::move(routine))
         {}
       };
@@ -288,17 +289,17 @@ namespace lanxc
 
       void fulfill(scheduler &s, T ...value)
       {
-        Future f = m_detail->m_function(value...);
+        m_detail->m_next_future = m_detail->m_function(value...);
 
-        f.m_detail->m_fulfill_handler
+        m_detail->m_next_future .m_detail->m_fulfill_handler
             = Future::cascade_fulfill_handler(&this->m_detail->m_next_promise);
 
-        f.m_detail->m_error_handler = [this](std::exception_ptr e)
+        m_detail->m_next_future .m_detail->m_error_handler = [this](std::exception_ptr e)
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
           this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        Future::promise_type::start(s, f.m_detail);
+        Future::promise_type::start(s, m_detail->m_next_future.m_detail);
       }
 
 
@@ -331,12 +332,13 @@ namespace lanxc
       struct detail
       {
         future<T...> m_future;
+        Future m_next_future{};
         typename Future::promise_type m_next_promise;
         function<Future(std::exception_ptr)> m_function;
 
         detail(future<T...> f, function<Future(std::exception_ptr)> routine)
             : m_future(std::move(f))
-            , m_next_promise(nullptr)
+            , m_next_promise{nullptr}
             , m_function(std::move(routine))
         { }
       };
@@ -363,17 +365,17 @@ namespace lanxc
 
       void caught(scheduler &s, std::exception_ptr e)
       {
-        Future f = m_detail->m_function(e);
+        m_detail->m_next_future = m_detail->m_function(e);
 
-        f.m_detail->m_fulfill_handler
+        m_detail->m_next_future.m_detail->m_fulfill_handler
             = Future::cascade_fulfill_handler(&this->m_detail->m_next_promise);
 
-        f.m_detail->m_error_handler = [this](std::exception_ptr ex)
+        m_detail->m_next_future.m_detail->m_error_handler = [this](std::exception_ptr ex)
         {
           this->m_detail->m_next_promise.set_exception_ptr(ex);
           this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        Future::promise_type::start(s, f.m_detail);
+        Future::promise_type::start(s, m_detail->m_next_future.m_detail);
       }
 
       void operator () (typename Future::promise_type p)
@@ -760,7 +762,7 @@ namespace lanxc
 
 
   private:
-    future(std::shared_ptr<typename promise<T...>::detail> ptr)
+    future(std::shared_ptr<typename promise<T...>::detail> ptr = nullptr)
         : m_detail(std::move(ptr))
     { }
     std::shared_ptr<typename promise<T...>::detail> m_detail;

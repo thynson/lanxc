@@ -27,8 +27,6 @@
 namespace lanxc
 {
 
-  task_listener::~task_listener() = default;
-
   task_monitor::task_monitor(task_monitor &&tm) noexcept
       : m_scheduler(nullptr)
       , m_listener(nullptr)
@@ -44,9 +42,9 @@ namespace lanxc
     return *this;
   }
 
-  task_monitor::task_monitor(scheduler &s, task_listener &l) noexcept
-      : m_scheduler(&s)
-      , m_listener(&l)
+  task_monitor::task_monitor(scheduler *s, task_listener *l) noexcept
+      : m_scheduler(s)
+      , m_listener(l)
   { }
 
   task_monitor::~task_monitor()
@@ -66,11 +64,9 @@ namespace lanxc
       m_scheduler->notify_progress(*m_listener, current, total);
   }
 
-  scheduler::~scheduler() = default;
-
   void scheduler::execute(task &t)
   {
-    t.routine(task_monitor(*this, t));
+    t.routine(task_monitor(this, &t));
   }
 
   void scheduler::do_notify_progress(task_listener &t,
@@ -86,8 +82,6 @@ namespace lanxc
 
   void scheduler::start() // Noop
   { }
-
-  task::~task() = default;
 
   struct thread_pool_scheduler::detail
   {
@@ -156,14 +150,14 @@ namespace lanxc
     using task_notify_queue
       = std::queue<std::reference_wrapper<task_listener>>;
 
-    thread_pool_scheduler      &m_scheduler;
+    thread_pool_scheduler     &m_scheduler;
     std::mutex                m_mutex{};
     std::condition_variable   m_condition{};
     std::condition_variable   m_notify_condition{};
     task_queue                m_queue{};
     task_notify_queue         m_finished_queue{};
-    task_progress_table       m_task_progresses {};
-    std::list<std::thread>    m_threads;
+    task_progress_table       m_task_progresses{};
+    std::list<std::thread>    m_threads{};
     std::size_t               m_task_count {0};
     bool                      m_exited {false};
   };
