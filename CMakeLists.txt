@@ -7,11 +7,6 @@ add_library(lanxc-core
         include/lanxc/functional.hpp
         include/lanxc/unique_tuple.hpp
         include/lanxc/link.hpp
-        include/lanxc/link/forward_list_config.hpp
-        include/lanxc/link/forward_list_define.hpp
-        include/lanxc/link/forward_list_node.hpp
-        include/lanxc/link/forward_list_iterator.hpp
-        include/lanxc/link/forward_list.hpp
         include/lanxc/link/list_config.hpp
         include/lanxc/link/list_define.hpp
         include/lanxc/link/list_node.hpp
