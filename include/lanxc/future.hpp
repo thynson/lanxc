@@ -24,7 +24,6 @@
 #include <exception>
 #include <memory>
 #include <utility>
-#include <cassert>
 
 
 namespace lanxc
@@ -44,19 +43,29 @@ namespace lanxc
   { constexpr static bool value = true; };
 
   /**
-   * Error and Exception
+   * @brief Indicate that the future has been cancelled without a reason
+   *
+   * If a @a promise is destructed when neither promsie<T...>::set_result,
+   * promise<T...>::set_exception nor promise<T...>::set_exception_ptr has
+   * been called. The corresponding future will receive an exception pointer
+   * wrapping an instance of this class.
    */
   class promise_cancelled : public std::exception
   {
   public:
-
-
     const char *what() const noexcept override
     {
       return "promise cancelled";
     }
   };
 
+  /**
+   * @brief Indicate that an operation is not appliable for a future
+   *
+   * If a @a future has been committed or chainned by another future, any
+   * subsequential operation will result in this an exception of this type
+   * being thrown.
+   */
   class invalid_future : public std::exception
   {
   public:
@@ -185,7 +194,6 @@ namespace lanxc
 
       void routine(task_monitor tm) noexcept override
       {
-        assert(m_self != nullptr);
         std::swap(m_task_monitor, tm);
         m_initiator(promise(std::move(m_self)));
       }
@@ -751,6 +759,8 @@ namespace lanxc
 
     /**
      * @brief Starting to resolve this future.
+     * @param s The scheduler which will schedule the delivering process of
+     * this future
      * @throws invalid_future If #then, #caught or #commit has already been
      * called for this future
      */
