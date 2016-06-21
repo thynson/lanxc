@@ -126,7 +126,7 @@ namespace lanxc
      * @ingroup intrusive_list
      */
     template<typename Node, typename Tag>
-    class list : private list<void, void>::enable_counter<Node, Tag>
+    class list : public list<void, void>::enable_counter<Node, Tag>
     {
       using config                  = list_config<Tag>;
       using node_type               = list_node<Node, Tag>;
@@ -241,13 +241,13 @@ namespace lanxc
       void insert(iterator pos, reference ref) noexcept
       {
         node_type &node_ref = ref;
-
+        node_type &p = *pos;
         // Unlink first
         node_ref.unlink_internal();
-        node_ref.m_prev = pos->m_prev;
+        node_ref.m_prev = p.m_prev;
         node_ref.m_prev->m_next = &node_ref;
-        pos->m_prev = &node_ref;
-        node_ref.m_next = &(*pos);
+        p.m_prev = &node_ref;
+        node_ref.m_next = &p;
         this->increase();
       }
 
@@ -273,7 +273,7 @@ namespace lanxc
       void erase(iterator pos) noexcept
       {
         node_type &ref = *pos;
-        if (pos->is_linked())
+        if (pos->node_type::is_linked())
         {
           ref.unlink_internal();
           this->decrease();

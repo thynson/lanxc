@@ -60,10 +60,10 @@ namespace lanxc
       {
       public:
         void unlink()
-        { static_cast<Node*>(this)->Node::unlink_internal(); }
+        { static_cast<Node*>(this)->list_node<Node, Tag>::unlink_internal(); }
       protected:
         ~enable_unlink()
-        { unlink(); }
+        { this->enable_unlink::unlink(); }
       };
 
     };
