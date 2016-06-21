@@ -57,22 +57,9 @@ namespace lanxc
     }
   }
 
-  void task_monitor::set_progress(unsigned current, unsigned total)
-  {
-
-    if (m_scheduler && m_listener)
-      m_scheduler->notify_progress(*m_listener, current, total);
-  }
-
   void scheduler::execute(task &t)
   {
     t.routine(task_monitor(this, &t));
-  }
-
-  void scheduler::do_notify_progress(task_listener &t,
-                                     unsigned current, unsigned total)
-  {
-    t.on_progress_changed(current, total);
   }
 
   void scheduler::do_notify_finished(task_listener &t)
@@ -90,20 +77,20 @@ namespace lanxc
       if (!wait_for_start()) return;
       while(true)
       {
-        task_queue tmp;
+        link::list<task> tmp;
         {
           std::unique_lock<std::mutex> lg(m_mutex);
           if (m_exited)
             return;
-          if (m_queue.empty())
+          if (m_committed_task.empty())
             m_condition.wait(lg);
-          m_queue.swap(tmp);
+          m_committed_task.swap(tmp);
         }
         while(!tmp.empty())
         {
           auto &t = tmp.front();
-          tmp.pop();
-          m_scheduler.execute(t.get());
+          tmp.pop_front();
+          m_scheduler.execute(t);
         }
       }
     }
@@ -150,13 +137,14 @@ namespace lanxc
     using task_notify_queue
       = std::queue<std::reference_wrapper<task_listener>>;
 
+
     thread_pool_scheduler     &m_scheduler;
     std::mutex                m_mutex{};
     std::condition_variable   m_condition{};
     std::condition_variable   m_notify_condition{};
-    task_queue                m_queue{};
-    task_notify_queue         m_finished_queue{};
-    task_progress_table       m_task_progresses{};
+    link::list<task>          m_prepared_task;
+    link::list<task_listener> m_finished_task;
+    link::list<task>          m_committed_task;
     std::list<std::thread>    m_threads{};
     std::size_t               m_task_count {0};
     bool                      m_exited {false};
@@ -172,26 +160,19 @@ namespace lanxc
   {
     std::lock_guard<std::mutex> lg(m_detail->m_mutex);
     m_detail->m_task_count++;
-    m_detail->m_queue.emplace(std::ref(t));
+    m_detail->m_committed_task.push_back(t);
     m_detail->m_condition.notify_one();
   }
 
-  void thread_pool_scheduler::notify_progress(task_listener &l, unsigned current, unsigned total)
+  void thread_pool_scheduler::dispatch(task &t)
   {
-    std::lock_guard<std::mutex> lg(m_detail->m_mutex);
-    auto i = m_detail->m_task_progresses.find(std::ref(l));
-    auto v = std::make_pair(current, total);
-    if (i == m_detail->m_task_progresses.end())
-      m_detail->m_task_progresses.emplace(std::ref(l), std::move(v));
-    else
-      std::swap(v, i->second);
-    m_detail->m_notify_condition.notify_one();
+    m_detail->m_prepared_task.push_back(t);
   }
 
   void thread_pool_scheduler::notify_finished(task_listener &l)
   {
     std::lock_guard<std::mutex> lg(m_detail->m_mutex);
-    m_detail->m_finished_queue.emplace(l);
+    m_detail->m_finished_task.push_back(l);
     m_detail->m_notify_condition.notify_one();
   }
 
@@ -207,31 +188,21 @@ namespace lanxc
 
     }
 
-    detail::task_notify_queue finish_queue;
-    detail::task_progress_table progress_table;
+    link::list<task_listener> finished_list;
     for ( ; ; )
     {
       if (m_detail->m_exited)
         return;
 
-      if (!finish_queue.empty())
+      if (!finished_list.empty())
       {
-        while(!finish_queue.empty())
+        while(!finished_list.empty())
         {
           m_detail->m_task_count --;
-          auto &r = finish_queue.front().get();
-          finish_queue.pop();
+          auto &r = finished_list.front();
+          finished_list.pop_front();
           do_notify_finished(r);
         }
-      }
-
-      if (!progress_table.empty())
-      {
-        for (auto &p : progress_table)
-        {
-          do_notify_progress(p.first.get(), p.second.first, p.second.second);
-        }
-        progress_table.clear();
       }
 
 
@@ -243,14 +214,16 @@ namespace lanxc
         m_detail->m_condition.notify_one();
         return;
       }
-      while(m_detail->m_finished_queue.empty()
-            && m_detail->m_task_progresses.empty())
+
+      while(m_detail->m_finished_task.empty())
       {
 
         m_detail->m_notify_condition.wait(lg);
       }
-      finish_queue.swap(m_detail->m_finished_queue);
-      progress_table.swap(m_detail->m_task_progresses);
+      finished_list.swap(m_detail->m_finished_task);
+      m_detail->m_task_count += m_detail->m_prepared_task.size();
+      m_detail->m_committed_task.swap(m_detail->m_prepared_task);
+
     }
   }
 }

@@ -30,6 +30,7 @@ int main()
     {
       return lanxc::future<float, int>([](lanxc::promise<float, int> p) {
         std::cout << "going to throw exception" << std::endl;
+        //p.set_result(10.0, 2);
         p.set_exception_ptr(std::make_exception_ptr(std::out_of_range("out of range")));
       });
     });
@@ -41,8 +42,8 @@ int main()
       try
       {
         std::rethrow_exception(e);
-      } catch(std::exception &e) {
-        std::cout << "okay: " << e.what() << std::endl;
+      } catch(std::exception &ex) {
+        std::cout << "okay: " << ex.what() << std::endl;
       }
       return lanxc::future<>([](lanxc::promise<>p)
       {

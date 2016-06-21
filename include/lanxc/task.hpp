@@ -18,8 +18,9 @@
 #ifndef LANXC_TASK_HPP_INCLUDED
 #define LANXC_TASK_HPP_INCLUDED
 
+#include <lanxc/function.hpp>
+#include <lanxc/link/list.hpp>
 #include <memory>
-#include "function.hpp"
 
 namespace lanxc
 {
@@ -27,7 +28,7 @@ namespace lanxc
   class task_monitor;
   class scheduler;
 
-  class task_listener
+  class task_listener : public link::list_node<task_listener>
   {
     friend class scheduler;
   protected:
@@ -37,6 +38,19 @@ namespace lanxc
      */
     virtual ~task_listener() = default;
 
+
+    /**
+     * @brief Function that called when a task is finished
+     */
+    virtual void on_finish() = 0;
+  };
+
+  class task_progress_listener
+  {
+    friend class scheduler;
+  protected:
+    virtual ~task_progress_listener() = default;
+
     /**
      * @brief Function that called when associated task updates its progress
      * @param current A number indicates the current progress of a task
@@ -44,10 +58,9 @@ namespace lanxc
      */
     virtual void on_progress_changed(unsigned current, unsigned total) = 0;
 
-    /**
-     * @brief Function that called when a task is finished
-     */
-    virtual void on_finish() = 0;
+  private:
+    unsigned m_current_progress;
+    unsigned m_total_progress;
   };
 
 
@@ -80,15 +93,12 @@ namespace lanxc
   };
 
   class task : public task_listener
+             , public link::list_node<task>
   {
     friend class scheduler;
   protected:
 
-    /**
-     * @brief Destructor of a task
-     */
     virtual ~task() = default;
-
     /**
      * @brief The routine of this task
      * @param tm The task monitor for this routine to update progress
@@ -101,9 +111,6 @@ namespace lanxc
 
   /**
    * @brief This class schedules tasks
-   * @note This class is concret through but actually design as an abstract
-   * class. The default implementation of this class is naive that runs
-   * scheduled tasks immediately.
    *
    * The implement of this class should run the scheduled task in any way,
    * e.g. a background thread or defer until event loop is free, and finally
@@ -116,13 +123,19 @@ namespace lanxc
 
     /**
      * @brief Schedule a task to run
+     * @note This funciton can be called from any thread
      * @param t The task
      */
     virtual void schedule(task &t) = 0;
 
     /**
      * @brief Start to run the scheduled tasks
+     * @note This function should only be called from the running thread of
+     * this scheduler
+     * @param t The task
      */
+    virtual void dispatch(task &t) = 0;
+
     virtual void start();
 
     virtual ~scheduler() = default;
@@ -137,26 +150,10 @@ namespace lanxc
     void execute(task &t);
 
     /**
-     * @brief Run the function task_listener::on_progress_changed of a task listener
-     * @param l The task listener
-     * @param current The number indicates current progress
-     * @param total The number indicates total progress
-     */
-    void do_notify_progress(task_listener &l, unsigned current, unsigned total);
-
-    /**
      * @brief Run the function task_listener::on_finished of a task listener
      * @param l The task listener
      */
     void do_notify_finished(task_listener &l);
-
-    /**
-     * @brief Notify that the progress of a task has updated
-     * @param l The task listener
-     * @param current A number indicates current progress
-     * @param total A number indicate total progress
-     */
-    virtual void notify_progress(task_listener &l, unsigned current, unsigned total) = 0;
 
     /**
      * @brief Notify that a task is finished
@@ -177,10 +174,10 @@ namespace lanxc
 
     void schedule(task &t) override;
 
+    void dispatch(task &t) override;
+
     void start() override;
   protected:
-
-    virtual void notify_progress(task_listener &t, unsigned current, unsigned total) override;
 
     virtual void notify_finished(task_listener &r) override;
 
