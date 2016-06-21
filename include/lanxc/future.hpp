@@ -223,7 +223,7 @@ namespace lanxc
         r.m_error_handler = [] (std::exception_ptr) {};
       if (!r.m_fulfill_handler)
         r.m_fulfill_handler = [] (T...) {};
-      s.schedule(r);
+      s.dispatch(r);
     }
 
     promise(detail *x, task_monitor tm) noexcept
