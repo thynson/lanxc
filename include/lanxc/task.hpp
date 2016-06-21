@@ -136,7 +136,7 @@ namespace lanxc
      */
     virtual void dispatch(task &t) = 0;
 
-    virtual void start();
+    virtual void start() = 0;
 
     virtual ~scheduler() = default;
 

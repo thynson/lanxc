@@ -67,9 +67,6 @@ namespace lanxc
     t.on_finish();
   }
 
-  void scheduler::start() // Noop
-  { }
-
   struct thread_pool_scheduler::detail
   {
     void routine()
