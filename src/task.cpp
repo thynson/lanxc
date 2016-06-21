@@ -202,8 +202,11 @@ namespace lanxc
         }
       }
 
-
       std::unique_lock<std::mutex> lg(m_detail->m_mutex);
+
+      m_detail->m_task_count += m_detail->m_prepared_task.size();
+      m_detail->m_committed_task.splice(m_detail->m_committed_task.end(),
+                                        m_detail->m_prepared_task);
 
       if (m_detail->m_task_count == 0)
       {
@@ -212,14 +215,16 @@ namespace lanxc
         return;
       }
 
-      while(m_detail->m_finished_task.empty())
-      {
-
-        m_detail->m_notify_condition.wait(lg);
-      }
       finished_list.swap(m_detail->m_finished_task);
-      m_detail->m_task_count += m_detail->m_prepared_task.size();
-      m_detail->m_committed_task.swap(m_detail->m_prepared_task);
+      if (m_detail->m_committed_task.empty())
+      {
+        while (finished_list.empty())
+        {
+          m_detail->m_notify_condition.wait(lg);
+          finished_list.swap(m_detail->m_finished_task);
+        }
+      }
+      m_detail->m_condition.notify_all();
 
     }
   }
