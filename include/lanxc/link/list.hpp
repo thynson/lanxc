@@ -387,13 +387,13 @@ namespace lanxc
 
         this->transfer(l);
 
-        node_type &x = *(b->m_prev), &y = *(e->m_prev);
+        node_type &x = *(b->node_type::m_prev), &y = *(e->node_type::m_prev);
         x.m_next = &(*e);
-        e->m_prev = &x;
+        e->node_type::m_prev = &x;
 
-        b->m_prev = pos->m_prev;
+        b->node_type::m_prev = pos->node_type::m_prev;
         y.m_next = &(*pos);
-        b->m_prev->m_next = &(*b);
+        b->node_type::m_prev->m_next = &(*b);
         y.m_next->m_prev = &y;
       }
 
