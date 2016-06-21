@@ -426,10 +426,10 @@ namespace lanxc
           detail::functor_padding tmp;
           auto imp = rhs->cast()->m_implement;
           imp(rhs->cast(), &tmp, detail::command::construct);
-          lhs->cast()->m_implement(rhs->cast(), &rhs->m_store,
+          lhs->cast()->m_implement(lhs->cast(), &rhs->m_store,
               detail::command::construct);
           imp(reinterpret_cast<detail::manager *>(&tmp),
-              &this->m_store,
+              &lhs->m_store,
               detail::command::construct);
           return;
         }
