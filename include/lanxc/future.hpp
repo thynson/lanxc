@@ -201,17 +201,18 @@ namespace lanxc
 
       void set_result(T ...value)
       {
-        m_finisher = std::bind([this](T ...value)
-                      { m_fulfill_handler(std::move(value)...); },
-                      std::move(value)...);
+        function<void()>(
+            std::bind([this](T ...value)
+            { m_fulfill_handler(std::move(value)...); }, std::move(value)...)
+        ).swap(m_finisher);
       }
 
       void set_exception_ptr(std::exception_ptr e)
       {
-        m_finisher = [this, e]()
+        function<void()>([this, e]()
         {
           m_error_handler(e);
-        };
+        }).swap(m_finisher);
       }
 
       virtual ~detail() = default;
@@ -268,13 +269,13 @@ namespace lanxc
     {
       struct detail
       {
-        future<T...> &m_future;
+        future<T...> m_future;
         Future m_next_future{};
         typename Future::promise_type m_next_promise;
         function<Future(T...)> m_function;
 
-        detail(future<T...> &f, function<Future(T...)> routine)
-            : m_future(f)
+        detail(future<T...> f, function<Future(T...)> routine)
+            : m_future(std::move(f))
             , m_next_promise{nullptr}
             , m_function(std::move(routine))
         {}
@@ -282,8 +283,8 @@ namespace lanxc
 
       std::unique_ptr<detail> m_detail;
 
-      then_future_functor(future<T...> &f, function<Future(T...)> routine)
-          : m_detail(new detail(f, std::move(routine)))
+      then_future_functor(future<T...> f, function<Future(T...)> routine)
+          : m_detail(new detail(std::move(f), std::move(routine)))
       {};
 
       then_future_functor(then_future_functor &&o) noexcept
@@ -302,16 +303,17 @@ namespace lanxc
       void fulfill(scheduler &s, T ...value)
       {
         m_detail->m_next_future = m_detail->m_function(value...);
+        auto &r = *m_detail->m_next_future.m_detail;
 
-        m_detail->m_next_future .m_detail->m_fulfill_handler
+        r.m_fulfill_handler
             = Future::cascade_fulfill_handler(&this->m_detail->m_next_promise);
 
-        m_detail->m_next_future .m_detail->m_error_handler = [this](std::exception_ptr e)
+        r.m_error_handler = [this](std::exception_ptr e)
         {
-          this->m_detail->m_next_promise.set_exception_ptr(e);
-          this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
+          m_detail->m_next_promise.set_exception_ptr(e);
+          m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        Future::promise_type::start(s, *m_detail->m_next_future.m_detail);
+        Future::promise_type::start(s, r);
       }
 
 
@@ -319,18 +321,19 @@ namespace lanxc
       {
         auto &s = p.m_task_monitor.get_scheduler();
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_detail.get();
 
-        ptr->m_fulfill_handler = [&s, this](T...args)
+        auto &r = *m_detail->m_future.m_detail;
+
+        r.m_fulfill_handler = [&s, this](T...args)
         {
           this->fulfill(s, std::move(args)...);
         };
-        ptr->m_error_handler = [this](std::exception_ptr e)
+        r.m_error_handler = [this](std::exception_ptr e)
         {
           this->m_detail->m_next_promise.set_exception_ptr(e);
           this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        promise<T...>::start(s, *m_detail->m_future.m_detail);
+        promise<T...>::start(s, r);
       }
     };
 
@@ -340,13 +343,13 @@ namespace lanxc
     {
       struct detail
       {
-        future<T...> &m_future;
+        future<T...> m_future;
         Future m_next_future{};
         typename Future::promise_type m_next_promise;
         function<Future(std::exception_ptr)> m_function;
 
-        detail(future<T...> &f, function<Future(std::exception_ptr)> routine)
-            : m_future(f)
+        detail(future<T...> f, function<Future(std::exception_ptr)> routine)
+            : m_future(std::move(f))
             , m_next_promise{nullptr}
             , m_function(std::move(routine))
         { }
@@ -354,9 +357,9 @@ namespace lanxc
 
       std::unique_ptr<detail> m_detail;
 
-      caught_future_functor(future<T...> &f,
+      caught_future_functor(future<T...> f,
                             function<Future(std::exception_ptr)> routine)
-          : m_detail(new detail(f, std::move(routine)))
+          : m_detail(new detail(std::move(f), std::move(routine)))
       { };
 
       caught_future_functor(caught_future_functor &&o)
@@ -376,32 +379,33 @@ namespace lanxc
       {
         m_detail->m_next_future = m_detail->m_function(e);
 
-        m_detail->m_next_future.m_detail->m_fulfill_handler
+        auto &r = *m_detail->m_next_future.m_detail;
+        r.m_fulfill_handler
             = Future::cascade_fulfill_handler(&this->m_detail->m_next_promise);
 
-        m_detail->m_next_future.m_detail->m_error_handler = [this](std::exception_ptr ex)
+        r.m_error_handler = [this](std::exception_ptr ex)
         {
-          this->m_detail->m_next_promise.set_exception_ptr(ex);
-          this->m_detail->m_next_promise = typename Future::promise_type(nullptr);
+          m_detail->m_next_promise.set_exception_ptr(ex);
+          m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        Future::promise_type::start(s, *m_detail->m_next_future.m_detail);
+        Future::promise_type::start(s, r);
       }
 
       void operator () (typename Future::promise_type p)
       {
         auto &s = p.m_task_monitor.get_scheduler();
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_detail.get();
+        auto &r = *m_detail->m_future.m_detail;
 
-        ptr->m_fulfill_handler = [this](T...)
+        r.m_fulfill_handler = [this](T...)
         {
           m_detail->m_next_promise = typename Future::promise_type(nullptr);
         };
-        ptr->m_error_handler = [&s, this](std::exception_ptr e)
+        r.m_error_handler = [&s, this](std::exception_ptr e)
         {
           caught(s, e);
         };
-        promise<T...>::start(s, *m_detail->m_future.m_detail);
+        promise<T...>::start(s, r);
       }
     };
 
@@ -410,20 +414,20 @@ namespace lanxc
     {
       struct detail
       {
-        future<T...> &m_future;
+        future<T...> m_future;
         promise<R> m_next_promise;
         function<R(T...)> m_function;
 
-        detail(future<T...> &f, function<R(T...)> routine)
-            : m_future()
+        detail(future<T...> f, function<R(T...)> routine)
+            : m_future(std::move(f))
             , m_next_promise(nullptr)
             , m_function(std::move(routine))
         {}
       };
 
       std::unique_ptr<detail> m_detail;
-      then_value_functor(future<T...> &f, function<R(T...)> routine)
-          : m_detail(new detail(f, std::move(routine)))
+      then_value_functor(future<T...> f, function<R(T...)> routine)
+          : m_detail(new detail(std::move(f), std::move(routine)))
       { }
 
       then_value_functor (then_value_functor &&o) noexcept
@@ -443,20 +447,20 @@ namespace lanxc
       {
         auto &scheduler = p.m_task_monitor.get_scheduler();
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_detail.get();
-        ptr->m_fulfill_handler = [this](T ...value)
+        auto &r = *m_detail->m_future.m_detail;
+        r.m_fulfill_handler = [this](T ...value)
         {
           m_detail->m_next_promise
                   .set_result(m_detail->m_function(std::move(value)...));
           m_detail->m_next_promise = promise<R>(nullptr);
         };
-        ptr->m_error_handler = [this](std::exception_ptr e)
+        r.m_error_handler = [this](std::exception_ptr e)
         {
-          this->m_detail->m_next_promise.set_exception_ptr(e);
+          m_detail->m_next_promise.set_exception_ptr(e);
           m_detail->m_next_promise = promise<R>(nullptr);
         };
 
-        promise<T...>::start(scheduler, *m_detail->m_future.m_detail);
+        promise<T...>::start(scheduler, r);
       }
 
     };
@@ -466,21 +470,21 @@ namespace lanxc
     {
       struct detail
       {
-        future<T...> &m_future;
+        future<T...> m_future;
         promise<R> m_next_promise;
         function<R(std::exception_ptr)> m_function;
 
-        detail(future<T...> &f, function<R(std::exception_ptr)> routine)
-            : m_future(f)
+        detail(future<T...> f, function<R(std::exception_ptr)> routine)
+            : m_future(std::move(f))
             , m_next_promise(nullptr)
             , m_function(std::move(routine))
         {}
       };
 
       std::unique_ptr<detail> m_detail;
-      caught_value_functor(future<T...> &f,
+      caught_value_functor(future<T...> f,
                            function<R(std::exception_ptr)> routine)
-          : m_detail(new detail(f, std::move(routine)))
+          : m_detail(new detail(std::move(f), std::move(routine)))
       { }
 
       caught_value_functor(caught_value_functor &&o) noexcept
@@ -499,19 +503,19 @@ namespace lanxc
       {
         auto &scheduler = p.m_task_monitor.get_scheduler();
         m_detail->m_next_promise = std::move(p);
-        auto *ptr = m_detail->m_future.m_detail.get();
-        ptr->m_fulfill_handler = [this](T ...)
+        auto &r = *m_detail->m_future.m_detail;
+        r.m_fulfill_handler = [this](T ...)
         {
           m_detail->m_next_promise = promise<R>(nullptr);
         };
 
-        ptr->m_error_handler = [this](std::exception_ptr e)
+        r.m_error_handler = [this](std::exception_ptr e)
         {
           m_detail->m_next_promise.set_result(m_detail->m_function(e));
           m_detail->m_next_promise = promise<R>(nullptr);
         };
 
-        promise<T...>::start(scheduler, *m_detail->m_future.m_detail);
+        promise<T...>::start(scheduler, r);
       }
     };
 
@@ -521,20 +525,20 @@ namespace lanxc
     {
       struct detail
       {
-        lanxc::future<T...> &m_future;
+        lanxc::future<T...> m_future;
         lanxc::promise<> m_next_promise;
         function<void(T...)> m_function;
 
-        detail(future<T...> &f, function<void(T...)> routine)
-            : m_future(f)
+        detail(future<T...> f, function<void(T...)> routine)
+            : m_future(std::move(f))
             , m_next_promise(nullptr)
             , m_function(std::move(routine))
         {}
       };
 
       std::unique_ptr<detail> m_detail;
-      then_void_functor(future<T...> &f, function<void(T...)> routine)
-          : m_detail(new detail(f, std::move(routine)))
+      then_void_functor(future<T...> f, function<void(T...)> routine)
+          : m_detail(new detail(std::move(f), std::move(routine)))
       { }
 
       then_void_functor(then_void_functor &&o) noexcept
@@ -574,21 +578,21 @@ namespace lanxc
     {
       struct detail
       {
-        lanxc::future<T...> &m_future;
+        lanxc::future<T...> m_future;
         lanxc::promise<> m_next_promise;
         function<void(std::exception_ptr)> m_function;
 
         detail(future<T...> &f, function<void(std::exception_ptr)> routine)
-            : m_future(f)
+            : m_future(std::move(f))
             , m_next_promise(nullptr)
             , m_function(std::move(routine))
         {}
       };
 
       std::unique_ptr<detail> m_detail;
-      caught_void_functor(future<T...> &f,
+      caught_void_functor(future<T...> f,
                           function<void(std::exception_ptr)> routine)
-          : m_detail(new detail(f, std::move(routine)))
+          : m_detail(new detail(std::move(f), std::move(routine)))
       { }
 
       void operator () (lanxc::promise<> p)
@@ -714,7 +718,7 @@ namespace lanxc
       using then_t = do_then<typename std::remove_reference<F>::type>;
       check();
       return typename then_t::result(
-          typename then_t::functor(*this, std::forward<F>(f)));
+          typename then_t::functor(std::move(*this), std::forward<F>(f)));
     }
 
     /**
@@ -740,7 +744,7 @@ namespace lanxc
       using caught_t = do_caught<typename std::remove_reference<F>::type>;
       check();
       return typename caught_t::result(
-          typename caught_t::functor(*this, std::forward<F>(f)));
+          typename caught_t::functor(std::move(*this), std::forward<F>(f)));
     }
 
     /**
@@ -750,7 +754,7 @@ namespace lanxc
      * @throws invalid_future If #then, #caught or #commit has already been
      * called for this future
      */
-    void commit(scheduler &s)
+    void commit(scheduler &s) &
     {
       check();
       promise<T...>::start(s, *m_detail);
