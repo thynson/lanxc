@@ -87,7 +87,7 @@ namespace lanxc
    * std::exception_ptr by the future.
    */
   template<typename ...T>
-  class promise
+  class promise final
   {
     template<typename ...> friend class future;
   public:
@@ -161,9 +161,10 @@ namespace lanxc
 
   private:
 
-    struct detail : task
+    class detail final : public task
     {
-      function<void(promise)> m_initiator;
+    public:
+      function<void(promise<T...>)> m_initiator;
       function<void(std::exception_ptr)> m_error_handler{};
       function<void(T...)> m_fulfill_handler{};
       function<void()> m_finisher{};
@@ -175,8 +176,6 @@ namespace lanxc
           m_error_handler(std::make_exception_ptr(promise_cancelled()));
         };
       }
-
-    protected:
 
       virtual void on_finish() override
       {
@@ -195,7 +194,7 @@ namespace lanxc
 
 
     public:
-      detail(function<void(promise)> f) noexcept
+      detail(lanxc::function<void(promise<T...>)> f) noexcept
           : m_initiator { std::move(f) }
       { }
 
@@ -244,7 +243,7 @@ namespace lanxc
 
 
   template<typename ...T>
-  class future
+  class future final
   {
     template<typename ...>
     friend class future;
@@ -762,11 +761,8 @@ namespace lanxc
 
 
   private:
-    template<typename ...>
-    friend class promise;
-
-    future(std::unique_ptr<detail> ptr = nullptr)
-        : m_detail(std::move(ptr))
+    constexpr future() noexcept
+        : m_detail(nullptr)
     { }
     std::unique_ptr<detail> m_detail;
   };
