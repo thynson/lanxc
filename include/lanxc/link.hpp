@@ -22,7 +22,6 @@
  * @defgroup intrusive_data_structure Intrusive Data Structure
  */
 
-#include "link/forward_list.hpp"
 #include "link/list.hpp"
 #include "link/rbtree.hpp"
 
