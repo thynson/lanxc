@@ -23,7 +23,7 @@ namespace lanxc
 {
 
 
-  class event_context
+  class io_context
   {
   public:
 

@@ -45,7 +45,7 @@ namespace lanxc
   /**
    * @brief Indicate that the future has been cancelled without a reason
    *
-   * If a @a promise is destructed when neither promsie<T...>::set_result,
+   * If a @a promise is destructed when neither promise<T...>::set_result,
    * promise<T...>::set_exception nor promise<T...>::set_exception_ptr has
    * been called. The corresponding future will receive an exception pointer
    * wrapping an instance of this class.
@@ -60,7 +60,7 @@ namespace lanxc
   };
 
   /**
-   * @brief Indicate that an operation is not appliable for a future
+   * @brief Indicate that an operation is not permited for a future
    *
    * If a @a future has been committed or chainned by another future, any
    * subsequential operation will result in this an exception of this type
@@ -187,7 +187,7 @@ namespace lanxc
         }
       }
 
-      virtual void routine(task_monitor tm) noexcept override
+      virtual void routine(task_token tm) noexcept override
       {
         m_initiator(promise(this, std::move(tm)));
       }
@@ -213,8 +213,6 @@ namespace lanxc
           m_error_handler(e);
         }).swap(m_finisher);
       }
-
-      virtual ~detail() = default;
     };
 
     static void start(scheduler &s, detail &r)
@@ -226,7 +224,7 @@ namespace lanxc
       s.dispatch(r);
     }
 
-    promise(detail *x, task_monitor tm) noexcept
+    promise(detail *x, task_token tm) noexcept
         : m_detail { x }
         , m_task_monitor { std::move(tm) }
     { }
@@ -237,7 +235,7 @@ namespace lanxc
     { }
 
     detail *m_detail;
-    task_monitor m_task_monitor;
+    task_token m_task_monitor;
 
   };
 
@@ -686,7 +684,7 @@ namespace lanxc
   public:
 
     future(function<void(lanxc::promise<T...>)> f)
-        : m_detail(new detail(std::move(f)))
+        : m_detail(new typename promise<T...>::detail(std::move(f)))
     { }
 
     future(future &&f) noexcept = default;
@@ -741,9 +739,10 @@ namespace lanxc
     -> typename do_caught<typename std::remove_reference<F>::type>::result
     {
       using caught_t = do_caught<typename std::remove_reference<F>::type>;
+      using result = do_caught<typename std::remove_reference<F>::type>;
+      using functor = typename do_caught<typename std::remove_reference<F>::type>::functor;
       check();
-      return typename caught_t::result(
-          typename caught_t::functor(std::move(*this), std::forward<F>(f)));
+      return result{functor {std::move(*this), std::forward<F>(f)}};
     }
 
     /**

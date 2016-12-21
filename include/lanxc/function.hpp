@@ -20,6 +20,7 @@
 #define LANXC_FUNCTION_HPP_INCLUDED
 
 #include <utility>
+#include <algorithm>
 #include <type_traits>
 #include <functional>
 #include <exception>
@@ -264,7 +265,7 @@ namespace lanxc
    *        compatible) to std::function in spirit of modern C++
    * @author LAN Xingcan
    *
-   * Since @p std::function was born in pre-C++11 era, where concept of
+   * Since @p std::function was born in pre-C++11 era, while concept of
    * move-semantic construction was not yet presented, it requires functor
    * satisfy copy-constructible rather than move-constructible. While in C++14,
    * lambda capture initialization expression was introduced, a lambda
@@ -287,11 +288,12 @@ namespace lanxc
 
     template<typename Function>
     using valid_functor_sfinae = typename std::enable_if<
-        std::is_move_constructible<Function>::value
+        !std::is_same<Function, function>::value
+        && std::is_move_constructible<Function>::value
         && std::is_convertible<
-            decltype(detail::make_functor(std::declval<Function>())
-                (std::declval<Arguments>()...)),
-            Result>::value>::type;
+              decltype(detail::make_functor(std::declval<Function>())
+                  (std::declval<Arguments>()...)), Result>::value
+    >::type;
 
     using caller_type = Result (*)(detail::manager *, Arguments ...);
 
@@ -326,6 +328,15 @@ namespace lanxc
     function(std::nullptr_t) noexcept
         : function()
     { }
+
+    /**
+     * @brief Move constructor
+     */
+    function(function &&other) noexcept
+        : function()
+    { swap(other); }
+
+    function(const function &) = delete;
 
     /**
      * @brief Constructor for null pointer with custom allocator
@@ -364,15 +375,6 @@ namespace lanxc
             detail::make_functor(f), a);
       }
     }
-
-    /**
-     * @brief Move constructor
-     */
-    function(function &&other) noexcept
-        : function()
-    { swap(other); }
-
-    function(const function &) = delete;
 
     /**
      * @brief Destructor
@@ -422,7 +424,7 @@ namespace lanxc
       {
         if (*rhs)
         {
-          std::swap(lhs->m_caller, rhs->m_caller);
+          std::swap<caller_type>(lhs->m_caller, rhs->m_caller);
           detail::functor_padding tmp;
           auto imp = rhs->cast()->m_implement;
           imp(rhs->cast(), &tmp, detail::command::construct);
@@ -434,12 +436,12 @@ namespace lanxc
           return;
         }
         else
-          std::swap(lhs, rhs);
+          std::swap<function*>(lhs, rhs);
       }
 
       if (*rhs)
       {
-        std::swap(lhs->m_caller, rhs->m_caller);
+        std::swap<caller_type>(lhs->m_caller, rhs->m_caller);
         auto rhs_implement = rhs->cast()->m_implement;
         rhs_implement(rhs->cast(), &lhs->m_store,
             detail::command::construct);
@@ -483,4 +485,6 @@ namespace std
     : std::true_type
   { };
 }
+
+
 #endif

@@ -8,15 +8,19 @@
       <w>crbegin</w>
       <w>crend</w>
       <w>defgroup</w>
+      <w>emplace</w>
       <w>endcode</w>
       <w>functor</w>
       <w>ingroup</w>
       <w>lanxc</w>
       <w>linkship</w>
+      <w>macos</w>
+      <w>noexcept</w>
       <w>nothrow</w>
       <w>rbegin</w>
       <w>rebalance</w>
       <w>retval</w>
+      <w>subsequential</w>
       <w>tortious</w>
       <w>tparam</w>
       <w>variadic</w>

@@ -15,30 +15,24 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_MACOS_EVENT_SERVICE_HPP
-#define LANXC_MACOS_EVENT_SERVICE_HPP
+#ifndef LANXC_CORE_CLOCK_SERVICE_HPP
+#define LANXC_CORE_CLOCK_SERVICE_HPP
 
-#include <lanxc/core-macos/event_channel.hpp>
+#include <chrono>
+
 
 namespace lanxc
 {
-  namespace macos
+
+  class clock_context
   {
+  public:
+    using time_point = std::chrono::steady_clock::time_point;
+    virtual ~clock_service() = 0;
+    virtual time_point now() = 0;
+  };
 
-
-    class event_service
-    {
-    public:
-      virtual void register_event(int descriptor,
-                                  int16_t event,
-                                  uint16_t operation,
-                                  uint32_t flag,
-                                  std::intptr_t data,
-                                  event_channel &channel) = 0;
-    };
-  }
 }
 
 
-
-#endif //LANXC_EVENT_SERVICE_HPP
+#endif //LANXC_CORE_CLOCK_SERVICE_HPP

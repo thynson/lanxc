@@ -34,19 +34,11 @@ namespace
       finished = true;
     }
 
-    virtual void routine(lanxc::task_monitor tm) noexcept override
+    virtual void routine(lanxc::task_token tm) noexcept override
     {
       executed = true;
-      tm.set_progress(0,1);
-      tm.set_progress(2,2);
-    }
-
-    virtual void on_progress_changed(unsigned current, unsigned total) override
-    {
-      std::cout << current << '/' << total << std::endl;
     }
   };
-
 }
 
 int main()

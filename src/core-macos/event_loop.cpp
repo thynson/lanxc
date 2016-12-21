@@ -15,98 +15,147 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <lanxc/core-macos/event_service.hpp>
 #include <lanxc/core-macos/event_loop.hpp>
-#include <lanxc/core/network_context.hpp>
+#include <lanxc/core-unix/core-unix.hpp>
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <system_error>
+#include <mutex>
+#include <vector>
+#include <array>
 
-struct stream_listener_options
+#include <sys/event.h>
+#include <unistd.h>
+
+namespace
 {
-  stream_listener_options(lanxc::network_context &ctx)
-      : _context (ctx)
+  int create_kqueue()
   {
+    int ret = ::kqueue();
+    if (ret == -1) lanxc::unix::throw_system_error();
+    return ret;
   }
-  lanxc::network_context &_context;
-  struct sockaddr_storage storage;
+}
 
-};
-
-
-class macos_stream_listener_builder
-    : public lanxc::connection_listener_builder
-    , public std::enable_shared_from_this<macos_stream_listener_builder>
+namespace lanxc
 {
-public:
-  macos_stream_listener_builder(lanxc::network_context &ctx)
-      : _options(new stream_listener_options(ctx))
-  { }
-
-  std::shared_ptr<address_builder> listen() override
+  namespace macos
   {
-    return nullptr;
-  }
-
-  std::shared_ptr<option_builder> set_option() override
-  {
-    return nullptr;
-  }
-
-  lanxc::connection_listener build() override
-  {
-    if (_options == nullptr) throw std::runtime_error("builder invalid");
-    int protocol_family = 0;
-
-    switch(_options->storage.ss_family) {
-      case AF_INET:
-        protocol_family = PF_INET;
-        break;
-      case AF_INET6:
-        protocol_family = PF_INET6;
-        break;
-      default:
-        throw std::runtime_error("unknown or uninitialized address family");
-    }
-    int fd = 0;
-    try
+    struct event_loop::detail : private event_channel
     {
-      fd = ::socket(protocol_family, SOCK_STREAM, 0);
-      socklen_t length = sizeof (_options->storage);
-      int ret = ::bind(fd, reinterpret_cast<sockaddr*>(&_options->storage),
-          length);
-      if (ret == -1)
+      const int _kqueue_fd;
+
+      std::mutex _mutex;
+      std::vector<struct kevent> _changed_events_list;
+
+      detail()
+        : _kqueue_fd(::create_kqueue())
       {
-        int e = 0;
-        std::swap(e, errno);
-        throw std::system_error(std::error_code(e));
       }
 
-    }
-    catch (...)
+      ~detail()
+      {
+        ::close(_kqueue_fd);
+      }
+
+
+      void on_activate(std::intptr_t, std::uint32_t) override
+      { /* Just empty */ }
+
+      void activate()
+      {
+
+        struct kevent ke;
+
+        EV_SET(&ke,
+               reinterpret_cast<uintptr_t>(this),
+               EVFILT_TIMER,
+               EV_ADD|EV_ONESHOT,
+               NOTE_SECONDS,
+               0,
+               this);
+
+        int ret = kevent(_kqueue_fd, nullptr, 0, &ke, 1, nullptr);
+        if (ret == 0) return;
+        lanxc::unix::throw_system_error();
+      }
+
+      void pool()
+      {
+        while (true)
+        {
+          std::array<struct kevent, 256> events;
+
+          int ret = ::kevent(_kqueue_fd,
+                             _changed_events_list.data(),
+                             static_cast<int>(_changed_events_list.size()),
+                             events.data(),
+                             static_cast<int>(events.size()),
+                             nullptr);
+
+          if (ret < 0)
+            lanxc::unix::throw_system_error();
+
+          _changed_events_list.clear();
+
+          if (ret == 0)
+            continue;
+
+          for (int i = 0; i < ret; i++)
+          {
+            auto *p = reinterpret_cast<event_channel *>(events[i].udata);
+            p->on_activate(events[i].data, events[i].fflags);
+          }
+        }
+      }
+
+    };
+
+    event_loop::event_loop()
+      : _detail { new detail() }
+    {}
+    event_loop::~event_loop() {}
+
+    void event_loop::start()
     {
-      ::close(fd);
-      throw;
+      _detail->pool();
+    }
+
+    std::shared_ptr<connection_listener_builder>
+    event_loop::create_connection_listener()
+    {
+      return nullptr;
+    }
+
+    std::shared_ptr<connection_endpoint_builder>
+    event_loop::create_connection_endpoint()
+    {
+      return nullptr;
+    }
+
+    std::shared_ptr<datagram_endpoint_builder>
+    event_loop::create_datagram_endpoint()
+    {
+      return nullptr;
+    }
+
+    void event_loop::register_event(int descriptor,
+                                    std::int16_t event,
+                                    std::uint16_t operation,
+                                    uint32_t flag,
+                                    std::intptr_t data,
+                                    event_channel &channel)
+    {
+      _detail->_changed_events_list.push_back(
+          {
+            static_cast<std::uintptr_t>(descriptor),
+            event,
+            operation,
+            flag,
+            data,
+            &channel
+          }
+      );
     }
   }
-
-private:
-  std::unique_ptr<stream_listener_options> _options;
-
-};
-
-class macos_network_context : public lanxc::network_context
-{
-  std::shared_ptr<lanxc::connection_listener_builder>
-  create_connection_listener() override
-  {
-    return std::make_shared<macos_stream_listener_builder>();
-  }
-
-  std::shared_ptr<lanxc::connection_endpoint_builder>
-  create_connection_endpoint() override
-  {
-    return nullptr;
-  }
-};
+}

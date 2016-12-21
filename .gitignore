@@ -39,4 +39,4 @@ build/
 *.iws
 *.iml
 
-
+cmake-build-*

@@ -18,21 +18,50 @@
 #ifndef LANXC_EVENT_LOOP_HPP
 #define LANXC_EVENT_LOOP_HPP
 
+#include <lanxc/core-macos/event_service.hpp>
+
 #include <lanxc/core/main_loop.hpp>
 #include <lanxc/core/io_context.hpp>
+#include <lanxc/core/network_context.hpp>
 
+#include <memory>
 
 namespace lanxc
 {
-
-  class macos_event_loop : public virtual main_loop
-                         , public virtual io_context
+  namespace macos
   {
-  public:
-    ~macos_event_loop() override;
+    class event_loop : public virtual main_loop
+                     , public virtual io_context
+                     , public virtual network_context
+                     , public virtual event_service
+    {
+    public:
 
-    void start() override;
-  };
+      event_loop();
+      ~event_loop() override;
+      void start() override;
+
+      std::shared_ptr<connection_listener_builder>
+      create_connection_listener() override;
+
+      std::shared_ptr<connection_endpoint_builder>
+      create_connection_endpoint() override;
+
+      std::shared_ptr<datagram_endpoint_builder>
+      create_datagram_endpoint() override;
+
+      void register_event(int descriptor,
+                          int16_t event,
+                          uint16_t operation,
+                          uint32_t flag,
+                          std::intptr_t data,
+                          event_channel &channel) override;
+    private:
+      struct detail;
+      std::unique_ptr<detail>  _detail;
+    };
+  }
+
 }
 
 #endif //LANXC_EVENT_LOOP_HPP

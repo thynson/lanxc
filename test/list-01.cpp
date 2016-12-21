@@ -14,6 +14,47 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+#include <type_traits>
+#include <memory>
+#include <iostream>
+
+class MoveConstructible
+{
+public:
+  MoveConstructible(int x);
+  MoveConstructible(MoveConstructible &&) = delete;
+  MoveConstructible(const MoveConstructible &) = delete;
+
+private:
+  std::shared_ptr<int> x;
+};
+
+template<typename T>
+class test
+{
+public:
+
+  template<typename F>
+  using sfinae = typename std::enable_if <
+      std::is_move_constructible<F>::value
+  >::type;
+
+  template<typename F, typename = sfinae<F> >
+  void ff(F f)
+  {
+
+  };
+
+
+  int main()
+  {
+
+    ff(MoveConstructible(2));
+    return 0;
+  }
+
+
+};
 
 #include <lanxc/link.hpp>
 #include <random>
@@ -86,17 +127,3 @@ void test_list()
 }
 
 
-int main()
-{
-  X x;
-  Y y;
-  lanxc::link::list<X, X> m;
-  lanxc::link::list<Y, Y> n;
-  m.push_back(x);
-  n.push_back(y);
-  assert(x.is_linked());
-
-  test_list<X>();
-  test_list<Y>();
-  return 0;
-}

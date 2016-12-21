@@ -27,7 +27,7 @@
 namespace lanxc
 {
 
-  task_monitor::task_monitor(task_monitor &&tm) noexcept
+  task_token::task_token(task_token &&tm) noexcept
       : m_scheduler(nullptr)
       , m_listener(nullptr)
   {
@@ -35,19 +35,19 @@ namespace lanxc
     std::swap(m_listener, tm.m_listener);
   }
 
-  task_monitor &task_monitor::operator =(task_monitor &&tm) noexcept
+  task_token &task_token::operator =(task_token &&tm) noexcept
   {
-    this->~task_monitor();
-    new (this) task_monitor(std::move(tm));
+    this->~task_token();
+    new (this) task_token(std::move(tm));
     return *this;
   }
 
-  task_monitor::task_monitor(scheduler *s, task_listener *l) noexcept
+  task_token::task_token(scheduler *s, task_listener *l) noexcept
       : m_scheduler(s)
       , m_listener(l)
   { }
 
-  task_monitor::~task_monitor()
+  task_token::~task_token()
   {
     if (m_scheduler && m_listener)
     {
@@ -59,7 +59,7 @@ namespace lanxc
 
   void scheduler::execute(task &t)
   {
-    t.routine(task_monitor(this, &t));
+    t.routine(task_token(this, &t));
   }
 
   void scheduler::do_notify_finished(task_listener &t)

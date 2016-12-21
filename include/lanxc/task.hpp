@@ -15,18 +15,25 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_TASK_HPP_INCLUDED
-#define LANXC_TASK_HPP_INCLUDED
+#ifndef LANXC_TASK_SERVICE_HPP_INCLUDED
+#define LANXC_TASK_SERVICE_HPP_INCLUDED
 
 #include <lanxc/function.hpp>
-#include <lanxc/link/list.hpp>
+#include <lanxc/link.hpp>
+
+
+#include <chrono>
 #include <memory>
 
 namespace lanxc
 {
   class task;
-  class task_monitor;
+  class task_token;
   class scheduler;
+
+  using std::chrono::steady_clock;
+  using std::chrono::system_clock;
+  using time_duration = steady_clock::duration;
 
   class task_listener : public link::list_node<task_listener>
   {
@@ -64,30 +71,30 @@ namespace lanxc
   };
 
 
-  class task_monitor
+  class task_token
   {
     friend class scheduler;
   public:
 
-    constexpr task_monitor () noexcept
+    constexpr task_token () noexcept
         : m_scheduler{nullptr}
         , m_listener{nullptr}
     { }
 
-    task_monitor(const task_monitor &tm) = delete;
-    task_monitor &operator = (const task_monitor &tm) =delete;
+    task_token(const task_token &tm) = delete;
+    task_token &operator = (const task_token &tm) =delete;
 
-    task_monitor(task_monitor &&tm) noexcept ;
-    task_monitor &operator = (task_monitor &&tm) noexcept ;
+    task_token(task_token &&tm) noexcept ;
+    task_token &operator = (task_token &&tm) noexcept ;
 
     void set_progress(unsigned current, unsigned total);
-    ~task_monitor();
+    ~task_token();
 
     scheduler &get_scheduler() const noexcept
     { return *m_scheduler; }
 
   private:
-    task_monitor(scheduler *s, task_listener *t) noexcept ;
+    task_token(scheduler *s, task_listener *t) noexcept ;
     scheduler *m_scheduler;
     task_listener *m_listener;
   };
@@ -105,8 +112,37 @@ namespace lanxc
      * @note This function should not throws any exception, any exception
      * should be caught and handled in its own way
      */
-    virtual void routine(task_monitor tm) noexcept = 0;
+    virtual void routine(task_token tm) noexcept = 0;
   };
+
+  /**
+   * @brief Task that run at specified time
+   */
+  class schedule
+    : public link::rbtree_node<steady_clock::time_point, schedule>
+    , public task
+  {
+    friend class scheduler;
+  protected:
+
+    /**
+     * @brief Construct a schedule initially runs at given time, repeat in
+     * specified duration
+     * @param tp The initial time
+     * @param td The duration, 0 means no repeat, default is 0
+     */
+    schedule(steady_clock::time_point tp, time_duration td);
+
+    /**
+     * @brief Construct a schedule runs repeatedly
+     * @param td The duration between each run
+     */
+    schedule(time_duration td);
+
+  private:
+    time_duration m_duration;
+  };
+
 
 
   /**
@@ -118,12 +154,12 @@ namespace lanxc
    */
   class scheduler
   {
-    friend class task_monitor;
+    friend class task_token;
   public:
 
     /**
      * @brief Schedule a task to run
-     * @note This funciton can be called from any thread
+     * @note This function can be called from any thread
      * @param t The task
      */
     virtual void schedule(task &t) = 0;
@@ -137,6 +173,7 @@ namespace lanxc
     virtual void dispatch(task &t) = 0;
 
     virtual void start() = 0;
+
 
     virtual ~scheduler() = default;
 

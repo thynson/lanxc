@@ -17,5 +17,33 @@
 
 #ifndef LANXC_EVENT_CHANNEL_HPP
 #define LANXC_EVENT_CHANNEL_HPP
+#include <cstdint>
+namespace lanxc
+{
+  namespace macos
+  {
+    class event_service;
+    class event_channel
+    {
+    public:
+      event_channel() = default;
+      event_channel(event_service &,
+                    int descriptor,
+                    int16_t event,
+                    uint16_t operation,
+                    uint32_t flags,
+                    intptr_t data);
+      event_channel(const event_channel &) = delete;
+      event_channel &operator = (const event_channel &) = delete;
+
+      event_channel(event_channel &&) = delete;
+      event_channel &operator = (event_channel &&) = delete;
+
+      virtual ~event_channel();
+      virtual void on_activate(std::intptr_t data, std::uint32_t flags) = 0;
+    };
+
+  }
+}
 
 #endif //LANXC_EVENT_CHANNEL_HPP

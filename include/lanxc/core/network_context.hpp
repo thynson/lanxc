@@ -29,8 +29,6 @@ namespace lanxc
   {
   public:
     using pointer = std::shared_ptr<connection_endpoint>;
-
-
   };
 
   class connection_endpoint_builder
@@ -42,13 +40,13 @@ namespace lanxc
   class connection_listener
   {
   public:
-    virtual void listen(function<void(connection_endpoint::pointer)> callback) = 0;
+    virtual void listen(function<void(connection_endpoint::pointer)> cb) = 0;
 
   };
 
   class connection_listener_builder
   {
-  protected:
+  public:
     class address_builder
     {
     public:
@@ -72,8 +70,6 @@ namespace lanxc
       virtual std::shared_ptr<option_builder>
       set_reuse_address(bool enabled);
     };
-    
-  public:
     
     virtual std::shared_ptr<address_builder> listen() = 0;
 
@@ -108,22 +104,6 @@ namespace lanxc
     create_datagram_endpoint() = 0;
 
   };
-
-
-  network_context *p;
-
-  int main()
-  {
-    p->create_connection_listener()
-     ->listen()
-     ->on(8888)
-     ->build()
-     ->listen([](connection_endpoint::pointer p)
-              {
-                p = nullptr;
-              });
-    return 0;
-  }
 }
 
 #endif //LANXC_NETWORK_CONTEXT_HPP

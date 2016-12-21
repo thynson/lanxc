@@ -20,18 +20,11 @@
 
 namespace lanxc
 {
-  class event_source
-  {
-
-  };
-  class main_loop : public event_source
+  class main_loop
   {
   public:
     virtual ~main_loop() = 0;
     virtual void start() = 0;
-  protected:
-    void watch(event_source &);
-
 
   };
 }

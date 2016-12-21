@@ -15,4 +15,23 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "event_channel.hpp"
+#include <lanxc/core-macos/event_channel.hpp>
+#include <lanxc/core-macos/event_service.hpp>
+
+#include <sys/event.h>
+
+namespace lanxc
+{
+  namespace macos
+  {
+    event_channel::event_channel(event_service &es,
+                                 int descriptor,
+                                 int16_t event,
+                                 uint16_t operation,
+                                 uint32_t flags,
+                                 intptr_t data)
+    { es.register_event(descriptor, event, operation, flags, data, *this); }
+
+    event_channel::~event_channel() = default;
+  }
+}
