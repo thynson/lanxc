@@ -23,7 +23,7 @@ add_library(lanxc-core
             include/lanxc/core/executor_context.hpp
             include/lanxc/core/network_context.hpp
             src/task.cpp
-            )
+            include/lanxc/core/future.hpp)
 
 
 target_compile_features(lanxc-core PUBLIC

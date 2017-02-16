@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_LIST_CONFIG_HPP_INCLUDED
-#define LANXC_LINK_LIST_CONFIG_HPP_INCLUDED
-
+#pragma once
 #include "list_define.hpp"
 
 namespace lanxc
@@ -48,4 +46,3 @@ namespace lanxc
   }
 }
 
-#endif

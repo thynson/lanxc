@@ -14,10 +14,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
-#ifndef LANXC_LINK_RBTREE_NODE_HPP_INCLUDED
-#define LANXC_LINK_RBTREE_NODE_HPP_INCLUDED
-
+#pragma once
 #include "rbtree_define.hpp"
 #include "rbtree_config.hpp"
 
@@ -1738,6 +1735,3 @@ namespace lanxc
     };
   }
 }
-
-
-#endif

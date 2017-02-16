@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_MAIN_LOOP_HPP
-#define LANXC_MAIN_LOOP_HPP
+#pragma once
 
 namespace lanxc
 {
@@ -28,5 +27,3 @@ namespace lanxc
 
   };
 }
-
-#endif //LANXC_MAIN_LOOP_HPP_HPP

@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_FUNCTIONAL_HPP
-#define LANXC_FUNCTIONAL_HPP
+#pragma once
 
 #include <lanxc/type_traits.hpp>
 #include <functional>
@@ -605,4 +604,3 @@ namespace lanxc
 
 /** @} */
 
-#endif

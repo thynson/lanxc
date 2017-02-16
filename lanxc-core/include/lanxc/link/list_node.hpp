@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_LIST_NODE_HPP_INCLUDED
-#define LANXC_LINK_LIST_NODE_HPP_INCLUDED
-
+#pragma once
 #include "list_config.hpp"
 #include <utility>
 #include <cassert>
@@ -159,4 +157,3 @@ namespace lanxc
   }
 }
 
-#endif

@@ -16,9 +16,7 @@
  */
 
 
-#ifndef LANXC_LINK_RBTREE_HPP_INCLUDED
-#define LANXC_LINK_RBTREE_HPP_INCLUDED
-
+#pragma once
 #include "rbtree_config.hpp"
 #include "rbtree_node.hpp"
 #include "rbtree_iterator.hpp"
@@ -633,4 +631,3 @@ namespace lanxc
 
   }
 }
-#endif

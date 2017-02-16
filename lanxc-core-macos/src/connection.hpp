@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_CONNECTION_HPP
-#define LANXC_CONNECTION_HPP
-
+#pragma once
 #include <lanxc/core-macos/event_loop.hpp>
 #include <lanxc/core-macos/event_service.hpp>
 #include <lanxc/core-unix/core-unix.hpp>
@@ -157,5 +155,3 @@ namespace lanxc
 
   }
 }
-
-#endif //LANXC_CONNECTION_HPP

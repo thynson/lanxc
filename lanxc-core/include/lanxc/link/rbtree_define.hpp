@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_RBTREE_DEFINE_HPP_INCLUDED
-#define LANXC_LINK_RBTREE_DEFINE_HPP_INCLUDED
-
+#pragma once
 /**
  *  @defgroup intrusive_rbtree Intrusive Red-Black Tree
  *  @ingroup intrusive_data_structure
@@ -133,4 +131,3 @@ namespace lanxc
   }
 }
 
-#endif

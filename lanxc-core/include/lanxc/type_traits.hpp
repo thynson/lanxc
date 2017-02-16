@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_TYPE_TRAITS_HPP_INCLUDED
-#define LANXC_TYPE_TRAITS_HPP_INCLUDED
+#pragma once
 
 #include <type_traits>
 #include <utility>
@@ -99,4 +98,3 @@ namespace lanxc
     static constexpr bool value = sfinae<T>(nullptr);
   };
 }
-#endif

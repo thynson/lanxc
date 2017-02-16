@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_RBTREE_CONFIG_HPP_INCLUDED
-#define LANXC_LINK_RBTREE_CONFIG_HPP_INCLUDED
-
+#pragma once
 #include "rbtree_define.hpp"
 #include <lanxc/functional.hpp>
 
@@ -66,5 +64,3 @@ namespace lanxc
 
   }
 }
-
-#endif

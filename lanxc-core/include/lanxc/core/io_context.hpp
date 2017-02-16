@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_EVENT_CONTEXT_HPP
-#define LANXC_EVENT_CONTEXT_HPP
-
+#pragma once
 
 namespace lanxc
 {
@@ -34,5 +32,3 @@ namespace lanxc
 
   };
 }
-
-#endif //LANXC_EVENT_CONTEXT_HPP

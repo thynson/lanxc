@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_EVENT_CHANNEL_HPP
-#define LANXC_EVENT_CHANNEL_HPP
+#pragma once
 #include <cstdint>
 namespace lanxc
 {
@@ -46,4 +45,3 @@ namespace lanxc
   }
 }
 
-#endif //LANXC_EVENT_CHANNEL_HPP

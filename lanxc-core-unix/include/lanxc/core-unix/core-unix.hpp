@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_CORE_UNIX_INCLUDED
-#define LANXC_CORE_UNIX_INCLUDED
+#pragma once
 
 #include <lanxc/type_traits.hpp>
 namespace lanxc
@@ -47,4 +46,3 @@ namespace lanxc
   }
 
 }
-#endif

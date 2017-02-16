@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_CORE_CLOCK_SERVICE_HPP
-#define LANXC_CORE_CLOCK_SERVICE_HPP
+#pragma once
 
 #include <chrono>
 
@@ -35,4 +34,3 @@ namespace lanxc
 }
 
 
-#endif //LANXC_CORE_CLOCK_SERVICE_HPP

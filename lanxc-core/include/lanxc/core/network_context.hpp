@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_NETWORK_CONTEXT_HPP
-#define LANXC_NETWORK_CONTEXT_HPP
+#pragma once
 
 #include "../function.hpp"
 
@@ -105,5 +104,3 @@ namespace lanxc
 
   };
 }
-
-#endif //LANXC_NETWORK_CONTEXT_HPP

@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
-#ifndef LANXC_FUNCTION_HPP_INCLUDED
-#define LANXC_FUNCTION_HPP_INCLUDED
+#pragma once
 
 #include <utility>
 #include <algorithm>
@@ -491,5 +489,3 @@ namespace std
   { };
 }
 
-
-#endif

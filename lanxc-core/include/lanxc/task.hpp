@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_TASK_SERVICE_HPP_INCLUDED
-#define LANXC_TASK_SERVICE_HPP_INCLUDED
+#pragma once
 
 #include <lanxc/function.hpp>
 #include <lanxc/link.hpp>
@@ -224,6 +223,3 @@ namespace lanxc
   };
 }
 
-
-
-#endif //LANXC_CORE_TASK_HPP

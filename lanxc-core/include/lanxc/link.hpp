@@ -15,14 +15,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_HPP_INCLUDED
-#define LANXC_LINK_HPP_INCLUDED
-
+#pragma once
 /**
  * @defgroup intrusive_data_structure Intrusive Data Structure
  */
 
 #include <lanxc/link/list.hpp>
 #include <lanxc/link/rbtree.hpp>
-
-#endif

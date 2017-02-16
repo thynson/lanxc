@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_UNIQUE_TUPLE_HPP_INCLUDED
-#define LANXC_UNIQUE_TUPLE_HPP_INCLUDED
+#pragma once
 
 #include <utility>
 #include <type_traits>

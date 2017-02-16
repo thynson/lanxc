@@ -15,9 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_LINK_LIST_HPP_INCLUDED
-#define LANXC_LINK_LIST_HPP_INCLUDED
-
+#pragma once
 #include "list_iterator.hpp"
 #include "list_node.hpp"
 
@@ -649,4 +647,3 @@ namespace lanxc
 
   }
 }
-#endif

@@ -15,8 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_MACOS_EVENT_SERVICE_HPP
-#define LANXC_MACOS_EVENT_SERVICE_HPP
+#pragma once
 
 #include <lanxc/core-macos/event_channel.hpp>
 
@@ -39,6 +38,3 @@ namespace lanxc
   }
 }
 
-
-
-#endif //LANXC_EVENT_SERVICE_HPP
