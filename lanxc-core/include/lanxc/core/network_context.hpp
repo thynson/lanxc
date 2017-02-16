@@ -18,7 +18,7 @@
 #ifndef LANXC_NETWORK_CONTEXT_HPP
 #define LANXC_NETWORK_CONTEXT_HPP
 
-#include <lanxc/function.hpp>
+#include "../function.hpp"
 
 #include <memory>
 #include <string>

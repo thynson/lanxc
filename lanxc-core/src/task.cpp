@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/task.hpp>
+#include "../include/lanxc/task.hpp"
 
 #include <queue>
 #include <thread>

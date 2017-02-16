@@ -356,7 +356,10 @@ namespace lanxc
         noexcept(detail::is_inplace_allocated<Function>::value)
         : function(std::allocator_arg, std::allocator<void>(),
                    std::move(functor))
-    { }
+    {
+      static_assert(std::is_move_constructible<Function>::value,
+                    "functor object must be move constructible");
+    }
 
     /**
      * @brief Construct a function from a functor object or (member) function
@@ -369,6 +372,8 @@ namespace lanxc
         noexcept(detail::is_inplace_allocated<Function>::value)
       : m_caller(get_caller<Allocator, Function>(f))
     {
+      static_assert(std::is_move_constructible<Function>::value,
+                    "functor object must be move constructible");
       if (m_caller != noop_function)
       {
         new (m_store) detail::manager_implement<Function, Allocator>(
@@ -424,7 +429,7 @@ namespace lanxc
       {
         if (*rhs)
         {
-          std::swap<caller_type>(lhs->m_caller, rhs->m_caller);
+          std::swap(lhs->m_caller, rhs->m_caller);
           detail::functor_padding tmp;
           auto imp = rhs->cast()->m_implement;
           imp(rhs->cast(), &tmp, detail::command::construct);
@@ -441,7 +446,7 @@ namespace lanxc
 
       if (*rhs)
       {
-        std::swap<caller_type>(lhs->m_caller, rhs->m_caller);
+        std::swap(lhs->m_caller, rhs->m_caller);
         auto rhs_implement = rhs->cast()->m_implement;
         rhs_implement(rhs->cast(), &lhs->m_store,
             detail::command::construct);

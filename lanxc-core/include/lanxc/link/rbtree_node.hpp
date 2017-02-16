@@ -1723,7 +1723,7 @@ namespace lanxc
     };
 
     /**
-     * @brief Alias (via inheriance) for #rbtree_node<Index, Node, void>
+     * @brief Alias (via inheriting) for #rbtree_node<Index, Node, void>
      * @ingroup intrusive_rbtree
      */
     template<typename Index, typename Node>

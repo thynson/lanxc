@@ -19,7 +19,7 @@
 #define LANXC_CORE_CONCURRENT_HPP
 
 #include <chrono>
-#include <lanxc/function.hpp>
+#include "../../lanxc-core/include/lanxc/function.hpp"
 
 namespace lanxc
 {

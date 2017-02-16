@@ -22,7 +22,7 @@
  * @defgroup intrusive_data_structure Intrusive Data Structure
  */
 
-#include "link/list.hpp"
-#include "link/rbtree.hpp"
+#include <lanxc/link/list.hpp>
+#include <lanxc/link/rbtree.hpp>
 
 #endif

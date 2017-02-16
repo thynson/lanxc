@@ -42,7 +42,6 @@ public:
   template<typename F, typename = sfinae<F> >
   void ff(F f)
   {
-
   };
 
 

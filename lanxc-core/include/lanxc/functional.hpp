@@ -18,8 +18,8 @@
 #ifndef LANXC_FUNCTIONAL_HPP
 #define LANXC_FUNCTIONAL_HPP
 
+#include <lanxc/type_traits.hpp>
 #include <functional>
-#include "type_traits.hpp"
 
 /**
  * @file functional.hpp
