@@ -118,7 +118,7 @@ namespace lanxc
 
       detail(function<void(promise<Value...>)> routine,
              function<void(Value...)> fulfill_action,
-             function<void(std::exception_ptr)> reject_action)
+             function<void(std::exception_ptr)> reject_action) noexcept
           : _start(std::move(routine))
           , _fulfill{std::move(fulfill_action)}
           , _reject{std::move(reject_action)}
@@ -156,32 +156,32 @@ namespace lanxc
                                            [](std::exception_ptr){})}
     { }
 
-    promise(std::shared_ptr<detail> x)
+    promise(std::shared_ptr<detail> x) noexcept
         : _detail(std::move(x))
     {
     }
 
-    promise(std::nullptr_t = nullptr)
+    promise(std::nullptr_t = nullptr) noexcept
         : _detail {nullptr}
     {
 
     }
 
-    promise &operator = (std::nullptr_t)
+    promise &operator = (std::nullptr_t) noexcept
     {
       _detail = nullptr;
       return *this;
     }
 
-    promise &set_fulfill_action(function<void(Value...)> action)
+    promise &set_fulfill_action(function<void(Value...)> f) noexcept
     {
-      _detail->_fulfill.swap(action);
+      _detail->_fulfill.swap(f);
       return *this;
     }
 
-    promise &set_reject_action(function<void(std::exception_ptr)> action)
+    promise &set_reject_action(function<void(std::exception_ptr)> f) noexcept
     {
-      _detail->_reject.swap(action);
+      _detail->_reject.swap(f);
       return *this;
     }
 
@@ -192,8 +192,7 @@ namespace lanxc
       ctx->dispatch(
           [d]
           {
-            auto &f= d->_start;
-            f(promise(d));
+            d->_start(promise(d));
           }
       );
     }
@@ -245,7 +244,8 @@ namespace lanxc
       }
     };
 
-    template<typename E, typename F, typename R=typename result_of<F(E&)>::type>
+    template<typename E, typename F,
+             typename R = typename result_of<F(E&)>::type>
     struct caught_type
     {
       using future_type = future<R>;
@@ -295,7 +295,7 @@ namespace lanxc
      * @brief Construct a future with a functor
      * @param initiator the functor that will fulfill the promise
      */
-    future(function<void(promise<Value...>)> initiator)
+    future(function<void(promise<Value...>)> initiator) noexcept
         : _promise(std::move(initiator))
     { }
 
