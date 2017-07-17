@@ -113,7 +113,7 @@ namespace lanxc
         : _detail{std::make_shared<detail>(std::move(initiator))}
     { }
 
-    promise(std::shared_ptr<detail> x)
+    explicit promise(std::shared_ptr<detail> x)
         : _detail(std::move(x))
     {
     }
@@ -182,7 +182,7 @@ namespace lanxc
 
       void set_exception_ptr(std::exception_ptr e)
       {
-        _finish = std::bind([this, e] { _reject(e); });
+        _finish = [this, e] { _reject(e); };
       }
     };
 
@@ -220,28 +220,28 @@ namespace lanxc
     future<R...> then(function<future<R...>(Value...)> done)
     {
       return future<R...>
-          { then_future_action(std::move(*this), std::move(done))};
+          { then_future_action<R...>(std::move(*this), std::move(done))};
     }
 
     template<typename E, typename R>
     future<R> caught(function<R(E&)> done)
     {
       return future<R>
-          { caught_value_action(std::move(*this), std::move(done))};
+          { caught_value_action<E, R>(std::move(*this), std::move(done))};
     }
 
     template<typename E>
     future<> caught(function<void(E&)> done)
     {
       return future<>
-          { caught_void_action(std::move(*this), std::move(done))};
+          { caught_void_action<E>(std::move(*this), std::move(done))};
     }
 
     template<typename E, typename ...R>
     future<R...> caught(function<future<R...>(E&)> done)
     {
       return future<R...>
-          { caught_future_action(std::move(*this), std::move(done))};
+          { caught_future_action<E, R...>(std::move(*this), std::move(done))};
     }
 
     void start(executor_context &);
@@ -275,10 +275,12 @@ namespace lanxc
                   auto f = _routine(std::move(value)...);
 
                   f.then(
-                      [this] (R ... r)
-                      {
-                        _next.fulfill(std::move(r)...);
-                        _next = nullptr;
+                      function<void(R...)> {
+                          [this](R ... r)
+                          {
+                            _next.fulfill(std::move(r)...);
+                            _next=nullptr;
+                          }
                       }
                   );
                   f.start(*_next._detail->_executor_context);
