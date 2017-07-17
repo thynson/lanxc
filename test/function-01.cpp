@@ -41,6 +41,14 @@ lanxc::function<void()> case1()
   return f;
 }
 
+void f(lanxc::function<void()> a) {
+  exit(1);
+}
+
+void f(lanxc::function<void(int)> b) {
+  b(0);
+}
+
 int main()
 {
   using namespace lanxc;
@@ -49,5 +57,7 @@ int main()
   g(0);
   assert(i == 1);
   case1()();
+
+  f([](int x) {assert(x == 0); });
 
 }
