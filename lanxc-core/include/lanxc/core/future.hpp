@@ -188,7 +188,7 @@ namespace lanxc
     void start(executor_context *ctx)
     {
       _detail->_executor_context = ctx;
-      auto d = _detail;
+      auto d = std::move(_detail);
       ctx->dispatch(
           [d]
           {
@@ -211,7 +211,7 @@ namespace lanxc
       {
         return future_type
             {
-                then_value_action<R>(std::move(self), std::move(f))
+                then_value_action<R>(std::move(self._promise), std::move(f))
             };
       }
     };
@@ -224,9 +224,9 @@ namespace lanxc
       construct_future(future self, function<void (Value...)> f)
       {
         return future_type
-            {
-                then_void_action(std::move(self), std::move(f))
-            };
+          {
+            then_void_action(std::move(self._promise), std::move(f))
+          };
       }
 
     };
@@ -238,15 +238,15 @@ namespace lanxc
       construct_future(future self, function<future_type(Value...)> f)
       {
         return future_type
-            {
-                then_future_action<V...>(std::move(self), std::move(f))
-            };
+          {
+            then_future_action<V...>(std::move(self._promise), std::move(f))
+          };
       }
     };
 
     template<typename E, typename F,
              typename R = typename result_of<F(E&)>::type>
-    struct caught_type
+    struct caught_exception_type
     {
       using future_type = future<R>;
 
@@ -254,13 +254,13 @@ namespace lanxc
       construct_future(future self, function<R(E&)> f)
       {
         return future_type
-            {
-                caught_value_action<E,R> (std::move(self), std::move(f))
-            };
+          {
+            caught_value_action<E,R> (std::move(self._promise), std::move(f))
+          };
       }
     };
     template<typename E, typename F>
-    struct caught_type<E, F, void>
+    struct caught_exception_type<E, F, void>
     {
       using future_type = future<>;
 
@@ -275,7 +275,7 @@ namespace lanxc
     };
 
     template<typename E, typename F, typename ...V>
-    struct caught_type<E, F, future<V...>>
+    struct caught_exception_type<E, F, future<V...>>
     {
       using future_type = future<V...>;
 
@@ -283,13 +283,15 @@ namespace lanxc
       construct_future(future self, function<future_type(E&)> f)
       {
         return future_type
-            {
-                caught_future_action<E, V...> (std::move(self), std::move(f))
-            };
+          {
+            caught_future_action<E, V...>(std::move(self._promise),
+                                          std::move(f))
+          };
       }
     };
 
   public:
+    using promise_type = promise<Value...>;
 
     /**
      * @brief Construct a future with a functor
@@ -337,10 +339,10 @@ namespace lanxc
      *     `future<T>`
      */
     template<typename E, typename F>
-    typename caught_type<E, F>::future_type
+    typename caught_exception_type<E, F>::future_type
     caught(F &&f)
     {
-      return caught_type<E, F>::construct_future(std::move(*this),
+      return caught_exception_type<E, F>::construct_future(std::move(*this),
                                                  std::move(f));
     };
 
@@ -360,11 +362,11 @@ namespace lanxc
     {
       struct detail
       {
-        future _current;
+        promise_type _current;
         promise<R...> _next;
         function<future<R...>(Value...)> _routine;
 
-        detail(future current,
+        detail(promise_type current,
                function<future<R...>(Value...)> routine)
             : _current{std::move(current)}
             , _next{}
@@ -374,7 +376,7 @@ namespace lanxc
         void start(promise<R...> next)
         {
           _next = std::move(next);
-          _current._promise.set_fulfill_action(
+          _current.set_fulfill_action(
               [this] (Value ...value)
               {
                 try
@@ -385,8 +387,8 @@ namespace lanxc
                           {
                             _next.fulfill(std::move(r)...);
                             _next = nullptr;
-                          });
-                  f.start(*_next._detail->_executor_context);
+                          })
+                   .start(*_next._detail->_executor_context);
                 }
                 catch (...)
                 {
@@ -395,7 +397,7 @@ namespace lanxc
               }
           );
 
-          _current._promise.set_reject_action(
+          _current.set_reject_action(
               [this] (std::exception_ptr e)
               {
                 _next.reject_by_exception_ptr(e);
@@ -403,7 +405,8 @@ namespace lanxc
               }
           );
 
-          _current.start(*_next._detail->_executor_context);
+          _current.start(_next._detail->_executor_context);
+          _current = nullptr;
 
         }
       };
@@ -415,7 +418,7 @@ namespace lanxc
         _detail->start(std::move(next));
       }
 
-      then_future_action(future current,
+      then_future_action(promise_type current,
                          function<future<R...>(Value...)> routine)
           : _detail { std::make_shared<detail>(std::move(current),
                                                std::move(routine)) }
@@ -427,11 +430,11 @@ namespace lanxc
     {
       struct detail
       {
-        future _current;
+        promise_type _current;
         promise<R> _next;
         function<R(Value...)> _routine;
 
-        detail(future current,
+        detail(promise_type current,
                function<R(Value...)> routine)
             : _current{std::move(current)}
             , _next{}
@@ -441,7 +444,7 @@ namespace lanxc
         void start(promise<R> next)
         {
           _next = std::move(next);
-          _current._promise.set_fulfill_action(
+          _current.set_fulfill_action(
               [this] (Value ...value)
               {
                 try
@@ -456,13 +459,14 @@ namespace lanxc
                 _next = nullptr;
               }
           );
-          _current._promise.set_reject_action(
+          _current.set_reject_action(
               [this] (std::exception_ptr e) {
                 _next.reject_by_exception_ptr(e);
                 _next = nullptr;
               }
           );
-          _current.start(*next._detail->_executor_context);
+          _current.start(_next._detail->_executor_context);
+          _current = nullptr;
         }
       };
 
@@ -473,7 +477,7 @@ namespace lanxc
         _detail->start(std::move(next));
       }
 
-      then_value_action(future current,
+      then_value_action(promise_type current,
                         function<R(Value...)> routine)
         : _detail
           { std::make_shared<detail>(std::move(current), std::move(routine)) }
@@ -485,11 +489,11 @@ namespace lanxc
     {
       struct detail
       {
-        future _current;
+        promise_type _current;
         promise<> _next;
         function<void(Value...)> _routine;
 
-        detail(future current,
+        detail(promise_type current,
                function<void(Value...)> routine)
             : _current{std::move(current)}
             , _next{}
@@ -499,7 +503,7 @@ namespace lanxc
         void start(promise<> next)
         {
           _next = std::move(next);
-          _current._promise.set_fulfill_action(
+          _current.set_fulfill_action(
               [this] (Value ...value)
               {
                 std::exception_ptr e;
@@ -517,7 +521,7 @@ namespace lanxc
               }
           );
 
-          _current._promise.set_reject_action(
+          _current.set_reject_action(
               [this] (std::exception_ptr e)
               {
                 _next.reject_by_exception_ptr(e);
@@ -525,7 +529,8 @@ namespace lanxc
               }
           );
 
-          _current.start(*next._detail->_executor_context);
+          _current.start(_next._detail->_executor_context);
+          _current = nullptr;
 
         }
       };
@@ -537,7 +542,7 @@ namespace lanxc
         _detail->start(std::move(next));
       }
 
-      then_void_action(future<Value...> current, function<void(Value...)> done)
+      then_void_action(promise_type current, function<void(Value...)> done)
         : _detail
           { std::make_shared<detail>(std::move(current), std::move (done))}
       {
@@ -551,11 +556,11 @@ namespace lanxc
     {
       struct detail
       {
-        future _current;
+        promise_type _current;
         promise<R...> _next;
         function<future<R...>(E &)> _routine;
 
-        detail(future current,
+        detail(promise_type current,
                function<future<R...>(E &)> routine)
             : _current{std::move(current)}
             , _next{}
@@ -565,7 +570,7 @@ namespace lanxc
         void start(promise<R...> next)
         {
           _next = std::move(next);
-          _current._promise.set_fulfill_action(
+          _current.set_fulfill_action(
               [this] (Value ...)
               {
                 _next.reject(promise_cancelled());
@@ -573,7 +578,7 @@ namespace lanxc
               }
           );
 
-          _current._promise.set_reject_action(
+          _current.set_reject_action(
               [this] (std::exception_ptr p)
               {
                 try
@@ -601,13 +606,14 @@ namespace lanxc
               }
           );
 
-          _current.start(*_next._detail->_executor_context);
+          _current.start(_next._detail->_executor_context);
+          _current = nullptr;
 
         }
       };
 
       std::shared_ptr<detail> _detail;
-      caught_future_action(future current,
+      caught_future_action(promise_type current,
                            function<future<R...>(E&)> routine)
         : _detail
           { std::make_shared<detail>(std::move(current), std::move (routine)) }
@@ -624,11 +630,11 @@ namespace lanxc
     {
       struct detail
       {
-        future<Value...> _current;
+        promise_type _current;
         promise<R> _next;
         function<R(E &)> _routine;
 
-        detail(future<Value...> current,
+        detail(promise_type current,
                function<R(E &)> routine)
             : _current{std::move(current)}
             , _next{}
@@ -638,14 +644,14 @@ namespace lanxc
         void start(promise<R> next)
         {
           _next = std::move(next);
-          _current._promise.set_fulfill_action(
+          _current.set_fulfill_action(
               [this] (Value ...)
               {
                 _next.reject(promise_cancelled());
                 _next = nullptr;
               }
           );
-          _current._promise.set_reject_action(
+          _current.set_reject_action(
               [this] (std::exception_ptr p)
               {
                 try
@@ -664,11 +670,12 @@ namespace lanxc
                 _next = nullptr;
               }
           );
-          _current.start(*next._detail->_executor_context);
+          _current.start(_next._detail->_executor_context);
+          _current = nullptr;
         }
       };
       std::shared_ptr<detail> _detail;
-      caught_value_action(future current,
+      caught_value_action(promise_type current,
                           function<R(E &)> routine)
         : _detail
           { std::make_shared<detail>(std::move(current), std::move(routine)) }
@@ -685,11 +692,11 @@ namespace lanxc
     {
       struct detail
       {
-        future<Value...> _current;
+        promise_type _current;
         promise<> _next;
         function<void(E &)> _routine;
 
-        detail(future<Value...> current,
+        detail(promise_type current,
                function<void(E &)> routine)
             : _current{std::move(current)}
             , _next{}
@@ -699,7 +706,7 @@ namespace lanxc
         void start(promise<> next)
         {
           _next = std::move(next);
-          _current._promise.set_fulfill_action(
+          _current.set_fulfill_action(
               [this] (Value...)
               {
                 _next.reject(promise_cancelled());
@@ -707,7 +714,7 @@ namespace lanxc
               }
           );
 
-          _current._promise.set_reject_action(
+          _current.set_reject_action(
               [this] (std::exception_ptr p)
               {
                 try
@@ -726,7 +733,8 @@ namespace lanxc
               }
           );
 
-          _current.start(*next._detail->_executor_context);
+          _current.start(_next._detail->_executor_context);
+          _current = nullptr;
 
         }
       };
@@ -743,6 +751,7 @@ namespace lanxc
           { std::make_shared<detail>(std::move(current), std::move(routine)) }
       {}
     };
+
     promise<Value...> _promise;
   };
 

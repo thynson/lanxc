@@ -5,6 +5,7 @@
 #include <lanxc/core/future.hpp>
 #include <list>
 #include <cassert>
+#include <iostream>
 
 
 class mock_executor : public lanxc::executor_context
@@ -37,7 +38,7 @@ int main()
   mock_executor me;
   lanxc::future<int> f ([](lanxc::promise<int> p) {
     p.fulfill(0);
-
+    std::cout << "!" << std::endl;
   });
 
   f.then([](int x)-> int { return x+1; })
@@ -45,6 +46,7 @@ int main()
    .then([](int x) -> lanxc::future<bool>
                {
                  assert(x == 1);
+                 std::cout << "!" << std::endl;
                  return lanxc::future<bool>([](lanxc::promise<bool> x)
                                             {
                                               x.fulfill(true);
@@ -53,9 +55,10 @@ int main()
    .then([](bool x) -> void
          {
            assert(x);
+           std::cout << "!" << std::endl;
            return;
          })
-   .start(me);
+  .start(me);
   me.run();
 
 
