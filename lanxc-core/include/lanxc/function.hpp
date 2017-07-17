@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "type_traits.hpp"
+
 #include <utility>
 #include <algorithm>
 #include <type_traits>
@@ -117,7 +119,7 @@ namespace lanxc
         void (*)(manager *, void *, command);
 
       const implement_type m_implement;
-      manager(implement_type implement) noexcept
+      explicit manager(implement_type implement) noexcept
           : m_implement(implement)
       { }
     };
@@ -126,7 +128,8 @@ namespace lanxc
     static Result invalid_function(manager *, Arguments ...)
     { throw bad_function_call(); }
 
-    template<typename Function>
+    template<typename Function, typename = typename
+      std::enable_if<std::is_move_constructible<Function>::value>::type>
     static Function &make_functor(Function &&f)
     { return f; }
 
@@ -185,6 +188,8 @@ namespace lanxc
         : manager(other.m_implement)
         , m_function(std::move(other.m_function))
       { }
+
+      manager_implement &operator = (manager_implement &&) = delete;
 
       ~manager_implement() = default;
 
@@ -252,6 +257,8 @@ namespace lanxc
         allocator_traits::destroy(m_allocator, m_function);
         allocator_traits::deallocate(m_allocator, m_function, 1);
       }
+
+      manager_implement &operator = (manager_implement &&) = delete;
       manager_implement(const manager_implement &) = delete;
       manager_implement &operator = (const manager_implement &) = delete;
     };
@@ -286,11 +293,8 @@ namespace lanxc
 
     template<typename Function>
     using valid_functor_sfinae = typename std::enable_if<
-        !std::is_same<Function, function>::value
-        && std::is_move_constructible<Function>::value
-        && std::is_convertible<
-              decltype(detail::make_functor(std::declval<Function>())
-                  (std::declval<Arguments>()...)), Result>::value
+        std::is_convertible<typename result_of<Function(Arguments...)>::type, Result>::value
+        && ! std::is_same<Function, function>::value
     >::type;
 
     using caller_type = Result (*)(detail::manager *, Arguments ...);
@@ -399,7 +403,7 @@ namespace lanxc
       return *this;
     }
 
-    function &operator =(const function &other) = delete;
+    function &operator =(const function &) = delete;
 
     /**
      * @brief Test if this function is initialized
