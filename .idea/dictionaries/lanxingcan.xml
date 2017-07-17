@@ -18,6 +18,7 @@
       <w>noexcept</w>
       <w>nothrow</w>
       <w>rbegin</w>
+      <w>rbtree</w>
       <w>rebalance</w>
       <w>retval</w>
       <w>subsequential</w>
