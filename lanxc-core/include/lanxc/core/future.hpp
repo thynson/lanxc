@@ -268,9 +268,9 @@ namespace lanxc
       construct_future(future self, lanxc::function<void(E&)> f)
       {
         return future_type
-            {
-                caught_void_action<E> (std::move(self), std::move(f))
-            };
+          {
+            caught_void_action<E> (std::move(self._promise), std::move(f))
+          };
       }
     };
 
@@ -360,400 +360,469 @@ namespace lanxc
     template<typename ...R>
     struct then_future_action
     {
-      struct detail
-      {
-        promise_type _current;
-        promise<R...> _next;
-        function<future<R...>(Value...)> _routine;
-
-        detail(promise_type current,
-               function<future<R...>(Value...)> routine)
-            : _current{std::move(current)}
-            , _next{}
-            , _routine{std::move(routine)}
-        { }
-
-        void start(promise<R...> next)
-        {
-          _next = std::move(next);
-          _current.set_fulfill_action(
-              [this] (Value ...value)
-              {
-                try
-                {
-                  auto f = _routine(std::move(value)...);
-
-                  f.then([this](R ... r)
-                          {
-                            _next.fulfill(std::move(r)...);
-                            _next = nullptr;
-                          })
-                   .start(*_next._detail->_executor_context);
-                }
-                catch (...)
-                {
-                  _next.reject_by_exception_ptr(std::current_exception());
-                }
-              }
-          );
-
-          _current.set_reject_action(
-              [this] (std::exception_ptr e)
-              {
-                _next.reject_by_exception_ptr(e);
-                _next = nullptr;
-              }
-          );
-
-          _current.start(_next._detail->_executor_context);
-          _current = nullptr;
-
-        }
-      };
-
+      struct detail;
       std::shared_ptr<detail> _detail;
-
-      void operator () (promise<R...> next)
-      {
-        _detail->start(std::move(next));
-      }
-
+      void operator () (promise<R...> next);
       then_future_action(promise_type current,
-                         function<future<R...>(Value...)> routine)
-          : _detail { std::make_shared<detail>(std::move(current),
-                                               std::move(routine)) }
-      { }
+                         function<future<R...>(Value...)> routine);
     };
 
     template<typename R>
     struct then_value_action
     {
-      struct detail
-      {
-        promise_type _current;
-        promise<R> _next;
-        function<R(Value...)> _routine;
-
-        detail(promise_type current,
-               function<R(Value...)> routine)
-            : _current{std::move(current)}
-            , _next{}
-            , _routine{std::move(routine)}
-        { }
-
-        void start(promise<R> next)
-        {
-          _next = std::move(next);
-          _current.set_fulfill_action(
-              [this] (Value ...value)
-              {
-                try
-                {
-                  _next.fulfill(_routine(std::forward<Value>(value)...));
-                }
-                catch(...)
-                {
-                  _next.reject_by_exception_ptr(std::current_exception());
-                }
-
-                _next = nullptr;
-              }
-          );
-          _current.set_reject_action(
-              [this] (std::exception_ptr e) {
-                _next.reject_by_exception_ptr(e);
-                _next = nullptr;
-              }
-          );
-          _current.start(_next._detail->_executor_context);
-          _current = nullptr;
-        }
-      };
-
+      struct detail;
       std::shared_ptr<detail> _detail;
-
-      void operator () (promise<R> next)
-      {
-        _detail->start(std::move(next));
-      }
-
+      void operator () (promise<R> next);
       then_value_action(promise_type current,
-                        function<R(Value...)> routine)
-        : _detail
-          { std::make_shared<detail>(std::move(current), std::move(routine)) }
-      { }
+                        function<R(Value...)> routine);
     };
 
 
     struct then_void_action
     {
-      struct detail
-      {
-        promise_type _current;
-        promise<> _next;
-        function<void(Value...)> _routine;
-
-        detail(promise_type current,
-               function<void(Value...)> routine)
-            : _current{std::move(current)}
-            , _next{}
-            , _routine{std::move(routine)}
-        { }
-
-        void start(promise<> next)
-        {
-          _next = std::move(next);
-          _current.set_fulfill_action(
-              [this] (Value ...value)
-              {
-                std::exception_ptr e;
-                try
-                {
-                  _routine(std::move(value)...);
-                }
-                catch (...)
-                {
-                  e = std::current_exception();
-                }
-                if (e) _next.reject_by_exception_ptr(e);
-                else _next.fulfill();
-                _next = nullptr;
-              }
-          );
-
-          _current.set_reject_action(
-              [this] (std::exception_ptr e)
-              {
-                _next.reject_by_exception_ptr(e);
-                _next = nullptr;
-              }
-          );
-
-          _current.start(_next._detail->_executor_context);
-          _current = nullptr;
-
-        }
-      };
-
+      struct detail;
       std::shared_ptr<detail> _detail;
-
-      void operator () (promise<> next)
-      {
-        _detail->start(std::move(next));
-      }
-
-      then_void_action(promise_type current, function<void(Value...)> done)
-        : _detail
-          { std::make_shared<detail>(std::move(current), std::move (done))}
-      {
-
-      }
+      void operator () (promise<> next);
+      then_void_action(promise_type current, function<void(Value...)> done);
     };
-
 
     template<typename E, typename ...R>
     struct caught_future_action
     {
-      struct detail
-      {
-        promise_type _current;
-        promise<R...> _next;
-        function<future<R...>(E &)> _routine;
-
-        detail(promise_type current,
-               function<future<R...>(E &)> routine)
-            : _current{std::move(current)}
-            , _next{}
-            , _routine{std::move(routine)}
-        { }
-
-        void start(promise<R...> next)
-        {
-          _next = std::move(next);
-          _current.set_fulfill_action(
-              [this] (Value ...)
-              {
-                _next.reject(promise_cancelled());
-                _next = nullptr;
-              }
-          );
-
-          _current.set_reject_action(
-              [this] (std::exception_ptr p)
-              {
-                try
-                {
-                  std::rethrow_exception(p);
-                }
-                catch (E &e)
-                {
-                  auto f = _routine(e);
-
-                  f.then(
-                      [this] (R ... r)
-                      {
-                        _next.fulfill(std::move(r)...);
-                        _next = nullptr;
-                      }
-                  );
-                  f.start(*_next._detail->_executor_context);
-                }
-                catch (...)
-                {
-                  _next.reject_by_exception_ptr(std::current_exception());
-                  _next = nullptr;
-                }
-              }
-          );
-
-          _current.start(_next._detail->_executor_context);
-          _current = nullptr;
-
-        }
-      };
-
+      struct detail;
       std::shared_ptr<detail> _detail;
+      void operator () (promise<R...> next);
       caught_future_action(promise_type current,
-                           function<future<R...>(E&)> routine)
-        : _detail
-          { std::make_shared<detail>(std::move(current), std::move (routine)) }
-      {}
-
-      void operator () (promise<R...> p)
-      {
-        _detail->start(std::move(p));
-      }
+                           function<future<R...>(E&)> routine);
     };
 
     template<typename E, typename R>
     struct caught_value_action
     {
-      struct detail
-      {
-        promise_type _current;
-        promise<R> _next;
-        function<R(E &)> _routine;
-
-        detail(promise_type current,
-               function<R(E &)> routine)
-            : _current{std::move(current)}
-            , _next{}
-            , _routine{std::move(routine)}
-        { }
-
-        void start(promise<R> next)
-        {
-          _next = std::move(next);
-          _current.set_fulfill_action(
-              [this] (Value ...)
-              {
-                _next.reject(promise_cancelled());
-                _next = nullptr;
-              }
-          );
-          _current.set_reject_action(
-              [this] (std::exception_ptr p)
-              {
-                try
-                {
-                  std::rethrow_exception(p);
-                }
-                catch(E &e)
-                {
-                  _next.fulfill(_routine(e));
-                }
-                catch(...)
-                {
-                  _next.reject_by_exception_ptr(std::current_exception());
-                }
-
-                _next = nullptr;
-              }
-          );
-          _current.start(_next._detail->_executor_context);
-          _current = nullptr;
-        }
-      };
+      struct detail;
       std::shared_ptr<detail> _detail;
+      void operator () (promise<R> next);
       caught_value_action(promise_type current,
-                          function<R(E &)> routine)
-        : _detail
-          { std::make_shared<detail>(std::move(current), std::move(routine)) }
-      {}
-
-      void operator () (promise<R> p)
-      {
-        _detail->start(std::move(p));
-      }
+                          function<R(E&)> routine);
     };
+
 
     template<typename E>
     struct caught_void_action
     {
-      struct detail
-      {
-        promise_type _current;
-        promise<> _next;
-        function<void(E &)> _routine;
-
-        detail(promise_type current,
-               function<void(E &)> routine)
-            : _current{std::move(current)}
-            , _next{}
-            , _routine{std::move(routine)}
-        { }
-
-        void start(promise<> next)
-        {
-          _next = std::move(next);
-          _current.set_fulfill_action(
-              [this] (Value...)
-              {
-                _next.reject(promise_cancelled());
-                _next = nullptr;
-              }
-          );
-
-          _current.set_reject_action(
-              [this] (std::exception_ptr p)
-              {
-                try
-                {
-                  std::rethrow_exception(p);
-                }
-                catch(E &e)
-                {
-                  _next.fulfill();
-                }
-                catch (...)
-                {
-                  _next.reject_by_exception_ptr(std::current_exception());
-                }
-                _next = nullptr;
-              }
-          );
-
-          _current.start(_next._detail->_executor_context);
-          _current = nullptr;
-
-        }
-      };
-
-      void operator () (promise<> p)
-      {
-        _detail->start(std::move(p));
-      }
-
+      struct detail;
       std::shared_ptr<detail> _detail;
-      caught_void_action(future current,
-                         function<void(E &)> routine)
-        : _detail
-          { std::make_shared<detail>(std::move(current), std::move(routine)) }
-      {}
+      void operator () (promise<> next);
+      caught_void_action(promise_type current, function<void(E&)> done);
     };
 
     promise<Value...> _promise;
   };
+
+  template<typename ...Value>
+  template<typename ...R>
+  struct future<Value...>::then_future_action<R...>::detail
+  {
+    promise_type _current;
+    promise<R...> _next;
+    function<future<R...>(Value...)> _routine;
+
+    detail(promise_type current,
+           function<future<R...>(Value...)> routine)
+        : _current{std::move(current)}
+        , _next{}
+        , _routine{std::move(routine)}
+    { }
+
+    void start(promise<R...> next)
+    {
+      _next = std::move(next);
+      _current.set_fulfill_action(
+          [this] (Value ...value)
+          {
+            try
+            {
+              auto f = _routine(std::move(value)...);
+
+              f.then([this](R ... r)
+                     {
+                       _next.fulfill(std::move(r)...);
+                       _next = nullptr;
+                     })
+               .start(*_next._detail->_executor_context);
+            }
+            catch (...)
+            {
+              _next.reject_by_exception_ptr(std::current_exception());
+            }
+          }
+      );
+
+      _current.set_reject_action(
+          [this] (std::exception_ptr e)
+          {
+            _next.reject_by_exception_ptr(e);
+            _next = nullptr;
+          }
+      );
+
+      _current.start(_next._detail->_executor_context);
+      _current = nullptr;
+
+    }
+  };
+
+  template<typename ...Value>
+  template<typename ...R>
+  void future<Value...>::then_future_action<R...>
+  ::operator () (promise<R...> next)
+  {
+    _detail->start(std::move(next));
+  }
+
+  template<typename ...Value>
+  template<typename ...R>
+  future<Value...>::then_future_action<R...>
+  ::then_future_action(promise_type current,
+                       function<future<R...>(Value...)> routine)
+    : _detail
+      { std::make_shared<detail>(std::move(current), std::move(routine)) }
+  { }
+
+
+  template<typename ...Value>
+  template<typename R>
+  struct future<Value...>::then_value_action<R>::detail
+  {
+    promise_type _current;
+    promise<R>   _next;
+    function<R(Value...)> _routine;
+
+    detail(promise_type current,
+           function<R(Value...)> routine)
+        : _current { std::move(current) }
+        , _next {}
+        , _routine { std::move(routine) } {}
+
+    void start(promise<R> next)
+    {
+      _next=std::move(next);
+      _current.set_fulfill_action(
+          [this](Value ...value)
+          {
+            try
+            {
+              _next.fulfill(_routine(std::forward<Value>(value)...));
+            }
+            catch (...)
+            {
+              _next.reject_by_exception_ptr(std::current_exception());
+            }
+
+            _next=nullptr;
+          }
+      );
+      _current.set_reject_action(
+          [this](std::exception_ptr e)
+          {
+            _next.reject_by_exception_ptr(e);
+            _next=nullptr;
+          }
+      );
+      _current.start(_next._detail->_executor_context);
+      _current=nullptr;
+    }
+  };
+
+  template<typename ...Value>
+  template<typename R>
+  void future<Value...>::then_value_action<R>::operator ()(promise<R> next)
+  {
+    _detail->start(std::move(next));
+  }
+
+  template<typename ...Value>
+  template<typename R>
+  future<Value...>::then_value_action<R>
+  ::then_value_action(promise_type current,
+                      function<R(Value...)> routine)
+    : _detail{std::make_shared<detail>(std::move(current), std::move(routine))}
+  {
+  }
+
+  template<typename ...Value>
+  struct future<Value...>::then_void_action::detail
+  {
+    promise_type _current;
+    promise<> _next;
+    function<void(Value...)> _routine;
+
+    detail(promise_type current,
+           function<void(Value...)> routine)
+        : _current{std::move(current)}
+        , _next{}
+        , _routine{std::move(routine)}
+    { }
+
+    void start(promise<> next)
+    {
+      _next = std::move(next);
+      _current.set_fulfill_action(
+          [this] (Value ...value)
+          {
+            std::exception_ptr e;
+            try
+            {
+              _routine(std::move(value)...);
+            }
+            catch (...)
+            {
+              e = std::current_exception();
+            }
+            if (e) _next.reject_by_exception_ptr(e);
+            else _next.fulfill();
+            _next = nullptr;
+          }
+      );
+
+      _current.set_reject_action(
+          [this] (std::exception_ptr e)
+          {
+            _next.reject_by_exception_ptr(e);
+            _next = nullptr;
+          }
+      );
+
+      _current.start(_next._detail->_executor_context);
+      _current = nullptr;
+
+    }
+  };
+
+  template<typename ...Value>
+  void future<Value...>::then_void_action
+  ::operator () (promise<> next)
+  {
+    _detail->start(std::move(next));
+  }
+
+  template<typename ...Value>
+  future<Value...>::then_void_action
+  ::then_void_action(promise_type current, function<void(Value...)> done)
+      : _detail
+      { std::make_shared<detail>(std::move(current), std::move(done)) }
+  {
+
+  }
+  template<typename ...Value>
+  template<typename E, typename ...R>
+  struct future<Value...>::caught_future_action<E, R...>::detail
+    {
+      promise_type _current;
+      promise<R...> _next;
+      function<future<R...>(E &)> _routine;
+
+      detail(promise_type current,
+             function<future<R...>(E &)> routine)
+          : _current{std::move(current)}
+          , _next{}
+          , _routine{std::move(routine)}
+      { }
+
+      void start(promise<R...> next)
+      {
+        _next = std::move(next);
+        _current.set_fulfill_action(
+            [this] (Value ...)
+            {
+              _next.reject(promise_cancelled());
+              _next = nullptr;
+            }
+        );
+
+        _current.set_reject_action(
+            [this] (std::exception_ptr p)
+            {
+              try
+              {
+                std::rethrow_exception(p);
+              }
+              catch (E &e)
+              {
+                auto f = _routine(e);
+
+                f.then(
+                    [this] (R ... r)
+                    {
+                      _next.fulfill(std::move(r)...);
+                      _next = nullptr;
+                    }
+                );
+                f.start(*_next._detail->_executor_context);
+              }
+              catch (...)
+              {
+                _next.reject_by_exception_ptr(std::current_exception());
+                _next = nullptr;
+              }
+            }
+        );
+
+        _current.start(_next._detail->_executor_context);
+        _current = nullptr;
+
+      }
+    };
+
+  template<typename ...Value>
+  template<typename E, typename ...R>
+  future<Value...>::caught_future_action<E, R...>
+  ::caught_future_action(promise_type current,
+                         function<future<R...>(E&)> routine)
+      : _detail
+      { std::make_shared<detail>(std::move(current), std::move(routine)) }
+  { }
+
+  template<typename ...Value>
+  template<typename E, typename ...R>
+  void future<Value...>::caught_future_action<E, R...>
+  ::operator ()(promise<R...> p)
+  {
+    _detail->start(std::move(p));
+  }
+
+  template<typename ...Value>
+  template<typename E, typename R>
+  struct future<Value...>::caught_value_action<E, R>::detail
+  {
+    promise_type _current;
+    promise<R> _next;
+    function<R(E &)> _routine;
+
+    detail(promise_type current,
+           function<R(E &)> routine)
+        : _current{std::move(current)}
+        , _next{}
+        , _routine{std::move(routine)}
+    { }
+
+    void start(promise<R> next)
+    {
+      _next = std::move(next);
+      _current.set_fulfill_action(
+          [this] (Value ...)
+          {
+            _next.reject(promise_cancelled());
+            _next = nullptr;
+          }
+      );
+      _current.set_reject_action(
+          [this] (std::exception_ptr p)
+          {
+            try
+            {
+              std::rethrow_exception(p);
+            }
+            catch(E &e)
+            {
+              _next.fulfill(_routine(e));
+            }
+            catch(...)
+            {
+              _next.reject_by_exception_ptr(std::current_exception());
+            }
+
+            _next = nullptr;
+          }
+      );
+      _current.start(_next._detail->_executor_context);
+      _current = nullptr;
+    }
+  };
+
+  template<typename ...Value>
+  template<typename E, typename R>
+  future<Value...>::caught_value_action<E, R>
+  ::caught_value_action(promise_type current, function<R(E&)> routine)
+      : _detail
+        { std::make_shared<detail>(std::move(current), std::move(routine)) }
+  { }
+
+  template<typename ...Value>
+  template<typename E, typename R>
+  void future<Value...>::caught_value_action<E, R>
+  ::operator () (promise<R> p)
+  {
+    _detail->start(std::move(p));
+  }
+
+  template<typename ...Value>
+  template<typename E>
+  struct future<Value...>::caught_void_action<E>::detail
+  {
+    promise_type _current;
+    promise<> _next;
+    function<void(E &)> _routine;
+
+    detail(promise_type current,
+           function<void(E &)> routine)
+        : _current{std::move(current)}
+        , _next{}
+        , _routine{std::move(routine)}
+    { }
+
+    void start(promise<> next)
+    {
+      _next = std::move(next);
+      _current.set_fulfill_action(
+          [this] (Value...)
+          {
+            _next.reject(promise_cancelled());
+            _next = nullptr;
+          }
+      );
+
+      _current.set_reject_action(
+          [this] (std::exception_ptr p)
+          {
+            try
+            {
+              std::rethrow_exception(p);
+            }
+            catch(E &e)
+            {
+              _next.fulfill();
+            }
+            catch (...)
+            {
+              _next.reject_by_exception_ptr(std::current_exception());
+            }
+            _next = nullptr;
+          }
+      );
+
+      _current.start(_next._detail->_executor_context);
+      _current = nullptr;
+
+    }
+  };
+
+  template<typename ...Value>
+  template<typename E>
+  void future<Value...>::caught_void_action<E>
+  ::operator () (promise<> p)
+  {
+    _detail->start(std::move(p));
+  }
+
+  template<typename ...Value>
+  template<typename E>
+  future<Value...>::caught_void_action<E>
+  ::caught_void_action(promise_type current,
+                       function<void(E &)> routine)
+      : _detail
+        { std::make_shared<detail>(std::move(current), std::move(routine)) }
+  {}
 
 
 }
