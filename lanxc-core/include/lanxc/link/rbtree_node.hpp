@@ -114,7 +114,9 @@ namespace lanxc
         }
 
         node(node &&n) noexcept
-            : node()
+            : m_p(nullptr), m_l(nullptr), m_r(nullptr)
+            , m_is_red(false), m_is_container(false)
+            , m_has_l(false), m_has_r(false)
         { move(*this, n); }
 
         node &operator = (node &&n) noexcept
@@ -808,7 +810,7 @@ namespace lanxc
         unlink_and_get_adjoin_node() noexcept
         {
           if (!is_linked())
-            return std::make_pair(nullptr, nullptr);
+            return std::make_pair<pointer, pointer>(nullptr, nullptr);
           std::pair<pointer, pointer> ret(prev(), next());
           pointer x;
 
