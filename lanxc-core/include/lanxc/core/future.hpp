@@ -262,7 +262,7 @@ namespace lanxc
     template<typename E, typename F>
     struct caught_type<E, F, void>
     {
-      using future_type = future<void>;
+      using future_type = future<>;
 
       static future_type
       construct_future(future self, lanxc::function<void(E&)> f)
