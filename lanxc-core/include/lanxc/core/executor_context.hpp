@@ -27,7 +27,9 @@ namespace lanxc
   class executor_context
   {
   public:
-    virtual void execute(lanxc::function<void()> routine) = 0;
+    virtual void dispatch(lanxc::function<void()> routine) = 0;
+
+    virtual void run() = 0;
   };
 
 }
