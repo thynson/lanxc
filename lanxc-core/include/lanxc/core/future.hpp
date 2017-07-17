@@ -36,8 +36,8 @@ namespace lanxc
    *
    * If a @a promise is destructed when neither promise<T...>::set_result,
    * promise<T...>::set_exception nor promise<T...>::set_exception_ptr has
-   * been called. The corresponding future will receive an exception pointer
-   * wrapping an instance of this class.
+   * been called. The corresponding future will catch an exception of this
+   * class.
    */
   class promise_cancelled : public std::exception
   {
@@ -60,11 +60,10 @@ namespace lanxc
   public:
     const char *what() const noexcept override
     {
-      return "this future is invalid, possibly because .then(), .caught()"
+      return "this future is invalid, possibly because .then_apply(), .caught()"
           " or .commit() was already called for this future.";
     }
   };
-
   /**
    * @brief The promise for a future
    *
@@ -85,8 +84,8 @@ namespace lanxc
     template<typename ...> friend class future;
   public:
 
-    promise(promise &&) = default;
-    promise &operator = (promise &&) = default;
+    promise(promise &&) noexcept = default;
+    promise &operator = (promise &&) noexcept = default;
 
     promise(const promise &) = delete;
     promise &operator = (const promise &) = default;
@@ -108,43 +107,6 @@ namespace lanxc
     }
 
   private:
-
-    promise(function<void(promise<Value...>)> initiator)
-        : _detail{std::make_shared<detail>(std::move(initiator))}
-    { }
-
-    explicit promise(std::shared_ptr<detail> x)
-        : _detail(std::move(x))
-    {
-    }
-
-    promise()
-        : _detail{nullptr}
-    {}
-
-    promise &set_fulfill_action(function<void(Value...)> action)
-    {
-      _detail->_fulfill.swap(action);
-      return *this;
-    }
-
-    promise &set_reject_action(function<void(std::exception_ptr)> action)
-    {
-      _detail->_reject.swap(action);
-      return *this;
-    }
-
-    void start(executor_context *ctx)
-    {
-      _detail->_executor_context = ctx;
-      ctx->execute(
-          [_detail]
-          {
-            auto &f = _detail->_start;
-            f(promise(_detail));
-          }
-      );
-    }
 
     struct detail
     {
@@ -187,64 +149,209 @@ namespace lanxc
     };
 
     std::shared_ptr<detail> _detail;
+
+    promise(function<void(promise<Value...>)> initiator)
+        : _detail{std::make_shared<detail>(std::move(initiator),
+                                           [](Value...) {},
+                                           [](std::exception_ptr){})}
+    { }
+
+    promise(std::shared_ptr<detail> x)
+        : _detail(std::move(x))
+    {
+    }
+
+    promise(std::nullptr_t = nullptr)
+        : _detail {nullptr}
+    {
+
+    }
+
+    promise &operator = (std::nullptr_t)
+    {
+      _detail = nullptr;
+      return *this;
+    }
+
+    promise &set_fulfill_action(function<void(Value...)> action)
+    {
+      _detail->_fulfill.swap(action);
+      return *this;
+    }
+
+    promise &set_reject_action(function<void(std::exception_ptr)> action)
+    {
+      _detail->_reject.swap(action);
+      return *this;
+    }
+
+    void start(executor_context *ctx)
+    {
+      _detail->_executor_context = ctx;
+      auto d = _detail;
+      ctx->dispatch(
+          [d]
+          {
+            auto &f= d->_start;
+            f(promise(d));
+          }
+      );
+    }
   };
 
   template<typename ...Value>
   class future
   {
+
+    template<typename F, typename R = typename result_of<F(Value...)>::type>
+    struct then_type
+    {
+      using future_type = future<R>;
+      static future_type
+      construct_future(future self, function<R (Value...)> f)
+      {
+        return future_type
+            {
+                then_value_action<R>(std::move(self), std::move(f))
+            };
+      }
+    };
+    template<typename F>
+    struct then_type<F, void>
+    {
+      using future_type = future<>;
+
+      static future_type
+      construct_future(future self, function<void (Value...)> f)
+      {
+        return future_type
+            {
+                then_void_action(std::move(self), std::move(f))
+            };
+      }
+
+    };
+    template<typename F, typename ...V>
+    struct then_type<F, future<V...>>
+    {
+      using future_type = future<V...>;
+      static future_type
+      construct_future(future self, function<future_type(Value...)> f)
+      {
+        return future_type
+            {
+                then_future_action<V...>(std::move(self), std::move(f))
+            };
+      }
+    };
+
+    template<typename E, typename F, typename R=typename result_of<F(E&)>::type>
+    struct caught_type
+    {
+      using future_type = future<R>;
+
+      static future_type
+      construct_future(future self, function<R(E&)> f)
+      {
+        return future_type
+            {
+                caught_value_action<E,R> (std::move(self), std::move(f))
+            };
+      }
+    };
+    template<typename E, typename F>
+    struct caught_type<E, F, void>
+    {
+      using future_type = future<void>;
+
+      static future_type
+      construct_future(future self, lanxc::function<void(E&)> f)
+      {
+        return future_type
+            {
+                caught_void_action<E> (std::move(self), std::move(f))
+            };
+      }
+    };
+
+    template<typename E, typename F, typename ...V>
+    struct caught_type<E, F, future<V...>>
+    {
+      using future_type = future<V...>;
+
+      static future_type
+      construct_future(future self, function<future_type(E&)> f)
+      {
+        return future_type
+            {
+                caught_future_action<E, V...> (std::move(self), std::move(f))
+            };
+      }
+    };
+
   public:
 
+    /**
+     * @brief Construct a future with a functor
+     * @param initiator the functor that will fulfill the promise
+     */
     future(function<void(promise<Value...>)> initiator)
         : _promise(std::move(initiator))
     { }
 
-    void commit(executor_context &ctx)
+
+    /**
+     * @brief Setup function to call after fulfilling of this future
+     * @tparam F The type of function to call
+     * @param f The instance of function
+     * @return A new @a future
+     *
+     * The actual type of the returned future is determined by the return
+     * type of @a F.
+     *   - If @a F returns a @a future, this function returns a future of
+     *     same type too
+     *   - If @a F returns @a void, this function returns `future<>`
+     *   - If @a F returns other type of `T`, this function returns
+     *     `future<T>`
+     */
+    template<typename F>
+    typename then_type<F>::future_type
+    then(F &&f)
     {
+      return then_type<F>::construct_future(std::move(*this), std::move(f));
     }
 
-
-    template<typename R>
-    future<R> then(function<R(Value...)> done)
+    /**
+     * @brief Setup an error handler for this future
+     * @tparam E The type of exception to catch
+     * @tparam F The type of error handler
+     * @param f The instance of error handler function
+     * @return A new @a future
+     *
+     * The actual type of the returned future is determined by the return
+     * type of @a F.
+     *   - If @a F returns a @a future, this function returns a future of
+     *     same type too
+     *   - If @a F returns @a void, this function returns `future<>`
+     *   - If @a F returns other type of `T`, this function returns
+     *     `future<T>`
+     */
+    template<typename E, typename F>
+    typename caught_type<E, F>::future_type
+    caught(F &&f)
     {
-      return future<R>
-          { then_value_action(std::move(*this), std::move(done))};
-    }
+      return caught_type<E, F>::construct_future(std::move(*this),
+                                                 std::move(f));
+    };
 
-    future<> then(function<void(Value...)> done)
+    /**
+     * @brief Resolve this future within an executor
+     * @param ctx The executor
+     */
+    void start(executor_context &ctx)
     {
-      return future<>
-          { then_void_action(std::move(*this), std::move(done))};
+      _promise.start(&ctx);
     }
-
-    template<typename ...R>
-    future<R...> then(function<future<R...>(Value...)> done)
-    {
-      return future<R...>
-          { then_future_action<R...>(std::move(*this), std::move(done))};
-    }
-
-    template<typename E, typename R>
-    future<R> caught(function<R(E&)> done)
-    {
-      return future<R>
-          { caught_value_action<E, R>(std::move(*this), std::move(done))};
-    }
-
-    template<typename E>
-    future<> caught(function<void(E&)> done)
-    {
-      return future<>
-          { caught_void_action<E>(std::move(*this), std::move(done))};
-    }
-
-    template<typename E, typename ...R>
-    future<R...> caught(function<future<R...>(E&)> done)
-    {
-      return future<R...>
-          { caught_future_action<E, R...>(std::move(*this), std::move(done))};
-    }
-
-    void start(executor_context &);
 
   private:
 
@@ -279,7 +386,7 @@ namespace lanxc
                           [this](R ... r)
                           {
                             _next.fulfill(std::move(r)...);
-                            _next=nullptr;
+                            _next = nullptr;
                           }
                       }
                   );
@@ -366,7 +473,7 @@ namespace lanxc
 
       std::shared_ptr<detail> _detail;
 
-      void operator () (promise<R...> next)
+      void operator () (promise<R> next)
       {
         _detail->start(std::move(next));
       }
