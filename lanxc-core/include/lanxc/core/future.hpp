@@ -381,15 +381,11 @@ namespace lanxc
                 {
                   auto f = _routine(std::move(value)...);
 
-                  f.then(
-                      function<void(R...)> {
-                          [this](R ... r)
+                  f.then([this](R ... r)
                           {
                             _next.fulfill(std::move(r)...);
                             _next = nullptr;
-                          }
-                      }
-                  );
+                          });
                   f.start(*_next._detail->_executor_context);
                 }
                 catch (...)
@@ -419,11 +415,10 @@ namespace lanxc
         _detail->start(std::move(next));
       }
 
-      then_future_action(
-          future current,
-          function<future<R...>(Value...)> routine)
-          : _detail{std::make_shared<detail>(
-          std::move(current), std::move(routine))}
+      then_future_action(future current,
+                         function<future<R...>(Value...)> routine)
+          : _detail { std::make_shared<detail>(std::move(current),
+                                               std::move(routine)) }
       { }
     };
 
@@ -480,7 +475,7 @@ namespace lanxc
 
       then_value_action(future current,
                         function<R(Value...)> routine)
-          : _detail
+        : _detail
           { std::make_shared<detail>(std::move(current), std::move(routine)) }
       { }
     };
@@ -542,10 +537,8 @@ namespace lanxc
         _detail->start(std::move(next));
       }
 
-      then_void_action(
-          future<Value...> current,
-          function<void(Value...)> done
-      ) : _detail
+      then_void_action(future<Value...> current, function<void(Value...)> done)
+        : _detail
           { std::make_shared<detail>(std::move(current), std::move (done))}
       {
 
@@ -616,9 +609,10 @@ namespace lanxc
       std::shared_ptr<detail> _detail;
       caught_future_action(future current,
                            function<future<R...>(E&)> routine)
-          : _detail(
-          std::make_shared<detail>(std::move(current), std::move (routine)))
+        : _detail
+          { std::make_shared<detail>(std::move(current), std::move (routine)) }
       {}
+
       void operator () (promise<R...> p)
       {
         _detail->start(std::move(p));
@@ -676,8 +670,8 @@ namespace lanxc
       std::shared_ptr<detail> _detail;
       caught_value_action(future current,
                           function<R(E &)> routine)
-          : _detail(
-          std::make_shared<detail>(std::move(current), std::move(routine)))
+        : _detail
+          { std::make_shared<detail>(std::move(current), std::move(routine)) }
       {}
 
       void operator () (promise<R> p)
@@ -745,8 +739,8 @@ namespace lanxc
       std::shared_ptr<detail> _detail;
       caught_void_action(future current,
                          function<void(E &)> routine)
-          : _detail(
-          std::make_shared<detail>(std::move(current), std::move(routine)))
+        : _detail
+          { std::make_shared<detail>(std::move(current), std::move(routine)) }
       {}
     };
     promise<Value...> _promise;
