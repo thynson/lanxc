@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
 add_subdirectory(lanxc-core)
-add_subdirectory(lanxc-core-posix)
-add_subdirectory(lanxc-core-macos)
+if (UNIX)
+  add_subdirectory(lanxc-core-posix)
+  if (APPLE)
+    add_subdirectory(lanxc-core-macos)
+  endif()
+endif()
 add_subdirectory(test)
