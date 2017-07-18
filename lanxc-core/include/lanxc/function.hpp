@@ -299,7 +299,8 @@ namespace lanxc
 
     using caller_type = Result (*)(detail::manager *, Arguments ...);
 
-    static const caller_type noop_function;
+    static constexpr caller_type noop_function
+       = function<void>::template invalid_function<Result, Arguments...>;
 
     template<typename Allocator, typename Function>
     static caller_type get_caller(const Function &f) noexcept
@@ -477,11 +478,6 @@ namespace lanxc
     caller_type m_caller;
     detail::functor_padding m_store;
   };
-
-  template<typename R, typename ...A>
-  const typename function<R(A...)>::caller_type
-    function<R(A...)>::noop_function
-    = function<void>::template invalid_function<R, A...>;
 
 }
 
