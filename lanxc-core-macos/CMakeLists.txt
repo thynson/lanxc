@@ -15,4 +15,4 @@ target_include_directories(lanxc-core-macos PUBLIC
                            )
 target_compile_options(lanxc-core-macos PRIVATE -Wall )
 
-target_link_libraries(lanxc-core-macos lanxc-core lanxc-core-unix)
+target_link_libraries(lanxc-core-macos lanxc-core lanxc-core-posix)

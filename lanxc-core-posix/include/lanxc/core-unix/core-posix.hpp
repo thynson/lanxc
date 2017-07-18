@@ -20,7 +20,7 @@
 #include <lanxc/type_traits.hpp>
 namespace lanxc
 {
-  namespace unix
+  namespace posix
   {
     [[noreturn]] void throw_system_error();
     [[noreturn]] void throw_system_error(int e);

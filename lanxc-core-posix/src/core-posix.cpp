@@ -15,25 +15,25 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/core-unix/core-unix.hpp>
+#include <lanxc/core-unix/core-posix.hpp>
 #include <errno.h>
 #include <string.h>
 #include <utility>
 #include <system_error>
 
-void lanxc::unix::throw_system_error()
+void lanxc::posix::throw_system_error()
 {
   int e = 0;
   std::swap(e, errno);
   throw_system_error(e);
 }
 
-void lanxc::unix::throw_system_error(int e)
+void lanxc::posix::throw_system_error(int e)
 {
   throw std::system_error(std::error_code(e, std::system_category()));
 }
 
-lanxc::unix::file_descriptor::file_descriptor(int fd)
+lanxc::posix::file_descriptor::file_descriptor(int fd)
     : _fd(fd)
 {
 

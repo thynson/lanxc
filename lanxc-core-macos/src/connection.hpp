@@ -18,7 +18,7 @@
 #pragma once
 #include <lanxc/core-macos/event_loop.hpp>
 #include <lanxc/core-macos/event_service.hpp>
-#include <lanxc/core-unix/core-unix.hpp>
+#include <lanxc/core-unix/core-posix.hpp>
 #include <lanxc/core/network_context.hpp>
 #include <memory>
 
@@ -30,7 +30,7 @@ namespace lanxc
   {
 
     struct readable_event_channel : public event_channel
-                                  , private virtual unix::file_descriptor
+                                  , private virtual posix::file_descriptor
     {
       using event_channel::event_channel;
 
@@ -39,7 +39,7 @@ namespace lanxc
     };
 
     struct writable_event_channel : public event_channel
-                                  , private virtual unix::file_descriptor
+                                  , private virtual posix::file_descriptor
     {
       using event_channel::event_channel;
 
@@ -48,7 +48,7 @@ namespace lanxc
     };
 
     struct error_event_channel : public event_channel
-                               , private virtual unix::file_descriptor
+                               , private virtual posix::file_descriptor
     {
       using event_channel::event_channel;
 
@@ -57,7 +57,7 @@ namespace lanxc
     };
 
     class macos_connection_endpoint
-        : public virtual unix::file_descriptor
+        : public virtual posix::file_descriptor
         , public lanxc::connection_endpoint
         , public readable_event_channel
         , public writable_event_channel
@@ -89,7 +89,7 @@ namespace lanxc
     };
 
     class macos_connection_listener
-        : public virtual unix::file_descriptor
+        : public virtual posix::file_descriptor
         , public lanxc::connection_listener
         , public lanxc::macos::readable_event_channel
     {

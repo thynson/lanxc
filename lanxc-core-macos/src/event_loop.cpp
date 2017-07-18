@@ -17,7 +17,7 @@
 
 #include <lanxc/core-macos/event_service.hpp>
 #include <lanxc/core-macos/event_loop.hpp>
-#include <lanxc/core-unix/core-unix.hpp>
+#include <lanxc/core-unix/core-posix.hpp>
 
 #include <system_error>
 #include <mutex>
@@ -32,7 +32,7 @@ namespace
   int create_kqueue()
   {
     int ret = ::kqueue();
-    if (ret == -1) lanxc::unix::throw_system_error();
+    if (ret == -1) lanxc::posix::throw_system_error();
     return ret;
   }
 }
@@ -77,7 +77,7 @@ namespace lanxc
 
         int ret = kevent(_kqueue_fd, nullptr, 0, &ke, 1, nullptr);
         if (ret == 0) return;
-        lanxc::unix::throw_system_error();
+        lanxc::posix::throw_system_error();
       }
 
       void pool()
@@ -94,7 +94,7 @@ namespace lanxc
                              nullptr);
 
           if (ret < 0)
-            lanxc::unix::throw_system_error();
+            lanxc::posix::throw_system_error();
 
           _changed_events_list.clear();
 
