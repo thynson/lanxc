@@ -15,14 +15,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LANXC_EXECUTOR_CONTEXT_HPP
-#define LANXC_EXECUTOR_CONTEXT_HPP
+#pragma once
 
 #include <lanxc/function.hpp>
 
 namespace lanxc
 {
-
 
   class executor_context
   {
@@ -33,8 +31,5 @@ namespace lanxc
   };
 
 }
-
-#endif
-
 
 
