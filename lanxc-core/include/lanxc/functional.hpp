@@ -25,7 +25,7 @@
  * @brief Functors
  * @author LAN Xingcan
  *
- * This file provides provides alternative functors implementations against
+ * This file provides provides alternative functor implementations against
  * standard one, which adds noexcept deduction, constexpr specifier, as well
  * as C++14 Transparent Operator Functor (N3421) feature added; and some
  * interesting stuff for functional programming will also be introduced here.
@@ -384,15 +384,15 @@ namespace lanxc
     template<unsigned long N, typename ...Argument>
     struct helper;
 
+    template<unsigned long N, typename Current, typename ...Argument>
+    struct helper<N, Current, Argument...> : helper<N - 1, Argument...>
+    { };
+
     template<typename Current, typename ...Argument>
     struct helper<0, Current, Argument...>
     {
       using type = tuple<Current, Argument...>;
     };
-
-    template<unsigned long N, typename Current, typename ...Argument>
-    struct helper<N, Current, Argument...> : helper<N - 1, Argument...>
-    { };
 
     template<typename , typename ...>
     struct test;
