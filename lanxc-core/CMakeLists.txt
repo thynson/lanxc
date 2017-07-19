@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(lanxc CXX)
-add_library(lanxc-core
-            include/lanxc/type_traits.hpp
+include (GenerateExportHeader)
+
+set(SOURCE_FILES include/lanxc/type_traits.hpp
             include/lanxc/function.hpp
             include/lanxc/functional.hpp
             include/lanxc/unique_tuple.hpp
@@ -23,8 +24,20 @@ add_library(lanxc-core
             include/lanxc/core/executor_context.hpp
             include/lanxc/core/network_context.hpp
             src/task.cpp
-            include/lanxc/core/future.hpp)
+            include/lanxc/core/future.hpp src/main.cpp
+            ${PROJECT_BINARY_DIR}/include/lanxc/config.hpp)
+if (BUILD_SHARED_LIBS)
+  add_library(lanxc-core SHARED ${SOURCE_FILES})
+  set(LANXC_CORE_SHARED 1)
+  target_compile_definitions(lanxc-core PRIVATE BUILD_SHARED_LANXC_CORE)
+  set_target_properties(lanxc-core PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  set_target_properties(lanxc-core PROPERTIES C_VISIBILITY_PRESET hidden)
+else()
+  add_library(lanxc-core ${SOURCE_FILES})
+  set(LANXC_CORE_SHARED 0)
+endif()
 
+set_source_files_properties(${PROJECT_BINARY_DIR}/include/lanxc/config.hpp PROPERTIES GENERATED 1)
 
 target_compile_features(lanxc-core PUBLIC
     cxx_alias_templates
@@ -42,8 +55,14 @@ target_compile_features(lanxc-core PUBLIC
     cxx_variadic_templates
     )
 
+if (BUILD_SHARED_LIBS)
+else()
+endif()
+
+configure_file(${PROJECT_SOURCE_DIR}/include/lanxc/config.hpp.in ${PROJECT_BINARY_DIR}/include/lanxc/config.hpp)
 target_include_directories(lanxc-core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/>
     $<INSTALL_INTERFACE:include>
     )
 target_link_libraries(lanxc-core PUBLIC pthread)

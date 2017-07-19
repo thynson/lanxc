@@ -22,12 +22,77 @@
 namespace lanxc
 {
 
+  class task
+  {
+    friend class main_loop;
+  public:
+    virtual void cancel() = 0;
+    virtual ~task();
+  private:
+    virtual void execute() = 0;
+  };
+
+  class alarm : public task
+  {
+  public:
+    virtual void schedule() = 0;
+
+  };
+
+  class main_loop
+  {
+  public:
+    virtual std::shared_ptr<task> dispatch(function<void()> routine) = 0;
+//    virtual void post(function<void()> routine) = 0;
+    virtual std::shared_ptr<alarm> schedule(std::uint64_t useconds, function<void()> routine) = 0;
+    virtual void run() = 0;
+  protected:
+    virtual std::size_t process_tasks() = 0;
+  };
+
   class executor_context
   {
   public:
     virtual void dispatch(lanxc::function<void()> routine) = 0;
 
     virtual void run() = 0;
+  };
+
+  class io_event
+  {
+
+  };
+
+  class io_proactor
+  {
+  public:
+    virtual void signal() = 0;
+  protected:
+    virtual size_t poll(bool block) = 0;
+
+  };
+
+  class event_loop : public virtual main_loop
+                   , private virtual io_proactor
+  {
+  public:
+
+    virtual void run() override
+    {
+      while (true)
+      {
+        auto count = process_tasks();
+        if (count == 0)
+        {
+          if (poll(true) == 0)
+            return;
+        }
+        else
+          poll(false);
+      }
+    }
+  private:
+
   };
 
 }

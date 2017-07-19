@@ -1,0 +1,27 @@
+
+
+#pragma once
+
+#define LANXC_CORE_SHARED @LANXC_CORE_SHARED@
+
+#if LANXC_CORE_SHARED
+  #if BUILD_SHARED_LANXC_CORE
+    #ifdef _WIN32
+      #define LANXC_CORE_EXPORT __declspec(dllexport)
+    #elif defined(unix) || defined(__unix__) || defined(__APPLE__)
+      #define LANXC_CORE_EXPORT __attribute((visibility("default")))
+    #else
+      #define LANXC_CORE_EXPORT
+    #endif
+  #else
+    #ifdef _WIN32
+      #define LANXC_CORE_EXPORT __declspec(dllimport)
+    #elif defined(unix) || defined(__unix__) || defined(__APPLE__)
+      #define LANXC_CORE_EXPORT __attribute((visibility("default")))
+    #else
+      #define LANXC_CORE_EXPORT
+    #endif
+  #endif
+#else
+  #define LANXC_CORE_EXPORT
+#endif

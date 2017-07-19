@@ -19,6 +19,7 @@
 #pragma once
 
 #include "executor_context.hpp"
+#include <lanxc/config.hpp>
 #include <lanxc/function.hpp>
 #include <exception>
 
@@ -861,4 +862,6 @@ namespace lanxc
   {}
 
 
+  extern template class LANXC_CORE_EXPORT future<>;
+  extern template class LANXC_CORE_EXPORT promise<>;
 }

@@ -19,6 +19,8 @@
 
 #include "type_traits.hpp"
 
+#include <lanxc/config.hpp>
+
 #include <utility>
 #include <algorithm>
 #include <type_traits>
