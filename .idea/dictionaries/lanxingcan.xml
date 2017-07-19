@@ -11,12 +11,15 @@
       <w>emplace</w>
       <w>endcode</w>
       <w>functor</w>
+      <w>functors</w>
       <w>ingroup</w>
       <w>lanxc</w>
       <w>linkship</w>
       <w>macos</w>
       <w>noexcept</w>
+      <w>noop</w>
       <w>nothrow</w>
+      <w>proactor</w>
       <w>rbegin</w>
       <w>rbtree</w>
       <w>rebalance</w>
