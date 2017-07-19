@@ -291,6 +291,42 @@ namespace lanxc
     };
 
   public:
+
+    /**
+     * @brief Create a future that will be rejected with specified exception
+     * @tparam E Type of exception
+     * @param e Instance info exception
+     * @return A future
+     */
+    template<typename E>
+    static future reject(E &e)
+    {
+      auto exp = std::make_exception_ptr(e);
+
+      return future<Value...>
+          {
+              [exp](promise<Value...> p) { p.reject_by_exception_ptr(exp); }
+          };
+
+    }
+
+    /**
+     * @brief Create a future that will be resolved to specified values
+     * @param values values to be resolved
+     * @return A future
+     */
+    static future resolve(Value ...values)
+    {
+      return future<Value...>
+          {
+              std::bind([](promise<Value...> p, Value ...values)
+                        {
+                          p.fulfill(std::move(values)...);
+                        }, std::placeholders::_1, std::move(values)...)
+          };
+
+    }
+
     using promise_type = promise<Value...>;
 
     /**
