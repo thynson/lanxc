@@ -37,7 +37,7 @@ namespace lanxc
 
       event_loop();
       ~event_loop() override;
-      void start() override;
+      void run() override;
 
       std::shared_ptr<connection_listener_builder>
       create_connection_listener() override;

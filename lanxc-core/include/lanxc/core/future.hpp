@@ -18,9 +18,10 @@
 
 #pragma once
 
-#include "executor_context.hpp"
-#include <lanxc/config.hpp>
+#include <lanxc/core/task_context.hpp>
 #include <lanxc/function.hpp>
+#include <lanxc/config.hpp>
+
 #include <exception>
 
 namespace lanxc
@@ -114,7 +115,8 @@ namespace lanxc
       function<void(Value...)> _fulfill;
       function<void(std::exception_ptr)> _reject;
       function<void()> _finish{};
-      executor_context *_executor_context;
+      std::shared_ptr<deferred> _awaiting_deferred;
+      task_context *_task_context;
 
       detail(function<void(promise<Value...>)> routine,
              function<void(Value...)> fulfill_action,
@@ -127,7 +129,7 @@ namespace lanxc
                   [this]
                   { _reject(std::make_exception_ptr(promise_cancelled())); }
               }
-          , _executor_context{nullptr}
+          , _task_context{nullptr}
       { }
 
       ~detail()
@@ -185,11 +187,17 @@ namespace lanxc
       return *this;
     }
 
-    void start(executor_context *ctx)
+    promise &await(std::shared_ptr<deferred> deferred_task) noexcept
     {
-      _detail->_executor_context = ctx;
+      _detail->_awaiting_deferred = std::move(deferred_task);
+      return *this;
+    }
+
+    std::shared_ptr<deferred> start(task_context *ctx)
+    {
+      _detail->_task_context = ctx;
       auto d = std::move(_detail);
-      ctx->dispatch(
+      return ctx->defer(
           [d]
           {
             d->_start(promise(d));
@@ -386,9 +394,9 @@ namespace lanxc
      * @brief Resolve this future within an executor
      * @param ctx The executor
      */
-    void start(executor_context &ctx)
+    std::shared_ptr<deferred> start(task_context &ctx)
     {
-      _promise.start(&ctx);
+      return _promise.start(&ctx);
     }
 
   private:
@@ -485,7 +493,7 @@ namespace lanxc
                        _next.fulfill(std::move(r)...);
                        _next = nullptr;
                      })
-               .start(*_next._detail->_executor_context);
+               .start(*_next._detail->_task_context);
             }
             catch (...)
             {
@@ -502,7 +510,7 @@ namespace lanxc
           }
       );
 
-      _current.start(_next._detail->_executor_context);
+      _next.await(_current.start(_next._detail->_task_context));
       _current = nullptr;
 
     }
@@ -542,7 +550,7 @@ namespace lanxc
 
     void start(promise<R> next)
     {
-      _next=std::move(next);
+      _next = std::move(next);
       _current.set_fulfill_action(
           [this](Value ...value)
           {
@@ -562,11 +570,11 @@ namespace lanxc
           [this](std::exception_ptr e)
           {
             _next.reject_by_exception_ptr(e);
-            _next=nullptr;
+            _next = nullptr;
           }
       );
-      _current.start(_next._detail->_executor_context);
-      _current=nullptr;
+      _next.await(_current.start(_next._detail->_task_context));
+      _current = nullptr;
     }
   };
 
@@ -629,7 +637,7 @@ namespace lanxc
           }
       );
 
-      _current.start(_next._detail->_executor_context);
+      _next.await(_current.start(_next._detail->_task_context));
       _current = nullptr;
 
     }
@@ -694,7 +702,7 @@ namespace lanxc
                       _next = nullptr;
                     }
                 );
-                f.start(*_next._detail->_executor_context);
+                f.start(*_next._detail->_task_context);
               }
               catch (...)
               {
@@ -704,7 +712,7 @@ namespace lanxc
             }
         );
 
-        _current.start(_next._detail->_executor_context);
+        _next.await(_current.start(_next._detail->_task_context));
         _current = nullptr;
 
       }
@@ -771,7 +779,7 @@ namespace lanxc
             _next = nullptr;
           }
       );
-      _current.start(_next._detail->_executor_context);
+      _next.await(_current.start(_next._detail->_task_context));
       _current = nullptr;
     }
   };
@@ -837,9 +845,8 @@ namespace lanxc
           }
       );
 
-      _current.start(_next._detail->_executor_context);
+      _next.await(_current.start(_next._detail->_task_context));
       _current = nullptr;
-
     }
   };
 
