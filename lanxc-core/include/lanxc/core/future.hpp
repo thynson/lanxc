@@ -40,7 +40,7 @@ namespace lanxc
    * been called. The corresponding future will catch an exception of this
    * class.
    */
-  class promise_cancelled : public std::exception
+  class LANXC_CORE_EXPORT promise_cancelled : public std::exception
   {
   public:
     const char *what() const noexcept override
@@ -56,7 +56,7 @@ namespace lanxc
    * subsequential operation will result in this an exception of this type
    * being thrown.
    */
-  class invalid_future : public std::exception
+  class LANXC_CORE_EXPORT invalid_future : public std::exception
   {
   public:
     const char *what() const noexcept override
@@ -80,7 +80,7 @@ namespace lanxc
    * to the corresponding future.
    */
   template<typename ...Value>
-  class promise
+  class LANXC_CORE_EXPORT promise
   {
     template<typename ...> friend class future;
   public:
@@ -106,7 +106,6 @@ namespace lanxc
     {
       reject_by_exception_ptr(std::make_exception_ptr(e));
     }
-
   private:
 
     struct detail
@@ -200,7 +199,7 @@ namespace lanxc
   };
 
   template<typename ...Value>
-  class future
+  class LANXC_CORE_EXPORT future
   {
 
     template<typename F, typename R = typename result_of<F(Value...)>::type>
@@ -862,6 +861,6 @@ namespace lanxc
   {}
 
 
-  extern template class LANXC_CORE_EXPORT future<>;
-  extern template class LANXC_CORE_EXPORT promise<>;
+  extern template class future<>;
+  extern template class promise<>;
 }

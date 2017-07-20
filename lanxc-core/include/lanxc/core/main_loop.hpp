@@ -17,9 +17,11 @@
 
 #pragma once
 
+#include <lanxc/config.hpp>
+
 namespace lanxc
 {
-  class main_loop
+  class LANXC_CORE_EXPORT main_loop
   {
   public:
     virtual ~main_loop() = 0;

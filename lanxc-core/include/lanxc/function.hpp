@@ -54,7 +54,7 @@ namespace lanxc
 
   /** @brief implementation detail */
   template<>
-  class function<void> final
+  class LANXC_CORE_EXPORT function<void> final
   {
   private:
 
@@ -289,7 +289,7 @@ namespace lanxc
    * @ingroup functor
    */
   template<typename Result, typename... Arguments>
-  class function<Result(Arguments...)> final
+  class LANXC_CORE_EXPORT function<Result(Arguments...)> final
   {
     using detail = function<void>;
 
@@ -480,6 +480,8 @@ namespace lanxc
     caller_type m_caller;
     detail::functor_padding m_store;
   };
+
+  extern template class function<void()>;
 
 }
 

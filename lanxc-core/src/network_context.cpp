@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -15,28 +15,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/core-unix/core-posix.hpp>
-#include <errno.h>
-#include <string.h>
-#include <utility>
-#include <system_error>
+#include <lanxc/core/network_context.hpp>
 
-void lanxc::posix::throw_system_error()
+namespace lanxc
 {
-  int e = 0;
-  std::swap(e, errno);
-  throw_system_error(e);
-}
+  network_context::~network_context() = default;
 
-void lanxc::posix::throw_system_error(int e)
-{
-  throw std::system_error(std::error_code(e, std::system_category()));
-}
+  connection_listener_builder::~connection_listener_builder() = default;
 
-lanxc::posix::file_descriptor::file_descriptor(int fd)
-    : _fd(fd)
-{
+  connection_listener::~connection_listener() = default;
+
+  connection_listener_builder::address_builder::~address_builder() = default;
+
+  connection_listener_builder::option_builder::~option_builder() = default;
 
 }
-
-lanxc::posix::file_descriptor::~file_descriptor() = default;

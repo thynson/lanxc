@@ -17,10 +17,12 @@
 
 #pragma once
 
-#include "../function.hpp"
+#include <lanxc/function.hpp>
+#include <lanxc/config.hpp>
 
 #include <memory>
 #include <string>
+
 
 namespace lanxc
 {
@@ -36,19 +38,23 @@ namespace lanxc
 
   };
 
-  class connection_listener
+  class LANXC_CORE_EXPORT connection_listener
   {
   public:
     virtual void listen(function<void(connection_endpoint::pointer)> cb) = 0;
 
+    virtual ~connection_listener() = 0;
+
   };
 
-  class connection_listener_builder
+  class LANXC_CORE_EXPORT connection_listener_builder
   {
   public:
     class address_builder
     {
     public:
+      virtual ~address_builder() = 0;
+
       virtual std::shared_ptr<connection_listener_builder>
       on(std::string address, std::uint16_t port) = 0;
 
@@ -63,12 +69,16 @@ namespace lanxc
     {
     public:
 
-      virtual std::shared_ptr<option_builder>
-      set_reuse_port(bool enabled);
+      virtual ~option_builder() = 0;
 
       virtual std::shared_ptr<option_builder>
-      set_reuse_address(bool enabled);
+      set_reuse_port(bool enabled) = 0;
+
+      virtual std::shared_ptr<option_builder>
+      set_reuse_address(bool enabled) = 0;
     };
+
+    virtual ~connection_listener_builder() = 0;
     
     virtual std::shared_ptr<address_builder> listen() = 0;
 
@@ -89,9 +99,11 @@ namespace lanxc
   };
 
 
-  class network_context
+  class LANXC_CORE_EXPORT network_context
   {
   public:
+
+    virtual ~network_context() = 0;
     
     virtual std::shared_ptr<connection_listener_builder>
     create_connection_listener() = 0;
