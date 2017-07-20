@@ -17,15 +17,38 @@
 
 #pragma once
 
+#include <lanxc/function.hpp>
 #include <lanxc/config.hpp>
+
+#include <memory>
 
 namespace lanxc
 {
-  class LANXC_CORE_EXPORT main_loop
+  class LANXC_CORE_EXPORT deferred
+  {
+    friend class task_context;
+  public:
+    virtual void cancel() = 0;
+    virtual ~deferred() = 0;
+  private:
+    virtual void execute() = 0;
+  };
+
+  class LANXC_CORE_EXPORT alarm : public deferred
   {
   public:
-    virtual ~main_loop() = 0;
-    virtual void start() = 0;
+    virtual void schedule() = 0;
+    virtual ~alarm() = 0;
+  };
 
+  class LANXC_CORE_EXPORT task_context
+  {
+  public:
+    virtual std::shared_ptr<deferred> defer(function<void()> routine) = 0;
+    virtual std::shared_ptr<alarm> schedule(std::uint64_t useconds, function<void()> routine) = 0;
+    virtual void run() = 0;
+    virtual ~task_context() = 0;
+  protected:
+    virtual std::size_t process_tasks() = 0;
   };
 }

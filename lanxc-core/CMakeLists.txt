@@ -22,13 +22,13 @@ add_library(lanxc-core
             include/lanxc/task.hpp
             include/lanxc/core/clock_context.hpp
             include/lanxc/core/io_context.hpp
-            include/lanxc/core/main_loop.hpp
+            include/lanxc/core/task_context.hpp
             include/lanxc/core/executor_context.hpp
             include/lanxc/core/network_context.hpp
             include/lanxc/core/future.hpp
             src/main.cpp
             src/task.cpp
-            src/network_context.cpp src/main_loop.cpp)
+            src/network_context.cpp src/task_context.cpp)
 if (BUILD_SHARED_LIBS)
   set(LANXC_CORE_SHARED 1)
   target_compile_definitions(lanxc-core PRIVATE BUILD_SHARED_LANXC_CORE)

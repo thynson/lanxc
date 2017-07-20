@@ -57,7 +57,7 @@ namespace lanxc
     }
   }
 
-  void scheduler::execute(task &t)
+  void scheduler::execute(deferred &t)
   {
     t.routine(task_token(this, &t));
   }
@@ -74,7 +74,7 @@ namespace lanxc
       if (!wait_for_start()) return;
       while(true)
       {
-        link::list<task> tmp;
+        link::list<deferred> tmp;
         {
           std::unique_lock<std::mutex> lg(m_mutex);
           if (m_exited)
@@ -129,7 +129,7 @@ namespace lanxc
         std::pair<unsigned, unsigned>, reference_comparator>;
 
     using task_queue
-      = std::queue<std::reference_wrapper<task>>;
+      = std::queue<std::reference_wrapper<deferred>>;
 
     using task_notify_queue
       = std::queue<std::reference_wrapper<task_listener>>;
@@ -139,9 +139,9 @@ namespace lanxc
     std::mutex                m_mutex{};
     std::condition_variable   m_condition{};
     std::condition_variable   m_notify_condition{};
-    link::list<task>          m_prepared_task;
+    link::list<deferred>          m_prepared_task;
     link::list<task_listener> m_finished_task;
-    link::list<task>          m_committed_task;
+    link::list<deferred>          m_committed_task;
     std::list<std::thread>    m_threads{};
     std::size_t               m_task_count {0};
     bool                      m_exited {false};
@@ -153,7 +153,7 @@ namespace lanxc
 
   thread_pool_scheduler::~thread_pool_scheduler() = default;
 
-  void thread_pool_scheduler::schedule(task &t)
+  void thread_pool_scheduler::schedule(deferred &t)
   {
     std::lock_guard<std::mutex> lg(m_detail->m_mutex);
     m_detail->m_task_count++;
@@ -161,7 +161,7 @@ namespace lanxc
     m_detail->m_condition.notify_one();
   }
 
-  void thread_pool_scheduler::dispatch(task &t)
+  void thread_pool_scheduler::dispatch(deferred &t)
   {
     m_detail->m_prepared_task.push_back(t);
   }

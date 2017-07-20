@@ -24,7 +24,7 @@ namespace
   bool finished = false;
   bool failed = false;
 
-  struct my_task : lanxc::task
+  struct my_task : lanxc::deferred
   {
     virtual ~my_task() =default;
 

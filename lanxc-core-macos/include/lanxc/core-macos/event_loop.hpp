@@ -18,7 +18,7 @@
 #pragma once
 #include <lanxc/core-macos/event_service.hpp>
 
-#include <lanxc/core/main_loop.hpp>
+#include <lanxc/core/task_context.hpp>
 #include <lanxc/core/io_context.hpp>
 #include <lanxc/core/network_context.hpp>
 
@@ -28,7 +28,7 @@ namespace lanxc
 {
   namespace macos
   {
-    class event_loop : public virtual main_loop
+    class event_loop : public virtual task_context
                      , public virtual io_context
                      , public virtual network_context
                      , public virtual event_service

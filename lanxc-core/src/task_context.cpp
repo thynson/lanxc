@@ -15,9 +15,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/core/main_loop.hpp>
+#include <lanxc/core/task_context.hpp>
 
 namespace lanxc
 {
-  main_loop::~main_loop() = default;
+  deferred::~deferred() = default;
+  alarm::~alarm() = default;
+  task_context::~task_context() = default;
 }

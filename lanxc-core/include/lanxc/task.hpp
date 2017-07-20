@@ -26,7 +26,7 @@
 
 namespace lanxc
 {
-  class task;
+  class deferred;
   class task_token;
   class scheduler;
 
@@ -98,13 +98,13 @@ namespace lanxc
     task_listener *m_listener;
   };
 
-  class task : public task_listener
-             , public link::list_node<task>
+  class deferred : public task_listener
+             , public link::list_node<deferred>
   {
     friend class scheduler;
   protected:
 
-    virtual ~task() = default;
+    virtual ~deferred() = default;
     /**
      * @brief The routine of this task
      * @param tm The task monitor for this routine to update progress
@@ -119,7 +119,7 @@ namespace lanxc
    */
   class schedule
     : public link::rbtree_node<steady_clock::time_point, schedule>
-    , public task
+    , public deferred
   {
     friend class scheduler;
   protected:
@@ -161,7 +161,7 @@ namespace lanxc
      * @note This function can be called from any thread
      * @param t The task
      */
-    virtual void schedule(task &t) = 0;
+    virtual void schedule(deferred &t) = 0;
 
     /**
      * @brief Start to run the scheduled tasks
@@ -169,7 +169,7 @@ namespace lanxc
      * this scheduler
      * @param t The task
      */
-    virtual void dispatch(task &t) = 0;
+    virtual void dispatch(deferred &t) = 0;
 
     virtual void start() = 0;
 
@@ -183,7 +183,7 @@ namespace lanxc
      * @param t The task
      * @param l The listener
      */
-    void execute(task &t);
+    void execute(deferred &t);
 
     /**
      * @brief Run the function task_listener::on_finished of a task listener
@@ -208,9 +208,9 @@ namespace lanxc
 
     ~thread_pool_scheduler();
 
-    void schedule(task &t) override;
+    void schedule(deferred &t) override;
 
-    void dispatch(task &t) override;
+    void dispatch(deferred &t) override;
 
     void start() override;
   protected:
