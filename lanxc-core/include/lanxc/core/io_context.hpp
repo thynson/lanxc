@@ -14,41 +14,21 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <lanxc/task.hpp>
-#include <cassert>
-#include <iostream>
 
-namespace
+#pragma once
+
+namespace lanxc
 {
-  bool executed = false;
-  bool finished = false;
-  bool failed = false;
 
-  struct my_task : lanxc::task
+
+  class io_context
   {
-    virtual ~my_task() =default;
+  public:
+
+    void wait();
 
   protected:
-    virtual void on_finish() override
-    {
-      finished = true;
-    }
 
-    virtual void routine(lanxc::task_token tm) noexcept override
-    {
-      executed = true;
-    }
+
   };
-}
-
-int main()
-{
-
-  my_task m; // 10390575
-  lanxc::thread_pool_scheduler scheduler;
-  scheduler.schedule(m);
-  scheduler.start();
-  assert(executed);
-  assert(finished);
-  assert(!failed);
 }

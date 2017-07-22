@@ -10,6 +10,6 @@ function(lanxc_unit_test )
     endforeach()
 endfunction()
 
-lanxc_unit_test(list-01 rbtree-01 rbtree-02 rbtree-03 rbtree-04 function-01 future-01
-        scheduler-01)
+lanxc_unit_test(list-01 rbtree-01 rbtree-02 rbtree-03 rbtree-04 function-01
+                scheduler-01 future-01)
 

@@ -14,41 +14,35 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <lanxc/task.hpp>
-#include <cassert>
-#include <iostream>
 
-namespace
+#pragma once
+
+#include <lanxc/type_traits.hpp>
+namespace lanxc
 {
-  bool executed = false;
-  bool finished = false;
-  bool failed = false;
-
-  struct my_task : lanxc::task
+  namespace posix
   {
-    virtual ~my_task() =default;
+    [[noreturn]] void throw_system_error();
+    [[noreturn]] void throw_system_error(int e);
 
-  protected:
-    virtual void on_finish() override
+    class file_descriptor
     {
-      finished = true;
-    }
+    public:
+      file_descriptor(int fd = -1);
+      template<typename F, typename ...Arguments>
+      file_descriptor(
+          typename std::enable_if<
+              std::is_same<int, typename result_of<F (Arguments ...) >::type>::value,
+              F>::type &&func, Arguments &&...arguments)
+          : file_descriptor(std::forward<F>(func)(std::forward<Arguments>
+                                                      (arguments)...))
+      {}
+      ~file_descriptor();
+      operator int () const noexcept;
+      operator bool () const noexcept;
+    private:
+      int _fd;
+    };
+  }
 
-    virtual void routine(lanxc::task_token tm) noexcept override
-    {
-      executed = true;
-    }
-  };
-}
-
-int main()
-{
-
-  my_task m; // 10390575
-  lanxc::thread_pool_scheduler scheduler;
-  scheduler.schedule(m);
-  scheduler.start();
-  assert(executed);
-  assert(finished);
-  assert(!failed);
 }

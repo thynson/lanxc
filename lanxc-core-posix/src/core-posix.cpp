@@ -14,41 +14,28 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <lanxc/task.hpp>
-#include <cassert>
-#include <iostream>
 
-namespace
+#include <lanxc/core-unix/core-posix.hpp>
+#include <errno.h>
+#include <string.h>
+#include <utility>
+#include <system_error>
+
+void lanxc::posix::throw_system_error()
 {
-  bool executed = false;
-  bool finished = false;
-  bool failed = false;
-
-  struct my_task : lanxc::task
-  {
-    virtual ~my_task() =default;
-
-  protected:
-    virtual void on_finish() override
-    {
-      finished = true;
-    }
-
-    virtual void routine(lanxc::task_token tm) noexcept override
-    {
-      executed = true;
-    }
-  };
+  int e = 0;
+  std::swap(e, errno);
+  throw_system_error(e);
 }
 
-int main()
+void lanxc::posix::throw_system_error(int e)
+{
+  throw std::system_error(std::error_code(e, std::system_category()));
+}
+
+lanxc::posix::file_descriptor::file_descriptor(int fd)
+    : _fd(fd)
 {
 
-  my_task m; // 10390575
-  lanxc::thread_pool_scheduler scheduler;
-  scheduler.schedule(m);
-  scheduler.start();
-  assert(executed);
-  assert(finished);
-  assert(!failed);
 }
+

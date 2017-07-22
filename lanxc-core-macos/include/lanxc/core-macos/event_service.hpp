@@ -14,41 +14,27 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <lanxc/task.hpp>
-#include <cassert>
-#include <iostream>
 
-namespace
+#pragma once
+
+#include <lanxc/core-macos/event_channel.hpp>
+
+namespace lanxc
 {
-  bool executed = false;
-  bool finished = false;
-  bool failed = false;
-
-  struct my_task : lanxc::task
+  namespace macos
   {
-    virtual ~my_task() =default;
 
-  protected:
-    virtual void on_finish() override
-    {
-      finished = true;
-    }
 
-    virtual void routine(lanxc::task_token tm) noexcept override
+    class event_service
     {
-      executed = true;
-    }
-  };
+    public:
+      virtual void register_event(int descriptor,
+                                  int16_t event,
+                                  uint16_t operation,
+                                  uint32_t flag,
+                                  std::intptr_t data,
+                                  event_channel &channel) = 0;
+    };
+  }
 }
 
-int main()
-{
-
-  my_task m; // 10390575
-  lanxc::thread_pool_scheduler scheduler;
-  scheduler.schedule(m);
-  scheduler.start();
-  assert(executed);
-  assert(finished);
-  assert(!failed);
-}

@@ -22,6 +22,33 @@
 
 using namespace lanxc;
 
+lanxc::function<void()> case1()
+{
+  long u = 3;
+  long v = 1;
+  long w = 0;
+  auto lambda = [u,v](long x, long y, long z){
+    assert(x == 1);
+    assert(y == 2);
+    assert(z == 3);
+    std::cout << u << ' ' << x << ' ' << y << ' ' << z << std::endl;
+  };
+  function<void()> f;
+  auto bind = std::bind(lambda, 1, 2, 3);
+  std::cout << sizeof (bind) << std::endl;
+
+  function<void()>(std::move(bind)).swap(f);
+  return f;
+}
+
+void f(lanxc::function<void()> a) {
+  exit(1);
+}
+
+void f(lanxc::function<void(int)> b) {
+  b(0);
+}
+
 int main()
 {
   using namespace lanxc;
@@ -29,4 +56,8 @@ int main()
   function<int(int)> g =[&](int){ return i++; };
   g(0);
   assert(i == 1);
+  case1()();
+
+  f([](int x) {assert(x == 0); });
+
 }

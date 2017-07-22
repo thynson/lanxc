@@ -16,6 +16,7 @@ matrix:
         - TRAVIS_CC=gcc
         - TRAVIS_CXX=g++
         - TRAVIS_TOOLCHAIN_VERSION=-4.8
+        - CMAKE_BUILD_SHARED_LIBS=0
     - compiler: gcc
       addons:
         apt:
@@ -31,6 +32,7 @@ matrix:
         - TRAVIS_CC=gcc
         - TRAVIS_CXX=g++
         - TRAVIS_TOOLCHAIN_VERSION=-4.9
+        - CMAKE_BUILD_SHARED_LIBS=0
     - compiler: gcc
       addons:
         apt:
@@ -46,11 +48,60 @@ matrix:
         - TRAVIS_CC=gcc
         - TRAVIS_CXX=g++
         - TRAVIS_TOOLCHAIN_VERSION=-5
+        - CMAKE_BUILD_SHARED_LIBS=0
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
+            - g++-4.8
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=gcc
+        - TRAVIS_CXX=g++
+        - TRAVIS_TOOLCHAIN_VERSION=-4.8
+        - CMAKE_BUILD_SHARED_LIBS=1
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
+            - g++-4.9
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=gcc
+        - TRAVIS_CXX=g++
+        - TRAVIS_TOOLCHAIN_VERSION=-4.9
+        - CMAKE_BUILD_SHARED_LIBS=1
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - george-edison55-precise-backports
+          packages:
+            - g++-5
+            - cmake
+            - cmake-data
+            - doxygen
+      env:
+        - TRAVIS_CC=gcc
+        - TRAVIS_CXX=g++
+        - TRAVIS_TOOLCHAIN_VERSION=-5
+        - CMAKE_BUILD_SHARED_LIBS=1
 
 before_script: |
   export CC=${TRAVIS_CC}${TRAVIS_TOOLCHAIN_VERSION}
   export CXX=${TRAVIS_CXX}${TRAVIS_TOOLCHAIN_VERSION}
-  mkdir build && cd build && cmake ..
+  mkdir build && cd build && cmake -DBUILD_SHARED_LIBS=${CMAKE_BUILD_SHARED_LIBS} ..
 script: make VERBOSE=1 && make VERBOSE=1 test
 
 
