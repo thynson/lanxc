@@ -39,4 +39,8 @@ build/
 *.iws
 *.iml
 
+*.duo
+.vs
+CMakeSettings.json
+
 
