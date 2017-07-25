@@ -19,7 +19,6 @@ add_library(lanxc-core
             include/lanxc/link/rbtree_node.hpp
             include/lanxc/link/rbtree_iterator.hpp
             include/lanxc/link/rbtree.hpp
-            include/lanxc/task.hpp
             include/lanxc/core/clock_context.hpp
             include/lanxc/core/io_context.hpp
             include/lanxc/core/task_context.hpp
@@ -27,7 +26,6 @@ add_library(lanxc-core
             include/lanxc/core/network_context.hpp
             include/lanxc/core/future.hpp
             src/main.cpp
-            src/task.cpp
             src/network_context.cpp src/task_context.cpp)
 if (BUILD_SHARED_LIBS)
   set(LANXC_CORE_SHARED 1)
