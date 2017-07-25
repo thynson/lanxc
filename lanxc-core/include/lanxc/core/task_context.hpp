@@ -24,12 +24,15 @@
 
 namespace lanxc
 {
+  class task_context;
+
   class LANXC_CORE_EXPORT deferred
   {
     friend class task_context;
   public:
-    virtual void cancel() = 0;
     virtual ~deferred() = 0;
+    virtual void cancel() = 0;
+    virtual void dispatch() = 0;
   private:
     virtual void execute() = 0;
   };
@@ -44,10 +47,20 @@ namespace lanxc
   class LANXC_CORE_EXPORT task_context
   {
   public:
-    virtual std::shared_ptr<deferred> defer(function<void()> routine) = 0;
-    virtual std::shared_ptr<alarm> schedule(std::uint64_t useconds, function<void()> routine) = 0;
-    virtual void run() = 0;
+
     virtual ~task_context() = 0;
+
+    virtual std::shared_ptr<deferred>
+    defer(function<void()> routine) = 0;
+
+    virtual std::shared_ptr<deferred>
+    defer_immediate(function<void()> routine) = 0;
+
+    virtual std::shared_ptr<alarm>
+    schedule(std::uint64_t useconds, function<void()> routine) = 0;
+
+    virtual void run() = 0;
+
   protected:
     virtual std::size_t process_tasks() = 0;
   };
