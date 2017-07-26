@@ -186,8 +186,6 @@ namespace lanxc
       }
     };
 
-    std::shared_ptr<detail> _detail;
-
     promise(std::shared_ptr<detail> x) noexcept
         : _detail(std::move(x))
     { }
@@ -195,6 +193,8 @@ namespace lanxc
     promise(std::nullptr_t = nullptr) noexcept
         : _detail {nullptr}
     { }
+
+    std::shared_ptr<detail> _detail;
 
   };
 
@@ -222,6 +222,7 @@ namespace lanxc
             };
       }
     };
+
     template<typename F>
     struct then_type<F, void>
     {
@@ -236,7 +237,6 @@ namespace lanxc
                 then_void_action(std::move(self._detail_ptr), std::move(f)) )
           };
       }
-
     };
 
     template<typename F, typename ...V>
@@ -270,6 +270,7 @@ namespace lanxc
           };
       }
     };
+
     template<typename E, typename F>
     struct caught_exception_type<E, F, void>
     {
@@ -303,10 +304,7 @@ namespace lanxc
       }
     };
 
-    ;
-
   public:
-
 
     /**
      * @brief Create a future that will be rejected with specified exception
@@ -348,7 +346,7 @@ namespace lanxc
      * @param initiator the functor that will fulfill the promise
      */
 
-    future(function<void(promise<Value...>)> f) noexcept
+    future(function<void(promise<Value...>)> f)
         : _detail_ptr
           { std::make_shared<detail_type>(initiator(std::move(f))) }
     { }
@@ -409,22 +407,23 @@ namespace lanxc
 
   private:
 
-    future(detail_ptr p)
+    future(detail_ptr p) noexcept
         : _detail_ptr{ std::move(p) }
     { }
 
     struct initiator
     {
       function<void(promise_type)> _routine;
-      initiator(lanxc::function<void(promise_type)> r)
+      initiator(lanxc::function<void(promise_type)> r) noexcept
           : _routine { std::move(r) }
       { }
+
       struct functor
       {
         detail_ptr _detail;
         function<void(promise_type)> _routine;
 
-        functor(detail_ptr d, function<void(promise_type)> r)
+        functor(detail_ptr d, function<void(promise_type)> r) noexcept
             : _detail { std::move(d) }
             , _routine { std::move(r) }
         { }
@@ -432,9 +431,11 @@ namespace lanxc
         void operator () ()
         { return _routine(promise_type(_detail)); }
       };
+
       std::shared_ptr<deferred> operator () (task_context &ctx, promise_type p)
       {
-        return ctx.defer_immediate(functor(std::move(p._detail), std::move(_routine)));
+        return ctx.defer_immediate(
+            functor{ std::move(p._detail), std::move(_routine)});
       }
     };
 
@@ -456,8 +457,7 @@ namespace lanxc
       struct functor;
       std::shared_ptr<detail> _detail;
       std::shared_ptr<deferred> operator () (task_context &t, promise<R> p);
-      then_value_action(detail_ptr current,
-                        function<R(Value...)> routine);
+      then_value_action(detail_ptr current, function<R(Value...)> routine);
     };
 
 
@@ -488,8 +488,7 @@ namespace lanxc
       struct functor;
       std::shared_ptr<detail> _detail;
       std::shared_ptr<deferred> operator () (task_context &, promise<R> next);
-      caught_value_action(detail_ptr current,
-                          function<R(E&)> routine);
+      caught_value_action(detail_ptr current, function<R(E&)> routine);
     };
 
 
@@ -537,7 +536,7 @@ namespace lanxc
     {
       typename future<Value...>::detail_ptr _detail;
 
-      forward_functor(typename future<Value...>::detail_ptr d)
+      forward_functor(typename future<Value...>::detail_ptr d) noexcept
           : _detail{std::move(d)}
       { }
 
@@ -566,7 +565,7 @@ namespace lanxc
     function<future<R...>(Value...)> _routine;
     std::shared_ptr<deferred> _task;
     functor(typename future<R...>::detail_ptr d,
-            function<future<R...>(Value...)> r)
+            function<future<R...>(Value...)> r) noexcept
         : _detail { std::move(d) }
         , _routine { std::move(r) }
     { }
@@ -597,7 +596,7 @@ namespace lanxc
     function<future<R...>(Value...)> _routine;
 
     detail(detail_ptr current,
-           function<future<R...>(Value...)> routine)
+           function<future<R...>(Value...)> routine) noexcept
         : _current{std::move(current)}
         , _routine{std::move(routine)}
     { }
@@ -636,7 +635,8 @@ namespace lanxc
     typename future<R>::detail_ptr _next;
     function<R(Value...)> _routine;
 
-    functor(typename future<R>::detail_ptr next, function<R(Value...)> routine)
+    functor(typename future<R>::detail_ptr next,
+            function<R(Value...)> routine) noexcept
         : _next{std::move(next)}
         , _routine{std::move(routine)}
     { }
@@ -663,11 +663,10 @@ namespace lanxc
     function<R(Value...)> _routine;
 
     detail(detail_ptr current,
-           function<R(Value...)> routine)
+           function<R(Value...)> routine) noexcept
         : _current { std::move(current) }
-        , _routine { std::move(routine) } {}
-
-    ~detail() = default;
+        , _routine { std::move(routine) }
+    { }
 
     std::shared_ptr<deferred> start(task_context &ctx, promise<R> next)
     {
@@ -702,7 +701,8 @@ namespace lanxc
     std::shared_ptr<promise<>::detail> _detail;
     function<void(Value...)> _routine;
 
-    functor(std::shared_ptr<promise<>::detail> d, function<void(Value...)> routine)
+    functor(std::shared_ptr<promise<>::detail> d,
+            function<void(Value...)> routine) noexcept
       : _detail{std::move(d)}
       , _routine{std::move(routine)}
     { }
@@ -730,7 +730,7 @@ namespace lanxc
     function<void(Value...)> _routine;
 
     detail(detail_ptr current,
-           function<void(Value...)> routine)
+           function<void(Value...)> routine) noexcept
         : _current{std::move(current)}
         , _routine{std::move(routine)}
     { }
@@ -768,7 +768,7 @@ namespace lanxc
     std::shared_ptr<deferred> _task;
 
     functor(typename future<R...>::detail_ptr ptr,
-            function<future<R...>(E &)> f)
+            function<future<R...>(E &)> f) noexcept
         : _detail { std::move(ptr) }
         , _routine { std::move(f) }
     { }
@@ -803,8 +803,7 @@ namespace lanxc
     promise<R...> _next;
     function<future<R...>(E &)> _routine;
 
-    detail(detail_ptr current,
-           function<future<R...>(E &)> routine)
+    detail(detail_ptr current, function<future<R...>(E &)> routine) noexcept
         : _current{std::move(current)}
         , _next{}
         , _routine{std::move(routine)}
@@ -843,7 +842,7 @@ namespace lanxc
     typename future<R>::detail_ptr _detail;
     function<R(E &)> _routine;
 
-    functor(typename future<R>::detail_ptr ptr, function<R(E &)> f)
+    functor(typename future<R>::detail_ptr ptr, function<R(E &)> f) noexcept
         : _detail { std::move(ptr) }
         , _routine { std::move(f) }
     { }
@@ -874,12 +873,8 @@ namespace lanxc
     detail_ptr _current;
     promise<R> _next;
     function<R(E &)> _routine;
-    std::shared_ptr<deferred> _awaited_task;
 
-;
-
-    detail(detail_ptr current,
-           function<R(E &)> routine)
+    detail(detail_ptr current, function<R(E &)> routine) noexcept
         : _current{std::move(current)}
         , _next{}
         , _routine{std::move(routine)}
@@ -918,7 +913,7 @@ namespace lanxc
     function<void(E &)> _routine;
 
     functor(std::shared_ptr<promise<>::detail> ptr,
-            function<void(E &)> f)
+            function<void(E &)> f) noexcept
         : _detail { std::move(ptr) }
         , _routine { std::move(f) }
     { }
@@ -950,8 +945,7 @@ namespace lanxc
     detail_ptr _current;
     function<void(E &)> _routine;
 
-    detail(detail_ptr current,
-           function<void(E &)> routine)
+    detail(detail_ptr current, function<void(E &)> routine) noexcept
         : _current{std::move(current)}
         , _routine{std::move(routine)}
     { }
@@ -980,8 +974,7 @@ namespace lanxc
                        function<void(E &)> routine)
       : _detail
         { std::make_shared<detail>(std::move(current), std::move(routine)) }
-  {}
-
+  { }
 
   extern template class future<>;
   extern template class promise<>;
