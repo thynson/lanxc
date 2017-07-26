@@ -178,6 +178,14 @@ namespace lanxc
         return _routine(ctx, promise(this->shared_from_this()));
       }
 
+      static std::shared_ptr<deferred> start(task_context &ctx, std::shared_ptr<detail> d)
+      {
+        d->_task_context = &ctx;
+        auto &r = d->_routine;
+        return r(ctx, promise(std::move(d)));
+
+      }
+
       void deliver()
       {
         _next = _task_context->defer_immediate(std::move(_delivery));
@@ -402,7 +410,7 @@ namespace lanxc
      */
     std::shared_ptr<deferred> start(task_context &ctx)
     {
-      return _detail_ptr->start(ctx);
+      return detail_type::start(ctx, std::move(_detail_ptr));
     }
 
   private:
@@ -414,19 +422,25 @@ namespace lanxc
     struct initiator
     {
       function<void(promise_type)> _routine;
-      promise_type _promise;
       initiator(lanxc::function<void(promise_type)> r)
           : _routine { std::move(r) }
       { }
-      std::shared_ptr<deferred>
-      operator () (task_context &ctx, promise_type p)
+      struct functor
       {
-        _promise = std::move(p);
-        return ctx.defer_immediate(
-            [this]
-            {
-              _routine(std::move(_promise));
-            });
+        detail_ptr _detail;
+        function<void(promise_type)> _routine;
+
+        functor(detail_ptr d, function<void(promise_type)> r)
+            : _detail { std::move(d) }
+            , _routine { std::move(r) }
+        { }
+
+        void operator () ()
+        { return _routine(promise_type(_detail)); }
+      };
+      std::shared_ptr<deferred> operator () (task_context &ctx, promise_type p)
+      {
+        return ctx.defer_immediate(functor(std::move(p._detail), std::move(_routine)));
       }
     };
 
@@ -497,7 +511,6 @@ namespace lanxc
   struct future<Value...>::then_future_action<R...>::detail
   {
     detail_ptr _current;
-    typename future<R...>::detail_ptr _tmp;
     promise<R...> _next;
     function<future<R...>(Value...)> _routine;
     std::shared_ptr<deferred> _awaiting_task;
@@ -521,8 +534,22 @@ namespace lanxc
       void operator () (R ... r)
       {
         _p->_next.fulfill(std::move(r)...);
-        _p->_next = nullptr;
+        _p->_next._detail->deliver();
       }
+    };
+
+    struct reject_functor
+    {
+      std::shared_ptr<detail> _p;
+      reject_functor(std::shared_ptr<detail> p)
+      : _p(std::move(p))
+      { }
+      void operator () (std::exception_ptr e)
+      {
+        _p->_next.reject_by_exception_ptr(e);
+        _p->_next._detail->deliver();
+      }
+
     };
 
 
@@ -535,24 +562,24 @@ namespace lanxc
                     try
                     {
                       auto f = _routine(std::move(value)...);
-                      _tmp = f._detail_ptr;
-                      _tmp->set_fulfill_action(
+                      f._detail_ptr->set_fulfill_action(
                            [this](R ...r)
                            {
                              _next.fulfill(std::move(r)...);
                              _next._detail->deliver();
                            });
-                      _tmp->set_reject_action(
+                      f._detail_ptr->set_reject_action(
                            [this] (std::exception_ptr e)
                            {
                              _next.reject_by_exception_ptr(e);
                              _next._detail->deliver();
                            });
-                      _awaiting_task = _tmp->start(*_current->_task_context);
+                      _awaiting_task = f.start(*_next._detail->_task_context);
                     }
                     catch (...)
                     {
                       _next.reject_by_exception_ptr(std::current_exception());
+                      _next._detail->deliver();
                     }
                   }
               );
@@ -563,7 +590,7 @@ namespace lanxc
                     _next._detail->deliver();
                   }
               );
-      return _current->start(ctx);
+      return detail_type::start(ctx, std::move(_current));
     }
   };
 
@@ -627,7 +654,7 @@ namespace lanxc
             _next._detail->deliver();
           }
       );
-      return _current->start(ctx);
+      return detail_type::start(ctx, std::move(_current));
     }
   };
 
@@ -688,9 +715,10 @@ namespace lanxc
           {
             _next.reject_by_exception_ptr(e);
             _next._detail->deliver();
+            _current = nullptr;
           }
       );
-      return _current->start(ctx);
+      return detail_type::start(ctx, std::move(_current));//_current->start(ctx);
     }
   };
 
@@ -713,7 +741,6 @@ namespace lanxc
   struct future<Value...>::caught_future_action<E, R...>::detail
   {
     detail_ptr _current;
-    typename future<R...>::detail_ptr _tmp;
     promise<R...> _next;
     function<future<R...>(E &)> _routine;
     std::shared_ptr<deferred> _awaiting_task;
@@ -733,6 +760,7 @@ namespace lanxc
           {
             _next.reject(promise_cancelled());
             _next._detail->deliver();
+            _current = nullptr;
           }
       );
       _current->set_reject_action(
@@ -745,7 +773,6 @@ namespace lanxc
             catch (E &e)
             {
               auto f = _routine(e);
-              _tmp = f._detail_ptr;
               f._detail_ptr->set_fulfill_action(
                    [this] (Value ...value)
                    {
@@ -758,23 +785,26 @@ namespace lanxc
                        _next.reject_by_exception_ptr(std::current_exception());
                      }
                      _next._detail->deliver();
+                     _current = nullptr;
                    });
               f._detail_ptr->set_reject_action(
                    [this](std::exception_ptr e)
                    {
                      _next.reject_by_exception_ptr(e);
                      _next._detail->deliver();
+                     _current = nullptr;
                    });
-              _awaiting_task = f._detail_ptr->start(*_current->_task_context);
+              _awaiting_task = f.start(*_next._detail->_task_context);
             }
             catch (...)
             {
               _next.reject_by_exception_ptr(std::current_exception());
               _next._detail->deliver();
+              _current = nullptr;
             }
           }
       );
-      return _current->start(ctx);
+      return detail_type::start(ctx, std::move(_current));
 
     }
   };
@@ -820,6 +850,7 @@ namespace lanxc
           {
             _next.reject(promise_cancelled());
             _next._detail->deliver();
+            _current = nullptr;
           }
       );
       _current->set_reject_action(
@@ -839,9 +870,10 @@ namespace lanxc
             }
 
             _next._detail->deliver();
+            _current = nullptr;
           }
       );
-      return _current->start(ctx);
+      return detail_type::start(ctx, std::move(_current));
     }
   };
 
@@ -885,6 +917,7 @@ namespace lanxc
           {
             _next.reject(promise_cancelled());
             _next._detail->deliver();
+            _current = nullptr;
           }
       );
       _current->set_reject_action(
@@ -904,12 +937,10 @@ namespace lanxc
               _next.reject_by_exception_ptr(std::current_exception());
             }
             _next._detail->deliver();
+            _current = nullptr;
           }
       );
-      return _current->start(ctx);
-//
-//      _current.start(_next._detail->_task_context);
-//      _current = nullptr;
+      return detail_type::start(ctx, std::move(_current));
     }
   };
 
