@@ -17,13 +17,15 @@
 
 #pragma once
 
+#include <lanxc/config.hpp>
+
 #include <chrono>
 
 
 namespace lanxc
 {
 
-  class clock_context
+  class LANXC_CORE_EXPORT clock_context
   {
   public:
     using time_point = std::chrono::steady_clock::time_point;

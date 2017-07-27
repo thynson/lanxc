@@ -32,7 +32,6 @@ namespace lanxc
   public:
     virtual ~deferred() = 0;
     virtual void cancel() = 0;
-    virtual void dispatch() = 0;
   private:
     virtual void execute() = 0;
   };
@@ -52,9 +51,6 @@ namespace lanxc
 
     virtual std::shared_ptr<deferred>
     defer(function<void()> routine) = 0;
-
-    virtual std::shared_ptr<deferred>
-    defer_immediate(function<void()> routine) = 0;
 
     virtual std::shared_ptr<alarm>
     schedule(std::uint64_t useconds, function<void()> routine) = 0;

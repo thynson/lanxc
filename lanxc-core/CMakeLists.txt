@@ -22,7 +22,6 @@ add_library(lanxc-core
             include/lanxc/core/clock_context.hpp
             include/lanxc/core/io_context.hpp
             include/lanxc/core/task_context.hpp
-            include/lanxc/core/executor_context.hpp
             include/lanxc/core/network_context.hpp
             include/lanxc/core/future.hpp
             src/main.cpp

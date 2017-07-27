@@ -59,7 +59,7 @@ public:
     return p;
   }
   std::shared_ptr<lanxc::deferred>
-  defer_immediate(lanxc::function<void()> routine) override
+  defer(lanxc::function<void()> routine) override
   {
     std::shared_ptr<mock_deferred> p = std::make_shared<mock_deferred>(*this, std::move(routine));
     deferred_list.push_back(*p);

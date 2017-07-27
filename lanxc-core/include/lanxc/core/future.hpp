@@ -201,7 +201,7 @@ namespace lanxc
 
       void deliver()
       {
-        _next = _task_context->defer_immediate(std::move(_delivery));
+        _next = _task_context->defer(std::move(_delivery));
       }
     };
 
@@ -553,8 +553,7 @@ namespace lanxc
 
       std::shared_ptr<deferred> operator () (task_context &ctx, promise_type p)
       {
-        return ctx.defer_immediate(
-            initiator{ std::move(p._detail), std::move(_routine)});
+        return ctx.defer(initiator{std::move(p._detail), std::move(_routine)});
       }
     };
 
