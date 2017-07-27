@@ -62,8 +62,8 @@ namespace lanxc
   public:
     const char *what() const noexcept override
     {
-      return "this future is invalid, possibly because .then_apply(), .caught()"
-          " or .commit() was already called for this future.";
+      return "this future is invalid, possibly because .then_apply(), "
+          ".caught() or .commit() was already called for this future.";
     }
   };
   /**
@@ -107,16 +107,32 @@ namespace lanxc
     promise(const promise &) = delete;
     promise &operator = (const promise &) = delete;
 
-    void fulfill(Value ...result)
+    /**
+     * @brief Stage given values to fulfill the promise
+     * @param values Values to be staged
+     * @note The value is not delivered until this promise is destructed
+     */
+    void fulfill(Value ...values)
     {
-      _detail->set_result(std::move(result)...);
+      _detail->set_result(std::move(values)...);
     }
 
+    /**
+     * @brief Stage given exception pointer to reject the promise
+     * @param e The exception pointer
+     * @note The exception pointer is not delivered until this promise is destructed
+     */
     void reject_by_exception_ptr(std::exception_ptr e)
     {
       _detail->set_exception_ptr(e);
     }
 
+    /**
+     * @brief Stage given exception instance to reject the promise
+     * @tparam E Type of exception
+     * @param e Instance of exception
+     * @note The exception is not delivered until this promise is destructed
+     */
     template<typename E>
     void reject(E e)
     {
@@ -174,7 +190,8 @@ namespace lanxc
         _reject.swap(f);
       }
 
-      static std::shared_ptr<deferred> start(task_context &ctx, std::shared_ptr<detail> d)
+      static std::shared_ptr<deferred>
+      start(task_context &ctx, std::shared_ptr<detail> d)
       {
         d->_task_context = &ctx;
         auto &r = d->_routine;
@@ -196,6 +213,10 @@ namespace lanxc
 
   };
 
+  /**
+   * @brief Represents values that may be available in the future
+   * @tparam Value Types of values
+   */
   template<typename ...Value>
   class LANXC_CORE_EXPORT future
   {
@@ -215,34 +236,35 @@ namespace lanxc
     template<typename ...V>
     using detail_ptr_for   = std::shared_ptr<detail_type_for<V...>>;
 
-    template<typename R>
-    using then_value_routine = function<R(Value...)>;
+    template<typename V>
+    using then_value_routine = function<V(Value...)>;
 
-    template<typename ...R>
-    using then_future_routine = function<future<R...>(Value...)>;
+    template<typename ...V>
+    using then_future_routine = function<future<V...>(Value...)>;
 
     using then_void_routine = function<void(Value...)>;
 
-    template<typename E, typename R>
-    using caught_value_routine = function<R(E&)>;
+    template<typename E, typename V>
+    using caught_value_routine = function<V(E&)>;
 
-    template<typename E, typename ...R>
-    using caught_future_routine = function<future<R...>(E&)>;
+    template<typename E, typename ...V>
+    using caught_future_routine = function<future<V...>(E&)>;
 
     template<typename E>
     using caught_void_routine = function<void(E&)>;
 
-    template<typename F, typename R = typename result_of<F(Value...)>::type>
+    template<typename F, typename V = typename result_of<F(Value...)>::type>
     struct then_type
     {
-      using future_type = future<R>;
+      using future_type = future<V>;
       static future_type
-      construct_future(future self, then_value_routine<R> f)
+      construct(future f, then_value_routine<V> r)
       {
         return future_type
             {
-              std::make_shared<detail_type_for<R>>(
-                  then_value_action<R>(std::move(self._detail_ptr), std::move(f)) )
+              std::make_shared<detail_type_for<V>>(
+                  then_value_action<V>(std::move(f._detail_ptr),
+                                       std::move(r)))
             };
       }
     };
@@ -253,13 +275,13 @@ namespace lanxc
       using future_type = future<>;
 
       static future_type
-      construct_future(future self, then_void_routine f)
+      construct(future f, then_void_routine r)
       {
         return future_type
-          {
-            std::make_shared<detail_type_for<>>(
-                then_void_action(std::move(self._detail_ptr), std::move(f)) )
-          };
+            {
+              std::make_shared<detail_type_for<>>(
+                  then_void_action(std::move(f._detail_ptr), std::move(r)))
+            };
       }
     };
 
@@ -268,63 +290,66 @@ namespace lanxc
     {
       using future_type = future<V...>;
       static future_type
-      construct_future(future self, then_future_routine<V...> f)
+      construct(future f, then_future_routine<V...> r)
       {
         return future_type
-          {
-            std::make_shared<detail_type_for<V...>>(
-                then_future_action<V...>(std::move(self._detail_ptr), std::move(f)) )
-          };
+            {
+              std::make_shared<detail_type_for<V...>>(
+                  then_future_action<V...>(std::move(f._detail_ptr),
+                                           std::move(r)))
+            };
       }
     };
 
     template<typename E, typename F,
-             typename R = typename result_of<F(E&)>::type>
-    struct caught_exception_type
+             typename V = typename result_of<F(E&)>::type>
+    struct caught_type
     {
-      using future_type = future<R>;
+      using future_type = future<V>;
 
       static future_type
-      construct_future(future self, caught_value_routine<E, R> f)
+      construct(future f, caught_value_routine<E, V> r)
       {
         return future_type
-          {
-            std::make_shared<detail_type_for<R>>(
-            caught_value_action<E,R> (std::move(self._detail_ptr), std::move(f)))
-          };
+            {
+              std::make_shared<detail_type_for<V>>(
+                  caught_value_action<E,V> (std::move(f._detail_ptr),
+                                            std::move(r)))
+            };
       }
     };
 
     template<typename E, typename F>
-    struct caught_exception_type<E, F, void>
+    struct caught_type<E, F, void>
     {
       using future_type = future<>;
 
       static future_type
-      construct_future(future self, caught_void_routine<E> f)
+      construct(future f, caught_void_routine<E> r)
       {
         return future_type
-          {
-            std::make_shared<detail_type_for<>>(
-              caught_void_action<E> (std::move(self._detail_ptr), std::move(f)))
-          };
+            {
+              std::make_shared<detail_type_for<>>(
+                  caught_void_action<E> (std::move(f._detail_ptr),
+                                         std::move(r)))
+            };
       }
     };
 
     template<typename E, typename F, typename ...V>
-    struct caught_exception_type<E, F, future<V...>>
+    struct caught_type<E, F, future<V...>>
     {
       using future_type = future<V...>;
 
       static future_type
-      construct_future(future self, caught_future_routine<E, V...> f)
+      construct(future f, caught_future_routine<E, V...> r)
       {
         return future_type
-          {
-            std::make_shared<detail_type_for<V...>>(
-              caught_future_action<E, V...>(std::move(self._detail_ptr),
-                                            std::move(f)))
-          };
+            {
+                std::make_shared<detail_type_for<V...>>(
+                    caught_future_action<E, V...>(std::move(f._detail_ptr),
+                                                  std::move(r)))
+            };
       }
     };
 
@@ -350,14 +375,14 @@ namespace lanxc
 
     /**
      * @brief Create a future that will be resolved to specified values
-     * @param values values to be resolved
+     * @param values Values to be resolved
      * @return A future
      */
     static future resolve(Value ...values)
     {
       return future<Value...>
           {
-            std::bind([](promise_type p, Value ...values)
+            std::bind([](promise_type p, Value &...values)
                   {
                     p.fulfill(std::move(values)...);
                   }, std::placeholders::_1, std::move(values)...)
@@ -367,57 +392,56 @@ namespace lanxc
 
     /**
      * @brief Construct a future with a functor
-     * @param initiator the functor that will fulfill the promise
+     * @param r the functor that will fulfill the promise
      */
 
-    future(function<void(promise<Value...>)> f)
+    future(function<void(promise<Value...>)> r)
         : _detail_ptr
-          { std::make_shared<detail_type>(initiator(std::move(f))) }
+          { std::make_shared<detail_type>(dispatcher(std::move(r))) }
     { }
 
 
     /**
      * @brief Setup function to call after fulfilling of this future
-     * @tparam F The type of function to call
-     * @param f The instance of function
+     * @tparam R The type of function to call
+     * @param r The instance of function
      * @return A new @a future
      *
      * The actual type of the returned future is determined by the return
      * type of @a F.
-     *   - If @a F returns a @a future, this function returns a future of
+     *   - If @a F returns a @ref future, this function returns a future of
      *     same type too
-     *   - If @a F returns @a void, this function returns `future<>`
-     *   - If @a F returns other type of `T`, this function returns
-     *     `future<T>`
+     *   - If @a F returns @c void, this function returns @ref future<>
+     *   - If @a F returns other type of @c T, this function returns
+     *     @ref future<T>
      */
-    template<typename F>
-    typename then_type<F>::future_type
-    then(F &&f)
+    template<typename R>
+    typename then_type<R>::future_type
+    then(R &&r)
     {
-      return then_type<F>::construct_future(std::move(*this), std::move(f));
+      return then_type<R>::construct(std::move(*this), std::move(r));
     }
 
     /**
      * @brief Setup an error handler for this future
      * @tparam E The type of exception to catch
-     * @tparam F The type of error handler
+     * @tparam R The type of error handler
      * @param f The instance of error handler function
      * @return A new @a future
      *
      * The actual type of the returned future is determined by the return
      * type of @a F.
-     *   - If @a F returns a @a future, this function returns a future of
+     *   - If @a F returns a @ref future, this function returns a future of
      *     same type too
-     *   - If @a F returns @a void, this function returns `future<>`
-     *   - If @a F returns other type of `T`, this function returns
-     *     `future<T>`
+     *   - If @a F returns @c void, this function returns @ref future<>
+     *   - If @a F returns other type of @c T, this function returns
+     *     @ref future<T>
      */
-    template<typename E, typename F>
-    typename caught_exception_type<E, F>::future_type
-    caught(F &&f)
+    template<typename E, typename R>
+    typename caught_type<E, R>::future_type
+    caught(R &&f)
     {
-      return caught_exception_type<E, F>::construct_future(std::move(*this),
-                                                 std::move(f));
+      return caught_type<E, R>::construct(std::move(*this), std::move(f));
     };
 
     /**
@@ -431,10 +455,17 @@ namespace lanxc
 
   private:
 
+    /**
+     * @brief Internal constructor
+     * @param p A shared pointer to promise implement detail
+     */
     future(detail_ptr p) noexcept
         : _detail_ptr{ std::move(p) }
     { }
 
+    /**
+     * @brief Functor that reject a promise with given exception pointer
+     */
     struct reject_functor
     {
       detail_ptr _detail;
@@ -449,11 +480,15 @@ namespace lanxc
       }
     };
 
+    /**
+     * @brief Functor that cancel a promise
+     * @tparam R values that the promise want to resolve
+     */
     template<typename ...R>
-    struct cancel_catching_functor
+    struct cancel_functor
     {
       detail_ptr_for<R...> _detail;
-      cancel_catching_functor(detail_ptr_for<R...> p) noexcept
+      cancel_functor(detail_ptr_for<R...> p) noexcept
           : _detail{std::move(p)}
       { }
 
@@ -462,9 +497,11 @@ namespace lanxc
         typename future<R...>::promise_type p {_detail};
         p.reject(promise_cancelled());
       }
-
     };
 
+    /**
+     * @brief Functor that resolve promise by forwarding resolved values
+     */
     struct forward_functor
     {
       detail_ptr_for<Value...> _detail;
@@ -487,12 +524,15 @@ namespace lanxc
       }
     };
 
-    struct initiate_functor
+    /**
+     * @brief Functor that initiate the progress of resolving future values
+     */
+    struct initiator
     {
       detail_ptr _detail;
       function<void(promise_type)> _routine;
 
-      initiate_functor(detail_ptr d, function<void(promise_type)> r) noexcept
+      initiator(detail_ptr d, function<void(promise_type)> r) noexcept
           : _detail { std::move(d) }
           , _routine { std::move(r) }
       { }
@@ -501,28 +541,31 @@ namespace lanxc
       { return _routine(promise_type(_detail)); }
     };
 
-    struct initiator
+    /**
+     * @brief Functor that dispatch the initiator
+     */
+    struct dispatcher
     {
       function<void(promise_type)> _routine;
-      initiator(lanxc::function<void(promise_type)> r) noexcept
+      dispatcher(lanxc::function<void(promise_type)> r) noexcept
           : _routine { std::move(r) }
       { }
 
       std::shared_ptr<deferred> operator () (task_context &ctx, promise_type p)
       {
         return ctx.defer_immediate(
-            initiate_functor{ std::move(p._detail), std::move(_routine)});
+            initiator{ std::move(p._detail), std::move(_routine)});
       }
     };
 
-    template<typename ...R>
+    template<typename ...V>
     struct then_future_functor
     {
-      detail_ptr_for<R...> _detail;
-      then_future_routine<R...> _routine;
+      detail_ptr_for<V...> _detail;
+      then_future_routine<V...> _routine;
       std::shared_ptr<deferred> _task;
-      then_future_functor(detail_ptr_for<R...> d,
-                          then_future_routine<R...> r) noexcept
+      then_future_functor(detail_ptr_for<V...> d,
+                          then_future_routine<V...> r) noexcept
           : _detail { std::move(d) }
           , _routine { std::move(r) }
       { }
@@ -533,72 +576,73 @@ namespace lanxc
         {
           task_context &ctx = *_detail->_task_context;
           auto f = _routine(std::move(value)...);
-          f._detail_ptr->set_fulfill_action(typename future<R...>::forward_functor(_detail));
-          f._detail_ptr->set_reject_action(typename future<R...>::reject_functor(_detail));
+          f._detail_ptr->set_fulfill_action(typename future<V...>::forward_functor(_detail));
+          f._detail_ptr->set_reject_action(typename future<V...>::reject_functor(_detail));
           _task = f.start(ctx);
         }
         catch (...)
         {
-          promise<R...> p { _detail };
+          promise<V...> p { _detail };
           p.reject_by_exception_ptr(std::current_exception());
         }
       }
     };
 
-    template<typename ...R>
+    template<typename ...V>
     struct then_future_detail
     {
       detail_ptr _current;
-      then_future_routine<R...> _routine;
+      then_future_routine<V...> _routine;
 
-      then_future_detail(detail_ptr current, then_future_routine<R...> routine) noexcept
+      then_future_detail(detail_ptr current, then_future_routine<V...> routine) noexcept
       : _current{std::move(current)}
           , _routine{std::move(routine)}
       { }
 
-      std::shared_ptr<deferred> start(task_context &ctx, promise<R...> next)
+      std::shared_ptr<deferred> start(task_context &ctx, promise<V...> next)
       {
         auto ptr = std::move(next._detail);
-        _current->set_fulfill_action(then_future_functor<R...>(ptr, std::move(_routine)));
-        _current->set_reject_action(typename future<R...>::reject_functor{std::move(ptr)});
+        _current->set_fulfill_action(then_future_functor<V...>(ptr, std::move(_routine)));
+        _current->set_reject_action(typename future<V...>::reject_functor{std::move(ptr)});
         return detail_type::start(ctx, std::move(_current));
       }
     };
 
 
-    template<typename ...R>
+    template<typename ...V>
     struct then_future_action
     {
-      std::shared_ptr<then_future_detail<R...>> _detail;
+      std::shared_ptr<then_future_detail<V...>> _detail;
 
-      std::shared_ptr<deferred> operator ()(task_context &ctx, promise<R...> p)
+      std::shared_ptr<deferred> operator ()(task_context &ctx, promise<V...> p)
       {
         return _detail->start(ctx, std::move(p));
       }
 
       then_future_action(detail_ptr current,
-                         then_future_routine<R...> routine)
+                         then_future_routine<V...> routine)
           : _detail
-          {std::make_shared<future::then_future_detail<R...>>(std::move(current),
-                                                              std::move(routine))}
-      {
-      }
+            {
+                std::make_shared<future::then_future_detail<V...>>(
+                    std::move(current), std::move(routine))
+            }
+      { }
     };
 
-    template<typename R>
+    template<typename V>
     struct then_value_functor
     {
-      detail_ptr_for<R> _next;
-      then_value_routine<R> _routine;
+      detail_ptr_for<V> _next;
+      then_value_routine<V> _routine;
 
-      then_value_functor(detail_ptr_for<R> next, then_value_routine<R> routine) noexcept
+      then_value_functor(detail_ptr_for<V> next, then_value_routine<V> routine) noexcept
       : _next{std::move(next)}
           , _routine{std::move(routine)}
       { }
 
       void operator () (Value ... value)
       {
-        promise<R> p {_next};
+        promise<V> p {_next};
         try
         {
           p.fulfill(_routine(std::forward<Value>(value)...));
@@ -610,42 +654,43 @@ namespace lanxc
       }
     };
 
-    template<typename R>
+    template<typename V>
     struct then_value_detail
     {
       detail_ptr _current;
-      then_value_routine<R> _routine;
+      then_value_routine<V> _routine;
 
-      then_value_detail(detail_ptr current, then_value_routine<R> routine) noexcept
+      then_value_detail(detail_ptr current, then_value_routine<V> routine) noexcept
       : _current { std::move(current) }
           , _routine { std::move(routine) }
       { }
 
-      std::shared_ptr<deferred> start(task_context &ctx, promise<R> next)
+      std::shared_ptr<deferred> start(task_context &ctx, promise<V> next)
       {
-        detail_ptr_for<R> ptr = std::move(next._detail);
-        _current->set_fulfill_action(then_value_functor<R>(ptr, std::move(_routine)));
-        _current->set_reject_action(typename future<R>::reject_functor(std::move(ptr)));
+        detail_ptr_for<V> ptr = std::move(next._detail);
+        _current->set_fulfill_action(then_value_functor<V>(ptr, std::move(_routine)));
+        _current->set_reject_action(typename future<V>::reject_functor(std::move(ptr)));
         return detail_type::start(ctx, std::move(_current));
       }
     };
 
-    template<typename R>
+    template<typename V>
     struct then_value_action
     {
-      std::shared_ptr<then_value_detail<R>> _detail;
+      std::shared_ptr<then_value_detail<V>> _detail;
 
-      std::shared_ptr<deferred> operator ()(task_context &ctx, promise<R> p)
+      std::shared_ptr<deferred> operator ()(task_context &ctx, promise<V> p)
       {
         return _detail->start(ctx, std::move(p));
       }
 
-      then_value_action(detail_ptr current, then_value_routine<R> routine)
+      then_value_action(detail_ptr current, then_value_routine<V> routine)
           : _detail
-            { std::make_shared<then_value_detail<R>>(std::move(current),
-                                                         std::move(routine))}
-      {
-      }
+            {
+                std::make_shared<then_value_detail<V>>(std::move(current),
+                                                     std::move(routine))
+            }
+      { }
     };
 
     struct then_void_functor
@@ -655,7 +700,7 @@ namespace lanxc
 
       then_void_functor(std::shared_ptr<promise<>::detail> d,
           then_void_routine routine) noexcept
-      : _detail{std::move(d)}
+          : _detail{std::move(d)}
           , _routine{std::move(routine)}
       { }
 
@@ -703,20 +748,23 @@ namespace lanxc
 
       then_void_action(detail_ptr current, then_void_routine done)
           : _detail
-            {std::make_shared<then_void_detail>(std::move(current), std::move(done))}
+            {
+                std::make_shared<then_void_detail>(std::move(current),
+                                                   std::move(done))
+            }
       { }
     };
 
-    template<typename E, typename ...R>
+    template<typename E, typename ...V>
     struct caught_future_functor
     {
-      detail_ptr_for<R...> _detail;
-      caught_future_routine<E, R...> _routine;
+      detail_ptr_for<V...> _detail;
+      caught_future_routine<E, V...> _routine;
       std::shared_ptr<deferred> _task;
 
-      caught_future_functor(detail_ptr_for<R...> ptr,
-          caught_future_routine<E, R...> f) noexcept
-      : _detail { std::move(ptr) }
+      caught_future_functor(detail_ptr_for<V...> ptr,
+                            caught_future_routine<E, V...> f) noexcept
+          : _detail { std::move(ptr) }
           , _routine { std::move(f) }
       { }
 
@@ -729,64 +777,71 @@ namespace lanxc
         catch(E &e)
         {
           auto f = _routine(e);
-          f._detail_ptr->set_fulfill_action(typename future<R...>::forward_functor(_detail));
-          f._detail_ptr->set_reject_action(typename future<R...>::reject_functor(_detail));
+          f._detail_ptr->set_fulfill_action(
+               typename future<V...>::forward_functor(_detail));
+          f._detail_ptr->set_reject_action(
+               typename future<V...>::reject_functor(_detail));
           _task = f.start(*_detail->_task_context);
         }
         catch(...)
         {
-          promise<R...> p { _detail };
+          promise<V...> p { _detail };
           p.reject_by_exception_ptr(std::current_exception());
         }
       }
     };
 
-    template<typename E, typename ...R>
+    template<typename E, typename ...V>
     struct caught_future_detail
     {
       detail_ptr _current;
-      promise<R...> _next;
-      caught_future_routine<E, R...> _routine;
+      promise<V...> _next;
+      caught_future_routine<E, V...> _routine;
 
-      caught_future_detail(detail_ptr current, caught_future_routine<E, R...> routine) noexcept
-      : _current{std::move(current)}
+      caught_future_detail(detail_ptr current,
+                           caught_future_routine<E, V...> routine) noexcept
+          : _current{std::move(current)}
           , _next{}
           , _routine{std::move(routine)}
       { }
 
-      std::shared_ptr<deferred> start(task_context &ctx, promise<R...> next)
+      std::shared_ptr<deferred> start(task_context &ctx, promise<V...> next)
       {
         auto ptr = std::move(next._detail);
-        _current->set_fulfill_action(cancel_catching_functor<R...>(ptr));
+        _current->set_fulfill_action(cancel_functor<V...>(ptr));
         _current->set_reject_action(
-            caught_future_functor<E, R...>(std::move(ptr), std::move(_routine)));
+            caught_future_functor<E, V...>(std::move(ptr), std::move(_routine)));
         return detail_type::start(ctx, std::move(_current));
       }
     };
 
-    template<typename E, typename ...R>
+    template<typename E, typename ...V>
     struct caught_future_action
     {
-      std::shared_ptr<caught_future_detail<E, R...>> _detail;
-      std::shared_ptr<deferred> operator () (task_context &ctx, promise<R...> p)
+      std::shared_ptr<caught_future_detail<E, V...>> _detail;
+      std::shared_ptr<deferred> operator () (task_context &ctx, promise<V...> p)
       {
         return _detail->start(ctx, std::move(p));
       }
       caught_future_action(detail_ptr current,
-                           caught_future_routine<E, R...> routine)
+                           caught_future_routine<E, V...> routine)
           : _detail
-          { std::make_shared<future::caught_future_detail<E,R...>>(std::move(current), std::move(routine)) }
+            {
+                std::make_shared<future::caught_future_detail<E,V...>>(
+                    std::move(current), std::move(routine))
+            }
       { }
     };
 
-    template<typename E, typename R>
+    template<typename E, typename V>
     struct caught_value_functor
     {
-      detail_ptr_for<R> _detail;
-      caught_value_routine<E, R> _routine;
+      detail_ptr_for<V> _detail;
+      caught_value_routine<E, V> _routine;
 
-      caught_value_functor(detail_ptr_for<R> ptr, caught_value_routine<E, R> f) noexcept
-      : _detail { std::move(ptr) }
+      caught_value_functor(detail_ptr_for<V> ptr,
+                           caught_value_routine<E, V> f) noexcept
+          : _detail { std::move(ptr) }
           , _routine { std::move(f) }
       { }
 
@@ -798,51 +853,56 @@ namespace lanxc
         }
         catch(E &e)
         {
-          promise<R> p { _detail };
+          promise<V> p { _detail };
           p.fulfill(_routine(e));
         }
         catch(...)
         {
-          promise<R> p { _detail };
+          promise<V> p { _detail };
           p.reject_by_exception_ptr(std::current_exception());
         }
       }
     };
 
-    template<typename E, typename R>
+    template<typename E, typename V>
     struct caught_value_detail
     {
       detail_ptr _current;
-      promise<R> _next;
-      caught_value_routine<E, R> _routine;
+      promise<V> _next;
+      caught_value_routine<E, V> _routine;
 
-      caught_value_detail(detail_ptr current, caught_value_routine<E, R> routine) noexcept
-      : _current{std::move(current)}
+      caught_value_detail(detail_ptr current,
+                          caught_value_routine<E, V> routine) noexcept
+          : _current{std::move(current)}
           , _next{}
           , _routine{std::move(routine)}
       { }
 
-      std::shared_ptr<deferred> start(task_context &ctx, promise<R> next)
+      std::shared_ptr<deferred> start(task_context &ctx, promise<V> next)
       {
         auto ptr = std::move(next._detail);
-        _current->set_fulfill_action(cancel_catching_functor<R>(ptr));
-        _current->set_reject_action(caught_value_functor<E, R>(std::move(ptr), std::move(_routine)));
+        _current->set_fulfill_action(cancel_functor<V>(ptr));
+        _current->set_reject_action(
+            caught_value_functor<E, V>(std::move(ptr), std::move(_routine)));
         return detail_type::start(ctx, std::move(_current));
       }
     };
 
-    template<typename E, typename R>
+    template<typename E, typename V>
     struct caught_value_action
     {
-      std::shared_ptr<caught_value_detail<E, R>> _detail;
-      std::shared_ptr<deferred> operator () (task_context &ctx, promise<R> p)
+      std::shared_ptr<caught_value_detail<E, V>> _detail;
+      std::shared_ptr<deferred> operator () (task_context &ctx, promise<V> p)
       {
         return _detail->start(ctx, std::move(p));
       }
       caught_value_action(detail_ptr current,
-                          caught_value_routine<E, R> routine)
+                          caught_value_routine<E, V> routine)
           : _detail
-          { std::make_shared<future::caught_value_detail<E, R>>(std::move(current), std::move(routine)) }
+            {
+                std::make_shared<future::caught_value_detail<E, V>>(
+                    std::move(current), std::move(routine))
+            }
       { }
     };
 
@@ -853,7 +913,8 @@ namespace lanxc
       detail_ptr_for<> _detail;
       caught_void_routine<E> _routine;
 
-      caught_void_functor(detail_ptr_for<> ptr, caught_void_routine<E> f) noexcept
+      caught_void_functor(detail_ptr_for<> ptr,
+                          caught_void_routine<E> f) noexcept
       : _detail { std::move(ptr) }
           , _routine { std::move(f) }
       { }
@@ -884,7 +945,8 @@ namespace lanxc
       detail_ptr _current;
       caught_void_routine<E> _routine;
 
-      caught_void_detail(detail_ptr current, caught_void_routine<E> routine) noexcept
+      caught_void_detail(detail_ptr current,
+                         caught_void_routine<E> routine) noexcept
           : _current{std::move(current)}
           , _routine{std::move(routine)}
       { }
@@ -892,8 +954,9 @@ namespace lanxc
       std::shared_ptr<deferred> start(task_context &ctx, promise<> next)
       {
         auto ptr = std::move(next._detail);
-        _current->set_fulfill_action(cancel_catching_functor<>(ptr));
-        _current->set_reject_action(caught_void_functor<E>(ptr, std::move(_routine)));
+        _current->set_fulfill_action(cancel_functor<>(ptr));
+        _current->set_reject_action(
+            caught_void_functor<E>(ptr, std::move(_routine)));
         return detail_type::start(ctx, std::move(_current));
       }
     };
@@ -909,7 +972,10 @@ namespace lanxc
 
       caught_void_action(detail_ptr current, caught_void_routine<E> routine)
           : _detail
-          { std::make_shared<future::caught_void_detail<E>>(std::move(current), std::move(routine)) }
+            {
+                std::make_shared<future::caught_void_detail<E>>(
+                    std::move(current), std::move(routine))
+            }
       { }
     };
 
