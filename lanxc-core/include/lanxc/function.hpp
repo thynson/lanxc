@@ -54,7 +54,7 @@ namespace lanxc
 
   /** @brief implementation detail */
   template<>
-  class function<void> final
+  class LANXC_CORE_EXPORT function<void> final
   {
   private:
 
@@ -115,19 +115,19 @@ namespace lanxc
       destroy,
     };
 
-    struct manager
+    struct abstract
     {
       using implement_type =
-        void (*)(manager *, void *, command);
+        void (*)(abstract *, void *, command);
 
       const implement_type m_implement;
-      explicit manager(implement_type implement) noexcept
+      explicit abstract(implement_type implement) noexcept
           : m_implement(implement)
       { }
     };
 
     template<typename Result, typename ... Arguments>
-    static Result invalid_function(manager *, Arguments ...)
+    static Result invalid_function(abstract *, Arguments ...)
     { throw bad_function_call(); }
 
     template<typename Function, typename = typename
@@ -146,65 +146,57 @@ namespace lanxc
       -> decltype(std::mem_fn(func))
     { return std::mem_fn(func); }
 
-    template<typename T, typename Allocator,
-        typename = typename std::conditional<
-            is_inplace_allocated<T>::value, std::true_type, std::false_type>::type>
-    struct manager_implement;
+    template<typename T, typename A, bool = is_inplace_allocated<T>::value>
+    struct concrete;
 
     template<typename Function, typename Allocator>
-    struct manager_implement<Function, Allocator,
-        typename std::enable_if<
-            is_inplace_allocated<Function>::value, std::true_type>::type>
-        final : manager
+    struct concrete<Function, Allocator, true> final : abstract
     {
       Function m_function;
 
       static void
-      implement(manager *mgr, void *args, command cmd) noexcept
+      implement(abstract *mgr, void *args, command cmd) noexcept
       {
-        auto self = static_cast<manager_implement *>(mgr);
+        auto self = static_cast<concrete *>(mgr);
         switch (cmd)
         {
         case command::construct:
-          new(args) manager_implement(std::move(*self));
+          new(args) concrete(std::move(*self));
           break;
         case command::destroy:
-          self->~manager_implement();
+          self->~concrete();
           break;
         }
       }
 
       template<typename Result, typename ...Arguments>
-      static Result call(manager *mgr, Arguments ...args)
+      static Result call(abstract *mgr, Arguments ...args)
       {
-        auto self = static_cast<manager_implement *>(mgr);
+        auto self = static_cast<concrete *>(mgr);
         return self->m_function(std::forward<Arguments>(args)...);
       }
 
-      manager_implement(Function &functor, const Allocator &) noexcept
-        : manager(implement)
+      concrete(Function &functor, const Allocator &) noexcept
+        : abstract(implement)
         , m_function(std::move(functor))
       { }
 
-      manager_implement(manager_implement &&other) noexcept
-        : manager(other.m_implement)
+      concrete(concrete &&other) noexcept
+        : abstract(other.m_implement)
         , m_function(std::move(other.m_function))
       { }
 
-      manager_implement &operator = (manager_implement &&) = delete;
+      concrete &operator = (concrete &&) = delete;
 
-      ~manager_implement() = default;
+      ~concrete() = default;
 
-      manager_implement(const manager_implement &) = delete;
-      manager_implement &operator = (const manager_implement &) = delete;
+      concrete(const concrete &) = delete;
+      concrete &operator = (const concrete &) = delete;
     };
 
 
     template<typename Function, typename Allocator>
-    struct manager_implement<Function, Allocator,
-        typename std::enable_if<
-            !is_inplace_allocated<Function>::value, std::false_type>::type>
-      final : manager
+    struct concrete<Function, Allocator, false> final : abstract
     {
       using allocator_type = typename std::allocator_traits<Allocator>
         ::template rebind_alloc<Function>;
@@ -214,31 +206,31 @@ namespace lanxc
       Function *m_function;
 
       template<typename Result, typename ...Arguments>
-      static Result call(manager *mgr, Arguments ...args)
+      static Result call(abstract *mgr, Arguments ...args)
       {
-        auto self = static_cast<manager_implement *>(mgr);
+        auto self = static_cast<concrete *>(mgr);
         return (*self->m_function)(std::forward<Arguments>(args)...);
       }
 
       static void
-      implement(manager *mgr, void *args, command cmd)
+      implement(abstract *mgr, void *args, command cmd)
       noexcept
       {
-        auto self = static_cast<manager_implement *>(mgr);
+        auto self = static_cast<concrete *>(mgr);
 
         switch (cmd)
         {
         case command::construct:
-          new(args) manager_implement(std::move(*self));
+          new(args) concrete(std::move(*self));
           break;
         case command::destroy:
-          self->~manager_implement();
+          self->~concrete();
           break;
         }
       }
 
-      manager_implement(Function &function, const Allocator &alloc) noexcept
-        : manager(implement)
+      concrete(Function &function, const Allocator &alloc) noexcept
+        : abstract(implement)
         , m_allocator(alloc)
         , m_function(allocator_traits::allocate(m_allocator, 1))
       {
@@ -246,23 +238,23 @@ namespace lanxc
             std::move(function));
       }
 
-      manager_implement(manager_implement &&other) noexcept
-        : manager(implement)
+      concrete(concrete &&other) noexcept
+        : abstract(implement)
         , m_allocator(std::move(other.m_allocator))
         , m_function(other.m_function)
       {
         other.m_function = nullptr;
       }
 
-      ~manager_implement() noexcept
+      ~concrete() noexcept
       {
         allocator_traits::destroy(m_allocator, m_function);
         allocator_traits::deallocate(m_allocator, m_function, 1);
       }
 
-      manager_implement &operator = (manager_implement &&) = delete;
-      manager_implement(const manager_implement &) = delete;
-      manager_implement &operator = (const manager_implement &) = delete;
+      concrete &operator = (concrete &&) = delete;
+      concrete(const concrete &) = delete;
+      concrete &operator = (const concrete &) = delete;
     };
 
   };
@@ -289,7 +281,7 @@ namespace lanxc
    * @ingroup functor
    */
   template<typename Result, typename... Arguments>
-  class function<Result(Arguments...)> final
+  class LANXC_CORE_EXPORT function<Result(Arguments...)> final
   {
     using detail = function<void>;
 
@@ -299,7 +291,7 @@ namespace lanxc
         && ! std::is_same<Function, function>::value
     >::type;
 
-    using caller_type = Result (*)(detail::manager *, Arguments ...);
+    using caller_type = Result (*)(detail::abstract *, Arguments ...);
 
     static constexpr caller_type noop_function
        = function<void>::template invalid_function<Result, Arguments...>;
@@ -307,7 +299,7 @@ namespace lanxc
     template<typename Allocator, typename Function>
     static caller_type get_caller(const Function &f) noexcept
     {
-      using implement = detail::manager_implement<Function, Allocator>;
+      using implement = detail::concrete<Function, Allocator>;
       if (detail::is_null(f))
         return noop_function;
       return implement::template call<Result, Arguments...>;
@@ -381,7 +373,7 @@ namespace lanxc
                     "functor object must be move constructible");
       if (m_caller != noop_function)
       {
-        new (m_store) detail::manager_implement<Function, Allocator>(
+        new (m_store) detail::concrete<Function, Allocator>(
             detail::make_functor(f), a);
       }
     }
@@ -440,7 +432,7 @@ namespace lanxc
           imp(rhs->cast(), &tmp, detail::command::construct);
           lhs->cast()->m_implement(lhs->cast(), &rhs->m_store,
               detail::command::construct);
-          imp(reinterpret_cast<detail::manager *>(&tmp),
+          imp(reinterpret_cast<detail::abstract *>(&tmp),
               &lhs->m_store,
               detail::command::construct);
           return;
@@ -471,15 +463,17 @@ namespace lanxc
 
   private:
 
-    detail::manager *cast() noexcept
-    { return reinterpret_cast<detail::manager *>(&m_store); }
+    detail::abstract *cast() noexcept
+    { return reinterpret_cast<detail::abstract *>(&m_store); }
 
-    const detail::manager *cast() const noexcept
-    { return reinterpret_cast<const detail::manager *>(&m_store); }
+    const detail::abstract *cast() const noexcept
+    { return reinterpret_cast<const detail::abstract *>(&m_store); }
 
     caller_type m_caller;
     detail::functor_padding m_store;
   };
+
+  extern template class function<void()>;
 
 }
 

@@ -8,20 +8,25 @@
   #if BUILD_SHARED_LANXC_CORE
     #ifdef _WIN32
       #define LANXC_CORE_EXPORT __declspec(dllexport)
+      #define LANXC_CORE_HIDDEN
     #elif defined(unix) || defined(__unix__) || defined(__APPLE__)
-      #define LANXC_CORE_EXPORT __attribute((visibility("default")))
+      #define LANXC_CORE_EXPORT __attribute__((visibility("default")))
+      #define LANXC_CORE_HIDDEN  __attribute__((visibility("hidden")))
     #else
       #define LANXC_CORE_EXPORT
+      #define LANXC_CORE_HIDDEN
     #endif
   #else
     #ifdef _WIN32
       #define LANXC_CORE_EXPORT __declspec(dllimport)
     #elif defined(unix) || defined(__unix__) || defined(__APPLE__)
-      #define LANXC_CORE_EXPORT __attribute((visibility("default")))
+      #define LANXC_CORE_EXPORT
     #else
       #define LANXC_CORE_EXPORT
     #endif
+    #define LANXC_CORE_HIDDEN
   #endif
 #else
   #define LANXC_CORE_EXPORT
+  #define LANXC_CORE_HIDDEN
 #endif

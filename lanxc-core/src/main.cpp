@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any

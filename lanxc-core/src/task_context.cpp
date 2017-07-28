@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -14,41 +14,12 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <lanxc/task.hpp>
-#include <cassert>
-#include <iostream>
 
-namespace
+#include <lanxc/core/task_context.hpp>
+
+namespace lanxc
 {
-  bool executed = false;
-  bool finished = false;
-  bool failed = false;
-
-  struct my_task : lanxc::task
-  {
-    virtual ~my_task() =default;
-
-  protected:
-    virtual void on_finish() override
-    {
-      finished = true;
-    }
-
-    virtual void routine(lanxc::task_token tm) noexcept override
-    {
-      executed = true;
-    }
-  };
-}
-
-int main()
-{
-
-  my_task m; // 10390575
-  lanxc::thread_pool_scheduler scheduler;
-  scheduler.schedule(m);
-  scheduler.start();
-  assert(executed);
-  assert(finished);
-  assert(!failed);
+  deferred::~deferred() = default;
+  alarm::~alarm() = default;
+  task_context::~task_context() = default;
 }

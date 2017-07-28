@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <sys/fcntl.h>
+#include <cstring>
 #include <array>
 #include <vector>
 #include <mutex>

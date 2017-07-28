@@ -116,7 +116,7 @@ namespace lanxc
     {}
     event_loop::~event_loop() {}
 
-    void event_loop::start()
+    void event_loop::run()
     {
       _detail->pool();
     }

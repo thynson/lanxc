@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 project(lanxc CXX)
 include (GenerateExportHeader)
 
-set(SOURCE_FILES include/lanxc/type_traits.hpp
+add_library(lanxc-core
+            ${PROJECT_BINARY_DIR}/include/lanxc/config.hpp
+            include/lanxc/type_traits.hpp
             include/lanxc/function.hpp
             include/lanxc/functional.hpp
             include/lanxc/unique_tuple.hpp
@@ -17,23 +19,19 @@ set(SOURCE_FILES include/lanxc/type_traits.hpp
             include/lanxc/link/rbtree_node.hpp
             include/lanxc/link/rbtree_iterator.hpp
             include/lanxc/link/rbtree.hpp
-            include/lanxc/task.hpp
             include/lanxc/core/clock_context.hpp
             include/lanxc/core/io_context.hpp
-            include/lanxc/core/main_loop.hpp
-            include/lanxc/core/executor_context.hpp
+            include/lanxc/core/task_context.hpp
             include/lanxc/core/network_context.hpp
-            src/task.cpp
-            include/lanxc/core/future.hpp src/main.cpp
-            ${PROJECT_BINARY_DIR}/include/lanxc/config.hpp)
+            include/lanxc/core/future.hpp
+            src/main.cpp
+            src/network_context.cpp src/task_context.cpp)
 if (BUILD_SHARED_LIBS)
-  add_library(lanxc-core SHARED ${SOURCE_FILES})
   set(LANXC_CORE_SHARED 1)
   target_compile_definitions(lanxc-core PRIVATE BUILD_SHARED_LANXC_CORE)
   set_target_properties(lanxc-core PROPERTIES CXX_VISIBILITY_PRESET hidden)
   set_target_properties(lanxc-core PROPERTIES C_VISIBILITY_PRESET hidden)
 else()
-  add_library(lanxc-core ${SOURCE_FILES})
   set(LANXC_CORE_SHARED 0)
 endif()
 

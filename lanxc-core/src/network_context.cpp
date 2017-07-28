@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -15,24 +15,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
-
-#include <lanxc/config.hpp>
-
-#include <chrono>
-
+#include <lanxc/core/network_context.hpp>
 
 namespace lanxc
 {
+  network_context::~network_context() = default;
 
-  class LANXC_CORE_EXPORT clock_context
-  {
-  public:
-    using time_point = std::chrono::steady_clock::time_point;
-    virtual ~clock_service() = 0;
-    virtual time_point now() = 0;
-  };
+  connection_listener_builder::~connection_listener_builder() = default;
+
+  connection_listener::~connection_listener() = default;
+
+  connection_listener_builder::address_builder::~address_builder() = default;
+
+  connection_listener_builder::option_builder::~option_builder() = default;
 
 }
-
-

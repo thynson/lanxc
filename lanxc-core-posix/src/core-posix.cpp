@@ -39,3 +39,4 @@ lanxc::posix::file_descriptor::file_descriptor(int fd)
 
 }
 
+lanxc::posix::file_descriptor::~file_descriptor() = default;

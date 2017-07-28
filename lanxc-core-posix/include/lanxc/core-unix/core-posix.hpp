@@ -38,8 +38,8 @@ namespace lanxc
                                                       (arguments)...))
       {}
       ~file_descriptor();
-      operator int () const noexcept;
-      operator bool () const noexcept;
+      operator int () const noexcept { return _fd; }
+      operator bool () const noexcept { return _fd >= 0;}
     private:
       int _fd;
     };
