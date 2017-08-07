@@ -80,9 +80,9 @@ namespace lanxc
             && std::is_nothrow_move_constructible<T>::value;
     };
 
-    template<typename T>
+    template<bool V, typename T>
     using inplace_allocated_sfinae =
-      typename std::enable_if<is_inplace_allocated<T>::value>::type;
+      typename std::enable_if<is_inplace_allocated<T>::value == V>::type;
 
 
     template<typename T>
@@ -146,11 +146,15 @@ namespace lanxc
       -> decltype(std::mem_fn(func))
     { return std::mem_fn(func); }
 
-    template<typename T, typename A, bool = is_inplace_allocated<T>::value>
+    template<typename T, typename A, typename = void>
     struct concrete;
 
     template<typename Function, typename Allocator>
-    struct concrete<Function, Allocator, true> final : abstract
+    struct concrete
+      < Function,
+        Allocator,
+        inplace_allocated_sfinae<true, Function>
+      > final : abstract
     {
       Function m_function;
 
@@ -196,7 +200,11 @@ namespace lanxc
 
 
     template<typename Function, typename Allocator>
-    struct concrete<Function, Allocator, false> final : abstract
+    struct concrete
+      < Function,
+        Allocator,
+        inplace_allocated_sfinae<false, Function>
+      > final : abstract
     {
       using allocator_type = typename std::allocator_traits<Allocator>
         ::template rebind_alloc<Function>;
@@ -473,7 +481,8 @@ namespace lanxc
     detail::functor_padding m_store;
   };
 
-  extern template class function<void()>;
+  extern template class LANXC_CORE_EXPORT function<void()>;
+  extern template class LANXC_CORE_EXPORT function<bool()>;
 
 }
 

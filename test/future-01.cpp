@@ -1,6 +1,4 @@
-//
-// Created by 蓝星灿 on 2017/7/17.
-//
+
 
 #include <iostream>
 #include <lanxc/core/future.hpp>
@@ -30,7 +28,6 @@ struct mock_deferred : lanxc::deferred , lanxc::link::list_node<mock_deferred>
     cancel();
   }
 
-  void dispatch() override;
 
 private:
   void execute() override
@@ -45,19 +42,11 @@ class mock_executor : public lanxc::task_context
 {
   friend class mock_deferred;
 
-//  std::list<lanxc::function<void()>> routines;
   lanxc::link::list<mock_deferred> deferred_list;
   std::set<std::weak_ptr<mock_deferred>> task_list;
 public:
 
 
-  std::shared_ptr<lanxc::deferred>
-  defer(lanxc::function<void()> routine) override
-  {
-    std::shared_ptr<mock_deferred> p = std::make_shared<mock_deferred>(*this, std::move(routine));
-    deferred_list.push_back(*p);
-    return p;
-  }
   std::shared_ptr<lanxc::deferred>
   defer(lanxc::function<void()> routine) override
   {
@@ -99,10 +88,6 @@ public:
   }
 };
 
-void mock_deferred::dispatch()
-{
-  _mock_executor.deferred_list.push_back(*this);
-}
 
 int main()
 {
