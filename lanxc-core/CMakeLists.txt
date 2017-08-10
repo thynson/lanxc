@@ -34,6 +34,7 @@ if (BUILD_SHARED_LIBS)
   set_target_properties(lanxc-core PROPERTIES CXX_VISIBILITY_PRESET hidden)
   set_target_properties(lanxc-core PROPERTIES C_VISIBILITY_PRESET hidden)
 endif()
+set_target_properties(lanxc-core PROPERTIES EXPORT_NAME core)
 
 target_compile_features(lanxc-core PUBLIC
     cxx_alias_templates
@@ -70,7 +71,7 @@ write_basic_package_version_file(
 # Install version file
 install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
-    DESTINATION lib/cmake/lanxc-core
+    DESTINATION lib/cmake/lanxc
     )
 
 # Export targets
@@ -81,15 +82,15 @@ install(TARGETS lanxc-core
 install(EXPORT lanxc-core-targets
     FILE lanxc-core-targets.cmake
     NAMESPACE lanxc::
-    DESTINATION lib/cmake/lanxc-core
+    DESTINATION lib/cmake/lancx
     )
 install(DIRECTORY include/lanxc DESTINATION include)
 
 # Package config file
-configure_file("lanxc-core-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core/lanxc-core-config.cmake")
+configure_file("lanxc-core-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config.cmake")
 
 # Install package config file
 install(FILES lanxc-core-config.cmake
-    DESTINATION lib/cmake/lanxc-core
+    DESTINATION lib/cmake/lanxc
     )
 

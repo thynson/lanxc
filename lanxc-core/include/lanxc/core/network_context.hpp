@@ -37,6 +37,12 @@ namespace lanxc
   {
   public:
 
+    std::shared_ptr<connection_endpoint_builder>
+    bind(std::string address, std::uint16_t port);
+
+
+    std::shared_ptr<connection_endpoint> connect(std::string address, std::uint16_t port);
+
   };
 
   class LANXC_CORE_EXPORT connection_listener
