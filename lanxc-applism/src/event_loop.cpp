@@ -127,31 +127,13 @@ namespace lanxc
     };
 
     event_loop::event_loop()
-      : _detail { new detail() }
+      : _detail { std::make_shared<detail>() }
     {}
     event_loop::~event_loop() {}
 
     void event_loop::run()
     {
       _detail->pool();
-    }
-
-    std::shared_ptr<connection_listener_builder>
-    event_loop::create_connection_listener()
-    {
-      return nullptr;
-    }
-
-    std::shared_ptr<connection_endpoint_builder>
-    event_loop::create_connection_endpoint()
-    {
-      return nullptr;
-    }
-
-    std::shared_ptr<datagram_endpoint_builder>
-    event_loop::create_datagram_endpoint()
-    {
-      return nullptr;
     }
 
     void event_loop::enable_event_channel(std::int16_t event,

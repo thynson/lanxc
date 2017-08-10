@@ -32,23 +32,15 @@ namespace lanxc
     class LANXC_APPLISM_EXPORT event_loop
         : public virtual task_context
         , public virtual io_context
-        , public virtual network_context
         , public virtual event_service
     {
     public:
 
       event_loop();
-      ~event_loop() override;
+
+      ~event_loop();
+
       void run() override;
-
-      std::shared_ptr<connection_listener_builder>
-      create_connection_listener() override;
-
-      std::shared_ptr<connection_endpoint_builder>
-      create_connection_endpoint() override;
-
-      std::shared_ptr<datagram_endpoint_builder>
-      create_datagram_endpoint() override;
 
       void enable_event_channel(int16_t event,
                                 uint32_t flag,
@@ -56,7 +48,7 @@ namespace lanxc
                                 event_channel &channel) override;
     private:
       struct detail;
-      std::unique_ptr<detail>  _detail;
+      std::shared_ptr<detail>  _detail;
     };
   }
 

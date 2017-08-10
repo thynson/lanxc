@@ -25,9 +25,7 @@
 
 #include <cerrno>
 
-#include <lanxc-applism/concrete_network_connection.hpp>
-
-#include "connection.hpp"
+#include <lanxc-applism/network_connection.hpp>
 
 namespace
 {
@@ -43,7 +41,7 @@ namespace
   {
   public:
     class builder;
-    macos_connection_endpoint(event_service &, int descriptor);
+    macos_connection_endpoint(event_service &es, int descriptor);
 
     void on_readable(intptr_t data, std::uint32_t flags) override;
 
@@ -52,31 +50,86 @@ namespace
     void on_error(intptr_t data, std::uint32_t flags) override;
 
   private:
-
-    int _descriptor;
   };
 
   class macos_connection_endpoint::builder
       : public lanxc::connection_endpoint_builder
+      , public std::enable_shared_from_this<builder>
   {
     friend class macos_connection_endpoint;
   public:
-    builder(lanxc::applism::event_loop &el);
+    builder(lanxc::applism::event_service &es) noexcept
+      : _event_service(es)
+    { };
 
 
+    std::shared_ptr<connection_endpoint_builder>
+    bind(std::string address, std::uint16_t port)
+    {
+      _specify_source_address = true;
+      // TODO: IPv6 support
+      int ret = inet_pton(AF_INET, address.data(),
+                          reinterpret_cast<sockaddr_in*>(&_source_address));
+      if (ret == -1)
+        unixy::throw_system_error();
+      return shared_from_this();
+    }
+
+    std::shared_ptr<connection_endpoint>
+    connect(std::string address, std::uint16_t port)
+    {
+      int ret = inet_pton(AF_INET, address.data(),
+                          reinterpret_cast<sockaddr_in*>(&_target_address));
+      if (ret == -1)
+        unixy::throw_system_error();
+
+      unixy::file_descriptor fd { ::socket(PF_INET, SOCK_STREAM, 0) };
+
+      if (!fd) unixy::throw_system_error();
+
+      socklen_t length = sizeof(sockaddr_storage);
+
+
+      if (_specify_source_address)
+      {
+        ret = ::bind(fd,
+                     reinterpret_cast<sockaddr*>(&_source_address),
+                     length);
+        if (ret == -1)
+          unixy::throw_system_error();
+      }
+
+      ret = ::connect(fd,
+                      reinterpret_cast<sockaddr*>(&_target_address),
+                      length);
+      if (ret == -1)
+        unixy::throw_system_error();
+
+      return std::make_shared<macos_connection_endpoint>(_event_service,
+                                                         std::move(fd));
+    }
+
+
+
+  private:
+    event_service &_event_service;
+    sockaddr_storage _target_address;
+    sockaddr_storage _source_address;
+    bool _specify_source_address { false };
   };
 
   class macos_connection_listener
       : public concrete_event_source
-        , public lanxc::connection_listener
-        , public lanxc::applism::readable_event_channel
+      , public lanxc::connection_listener
+      , public lanxc::applism::readable_event_channel
   {
   public:
+
     class builder
         : public lanxc::connection_listener_builder
-          , public lanxc::connection_listener_builder::address_builder
-          , public lanxc::connection_listener_builder::option_builder
-          , public std::enable_shared_from_this<builder>
+        , public lanxc::connection_listener_builder::address_builder
+        , public lanxc::connection_listener_builder::option_builder
+        , public std::enable_shared_from_this<builder>
     {
       friend class macos_connection_listener;
     public:
@@ -84,7 +137,9 @@ namespace
       using lanxc::connection_listener_builder::address_builder;
       using lanxc::connection_listener_builder::option_builder;
 
-      builder(lanxc::applism::event_loop &el);
+      builder(event_service &es)
+          : _event_service(es)
+      { }
 
       std::shared_ptr<address_builder> listen() override;
 
@@ -101,11 +156,15 @@ namespace
       std::shared_ptr<connection_listener_builder>
       on(std::string path) override;
 
+      std::shared_ptr<option_builder> set_reuse_port(bool enabled) override;
+
+      std::shared_ptr<option_builder> set_reuse_address(bool enabled) override;
+
     private:
 
       unixy::file_descriptor create_socket_descriptor();
 
-      lanxc::applism::event_loop &_event_loop;
+      lanxc::applism::event_service &_event_service;
       struct sockaddr_storage  _address;
       int                      _protocol_family;
 
@@ -124,7 +183,7 @@ namespace
     void accept();
 
   private:
-    lanxc::applism::event_loop &_event_loop;
+    lanxc::applism::event_service &_event_service;
     lanxc::function<void(lanxc::connection_endpoint::pointer)> _callback;
     bool _stopped { false };
 
@@ -153,8 +212,8 @@ namespace
 
   macos_connection_listener::macos_connection_listener(builder &builder)
       : concrete_event_source(builder.create_socket_descriptor())
-      , readable_event_channel(builder._event_loop)
-      , _event_loop(builder._event_loop)
+      , readable_event_channel(builder._event_service)
+      , _event_service(builder._event_service)
   {
 
   }
@@ -180,11 +239,15 @@ namespace
   {
     struct sockaddr_storage storage;
     socklen_t length = sizeof(storage);
-    int ret = ::accept(get_file_descriptor(),
-                       reinterpret_cast<sockaddr*>(&storage),
-                       &length);
 
-    if (ret == -1)
+    unixy::file_descriptor endpoint
+    {
+        ::accept(get_file_descriptor(),
+                 reinterpret_cast<sockaddr*>(&storage),
+                 &length)
+    };
+
+    if (!endpoint)
     {
       int e = 0;
       std::swap(e, errno);
@@ -195,6 +258,7 @@ namespace
       }
       lanxc::unixy::throw_system_error(e);
     }
+    _callback(std::make_shared<macos_connection_endpoint>(_event_service, std::move(endpoint)));
   }
   std::shared_ptr<connection_listener_builder::address_builder>
   macos_connection_listener::builder::listen()
@@ -288,12 +352,40 @@ namespace
     return shared_from_this();
   }
 
+  std::shared_ptr<connection_listener_builder::option_builder>
+  macos_connection_listener::builder::set_reuse_port(bool enabled)
+  {
+    return shared_from_this();
+  }
+
+  std::shared_ptr<connection_listener_builder::option_builder>
+  macos_connection_listener::builder::set_reuse_address(bool enabled)
+  {
+    return shared_from_this();
+  }
+
 }
 
-lanxc::applism::network_connection_context::~network_connection_context() = default;
-
-std::shared_ptr<connection_endpoint_builder>
-lanxc::applism::network_connection_context::create_connection_endpoint()
+namespace lanxc
 {
-  return std::make_shared<macos_connection_listener::builder>(this);
+  namespace applism
+  {
+    network_connection_context::~network_connection_context() = default;
+
+    std::shared_ptr<connection_listener_builder>
+    network_connection_context::create_connection_listener()
+    {
+      event_service &es = *this;
+      return std::make_shared<macos_connection_listener::builder>(es);
+    }
+
+    std::shared_ptr<connection_endpoint_builder>
+    network_connection_context::create_connection_endpoint()
+    {
+      event_service &es = *this;
+      return std::make_shared<macos_connection_endpoint::builder>(es);
+    }
+
+  }
 }
+

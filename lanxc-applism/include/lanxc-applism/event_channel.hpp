@@ -46,6 +46,29 @@ namespace lanxc
       virtual void signal(std::intptr_t data, std::uint32_t flags) = 0;
     };
 
+    struct LANXC_APPLISM_EXPORT readable_event_channel : public event_channel
+    {
+      readable_event_channel(event_service &es);
+
+      void signal(std::intptr_t data, std::uint32_t flags) override;
+      virtual void on_readable(std::intptr_t data, std::uint32_t flags) = 0;
+    };
+
+    struct LANXC_APPLISM_EXPORT writable_event_channel : public event_channel
+    {
+      writable_event_channel(event_service &es);
+
+      void signal(std::intptr_t data, std::uint32_t flags) override;
+      virtual void on_writable(std::intptr_t data, std::uint32_t flags) = 0;
+    };
+
+    struct LANXC_APPLISM_EXPORT error_event_channel : public event_channel
+    {
+      error_event_channel(event_service &es);
+
+      void signal(std::intptr_t data, std::uint32_t flags) override;
+      virtual void on_error(std::intptr_t data, std::uint32_t flags) = 0;
+    };
   }
 }
 

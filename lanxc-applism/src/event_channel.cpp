@@ -19,7 +19,6 @@
 #include <lanxc-applism/event_service.hpp>
 
 #include <sys/event.h>
-#include "connection.hpp"
 
 namespace lanxc
 {

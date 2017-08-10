@@ -26,12 +26,12 @@ namespace lanxc
 {
   namespace applism
   {
-    class concrete_network_connection
+    class network_connection_context
         : public virtual lanxc::network_connection_context
         , protected virtual event_service
     {
     public:
-      ~concrete_network_connection() override;
+      ~network_connection_context() override;
 
       std::shared_ptr<connection_listener_builder>
       create_connection_listener() override;
