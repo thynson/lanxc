@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -15,26 +15,4 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
-
-#include <lanxc/core-macos/event_channel.hpp>
-
-namespace lanxc
-{
-  namespace macos
-  {
-
-
-    class event_service
-    {
-    public:
-      virtual void register_event(int descriptor,
-                                  int16_t event,
-                                  uint16_t operation,
-                                  uint32_t flag,
-                                  std::intptr_t data,
-                                  event_channel &channel) = 0;
-    };
-  }
-}
-
+#include <lanxc/core/buffer.hpp>

@@ -15,14 +15,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/core-macos/event_channel.hpp>
-#include <lanxc/core-macos/event_service.hpp>
+#include <lanxc-applism/event_channel.hpp>
+#include <lanxc-applism/event_service.hpp>
 
 #include <sys/event.h>
 
 namespace lanxc
 {
-  namespace macos
+  namespace applism
   {
     event_channel::event_channel(event_service &es,
                                  int descriptor,

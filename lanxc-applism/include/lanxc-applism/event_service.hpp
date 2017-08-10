@@ -17,32 +17,24 @@
 
 #pragma once
 
-#include <lanxc/type_traits.hpp>
+#include <lanxc-applism/event_channel.hpp>
+
 namespace lanxc
 {
-  namespace posix
+  namespace applism
   {
-    [[noreturn]] void throw_system_error();
-    [[noreturn]] void throw_system_error(int e);
 
-    class file_descriptor
+
+    class LANXC_APPLISM_EXPORT event_service
     {
     public:
-      file_descriptor(int fd = -1);
-      template<typename F, typename ...Arguments>
-      file_descriptor(
-          typename std::enable_if<
-              std::is_same<int, typename result_of<F (Arguments ...) >::type>::value,
-              F>::type &&func, Arguments &&...arguments)
-          : file_descriptor(std::forward<F>(func)(std::forward<Arguments>
-                                                      (arguments)...))
-      {}
-      ~file_descriptor();
-      operator int () const noexcept { return _fd; }
-      operator bool () const noexcept { return _fd >= 0;}
-    private:
-      int _fd;
+      virtual void register_event(int descriptor,
+                                  int16_t event,
+                                  uint16_t operation,
+                                  uint32_t flag,
+                                  std::intptr_t data,
+                                  event_channel &channel) = 0;
     };
   }
-
 }
+

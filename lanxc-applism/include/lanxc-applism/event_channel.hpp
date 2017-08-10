@@ -15,28 +15,37 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/core-unix/core-posix.hpp>
-#include <errno.h>
-#include <string.h>
-#include <utility>
-#include <system_error>
+#pragma once
 
-void lanxc::posix::throw_system_error()
+#include <lanxc-applism/config.hpp>
+
+#include <cstdint>
+
+namespace lanxc
 {
-  int e = 0;
-  std::swap(e, errno);
-  throw_system_error(e);
+  namespace applism
+  {
+    class event_service;
+    class LANXC_APPLISM_EXPORT event_channel
+    {
+    public:
+      event_channel() = default;
+      event_channel(event_service &,
+                    int descriptor,
+                    int16_t event,
+                    uint16_t operation,
+                    uint32_t flags,
+                    intptr_t data);
+      event_channel(const event_channel &) = delete;
+      event_channel &operator = (const event_channel &) = delete;
+
+      event_channel(event_channel &&) = delete;
+      event_channel &operator = (event_channel &&) = delete;
+
+      virtual ~event_channel();
+      virtual void on_activate(std::intptr_t data, std::uint32_t flags) = 0;
+    };
+
+  }
 }
 
-void lanxc::posix::throw_system_error(int e)
-{
-  throw std::system_error(std::error_code(e, std::system_category()));
-}
-
-lanxc::posix::file_descriptor::file_descriptor(int fd)
-    : _fd(fd)
-{
-
-}
-
-lanxc::posix::file_descriptor::~file_descriptor() = default;

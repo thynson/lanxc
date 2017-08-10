@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
-project(lanxc CXX)
-include (GenerateExportHeader)
+project(lanxc-core CXX)
 
 add_library(lanxc-core
-            ${PROJECT_BINARY_DIR}/include/lanxc/config.hpp
+            include/lanxc/config.hpp
             include/lanxc/type_traits.hpp
             include/lanxc/function.hpp
             include/lanxc/functional.hpp
@@ -24,18 +23,17 @@ add_library(lanxc-core
             include/lanxc/core/task_context.hpp
             include/lanxc/core/network_context.hpp
             include/lanxc/core/future.hpp
+            include/lanxc/core/buffer.hpp
             src/main.cpp
-            src/network_context.cpp src/task_context.cpp)
+            src/network_context.cpp src/task_context.cpp src/buffer.cpp)
+add_library(lanxc::core ALIAS lanxc-core)
+
 if (BUILD_SHARED_LIBS)
-  set(LANXC_CORE_SHARED 1)
-  target_compile_definitions(lanxc-core PRIVATE BUILD_SHARED_LANXC_CORE)
+  target_compile_definitions(lanxc-core PRIVATE BUILD_LANXC_CORE_SHARED_LIBRARY)
+  target_compile_definitions(lanxc-core PUBLIC LANXC_CORE_SHARED_LIBRARY)
   set_target_properties(lanxc-core PROPERTIES CXX_VISIBILITY_PRESET hidden)
   set_target_properties(lanxc-core PROPERTIES C_VISIBILITY_PRESET hidden)
-else()
-  set(LANXC_CORE_SHARED 0)
 endif()
-
-set_source_files_properties(${PROJECT_BINARY_DIR}/include/lanxc/config.hpp PROPERTIES GENERATED 1)
 
 target_compile_features(lanxc-core PUBLIC
     cxx_alias_templates
@@ -53,17 +51,10 @@ target_compile_features(lanxc-core PUBLIC
     cxx_variadic_templates
     )
 
-if (BUILD_SHARED_LIBS)
-else()
-endif()
-
-configure_file(${PROJECT_SOURCE_DIR}/include/lanxc/config.hpp.in ${PROJECT_BINARY_DIR}/include/lanxc/config.hpp)
 target_include_directories(lanxc-core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/>
     $<INSTALL_INTERFACE:include>
     )
-target_link_libraries(lanxc-core PUBLIC pthread)
 
 install(DIRECTORY include/lanxc DESTINATION include/lanxc)
 
@@ -73,7 +64,7 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
     VERSION 1.0
-    COMPATIBILITY AnyNewerVersion
+    COMPATIBILITY SameMajorVersion
     )
 
 # Install version file
@@ -101,5 +92,4 @@ configure_file("lanxc-core-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core
 install(FILES lanxc-core-config.cmake
     DESTINATION lib/cmake/lanxc-core
     )
-add_library(lanxc::lanxc-core ALIAS lanxc-core)
 

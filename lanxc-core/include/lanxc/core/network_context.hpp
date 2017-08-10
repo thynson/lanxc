@@ -26,6 +26,7 @@
 
 namespace lanxc
 {
+
   class connection_endpoint
   {
   public:
@@ -95,6 +96,21 @@ namespace lanxc
 
   class datagram_endpoint_builder
   {
+
+  };
+
+  class LANXC_CORE_EXPORT network_connection_context
+  {
+  public:
+    virtual ~network_connection_context() = 0;
+
+
+  };
+
+  class LANXC_CORE_EXPORT network_datagram_context
+  {
+  public:
+    virtual ~network_datagram_context() = 0;
 
   };
 

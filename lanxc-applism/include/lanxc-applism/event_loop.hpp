@@ -16,7 +16,8 @@
  */
 
 #pragma once
-#include <lanxc/core-macos/event_service.hpp>
+#include <lanxc-applism/event_service.hpp>
+#include <lanxc-applism/config.hpp>
 
 #include <lanxc/core/task_context.hpp>
 #include <lanxc/core/io_context.hpp>
@@ -26,12 +27,13 @@
 
 namespace lanxc
 {
-  namespace macos
+  namespace applism
   {
-    class event_loop : public virtual task_context
-                     , public virtual io_context
-                     , public virtual network_context
-                     , public virtual event_service
+    class LANXC_APPLISM_EXPORT event_loop
+        : public virtual task_context
+        , public virtual io_context
+        , public virtual network_context
+        , public virtual event_service
     {
     public:
 

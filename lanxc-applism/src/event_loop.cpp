@@ -15,9 +15,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc/core-macos/event_service.hpp>
-#include <lanxc/core-macos/event_loop.hpp>
-#include <lanxc/core-unix/core-posix.hpp>
+#include <lanxc-applism/event_service.hpp>
+#include <lanxc-applism/event_loop.hpp>
+#include <lanxc-unixy/unixy.hpp>
 
 #include <system_error>
 #include <mutex>
@@ -32,14 +32,14 @@ namespace
   int create_kqueue()
   {
     int ret = ::kqueue();
-    if (ret == -1) lanxc::posix::throw_system_error();
+    if (ret == -1) lanxc::unixy::throw_system_error();
     return ret;
   }
 }
 
 namespace lanxc
 {
-  namespace macos
+  namespace applism
   {
     struct event_loop::detail : private event_channel
     {
@@ -77,7 +77,7 @@ namespace lanxc
 
         int ret = kevent(_kqueue_fd, nullptr, 0, &ke, 1, nullptr);
         if (ret == 0) return;
-        lanxc::posix::throw_system_error();
+        lanxc::unixy::throw_system_error();
       }
 
       void pool()
@@ -94,7 +94,7 @@ namespace lanxc
                              nullptr);
 
           if (ret < 0)
-            lanxc::posix::throw_system_error();
+            lanxc::unixy::throw_system_error();
 
           _changed_events_list.clear();
 

@@ -15,33 +15,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
-#include <cstdint>
-namespace lanxc
+#include <lanxc-unixy/unixy.hpp>
+#include <errno.h>
+#include <string.h>
+#include <utility>
+#include <system_error>
+
+void lanxc::unixy::throw_system_error()
 {
-  namespace macos
-  {
-    class event_service;
-    class event_channel
-    {
-    public:
-      event_channel() = default;
-      event_channel(event_service &,
-                    int descriptor,
-                    int16_t event,
-                    uint16_t operation,
-                    uint32_t flags,
-                    intptr_t data);
-      event_channel(const event_channel &) = delete;
-      event_channel &operator = (const event_channel &) = delete;
-
-      event_channel(event_channel &&) = delete;
-      event_channel &operator = (event_channel &&) = delete;
-
-      virtual ~event_channel();
-      virtual void on_activate(std::intptr_t data, std::uint32_t flags) = 0;
-    };
-
-  }
+  int e = 0;
+  std::swap(e, errno);
+  throw_system_error(e);
 }
 
+void lanxc::unixy::throw_system_error(int e)
+{
+  throw std::system_error(std::error_code(e, std::system_category()));
+}
+
+lanxc::unixy::file_descriptor::file_descriptor(int fd)
+    : _fd(fd)
+{
+
+}
+
+lanxc::unixy::file_descriptor::~file_descriptor() = default;

@@ -16,9 +16,9 @@
  */
 
 #pragma once
-#include <lanxc/core-macos/event_loop.hpp>
-#include <lanxc/core-macos/event_service.hpp>
-#include <lanxc/core-unix/core-posix.hpp>
+#include <lanxc-applism/event_loop.hpp>
+#include <lanxc-applism/event_service.hpp>
+#include <lanxc-unixy/unixy.hpp>
 #include <lanxc/core/network_context.hpp>
 #include <memory>
 
@@ -26,11 +26,11 @@
 
 namespace lanxc
 {
-  namespace macos
+  namespace applism
   {
 
     struct readable_event_channel : public event_channel
-                                  , private virtual posix::file_descriptor
+                                  , private virtual unixy::file_descriptor
     {
       using event_channel::event_channel;
 
@@ -39,7 +39,7 @@ namespace lanxc
     };
 
     struct writable_event_channel : public event_channel
-                                  , private virtual posix::file_descriptor
+                                  , private virtual unixy::file_descriptor
     {
       using event_channel::event_channel;
 
@@ -48,7 +48,7 @@ namespace lanxc
     };
 
     struct error_event_channel : public event_channel
-                               , private virtual posix::file_descriptor
+                               , private virtual unixy::file_descriptor
     {
       using event_channel::event_channel;
 
@@ -57,7 +57,7 @@ namespace lanxc
     };
 
     class macos_connection_endpoint
-        : public virtual posix::file_descriptor
+        : public virtual unixy::file_descriptor
         , public lanxc::connection_endpoint
         , public readable_event_channel
         , public writable_event_channel
@@ -83,15 +83,15 @@ namespace lanxc
     {
       friend class macos_connection_endpoint;
     public:
-      builder(lanxc::macos::event_loop &el);
+      builder(lanxc::applism::event_loop &el);
 
 
     };
 
     class macos_connection_listener
-        : public virtual posix::file_descriptor
+        : public virtual unixy::file_descriptor
         , public lanxc::connection_listener
-        , public lanxc::macos::readable_event_channel
+        , public lanxc::applism::readable_event_channel
     {
     public:
       class builder
@@ -106,7 +106,7 @@ namespace lanxc
         using lanxc::connection_listener_builder::address_builder;
         using lanxc::connection_listener_builder::option_builder;
 
-        builder(lanxc::macos::event_loop &el);
+        builder(lanxc::applism::event_loop &el);
 
         std::shared_ptr<address_builder> listen() override;
 
@@ -127,7 +127,7 @@ namespace lanxc
 
         int create_socket_descriptor();
 
-        lanxc::macos::event_loop &_event_loop;
+        lanxc::applism::event_loop &_event_loop;
         struct sockaddr_storage  _address;
         int                      _protocol_family;
 
@@ -146,7 +146,7 @@ namespace lanxc
       void accept();
 
     private:
-      lanxc::macos::event_loop &_event_loop;
+      lanxc::applism::event_loop &_event_loop;
       lanxc::function<void(lanxc::connection_endpoint::pointer)> _callback;
       bool _stopped { false };
 

@@ -2,10 +2,9 @@
 
 #pragma once
 
-#define LANXC_CORE_SHARED @LANXC_CORE_SHARED@
 
-#if LANXC_CORE_SHARED
-  #if defined(BUILD_SHARED_LANXC_CORE)
+#if defined(LANXC_CORE_SHARED_LIBRARY)
+  #if defined(BUILD_LANXC_CORE_SHARED_LIBRARY)
     #ifdef _WIN32
       #define LANXC_CORE_EXPORT __declspec(dllexport)
       #define LANXC_CORE_HIDDEN
@@ -22,6 +21,7 @@
       #define LANXC_CORE_HIDDEN
     #elif defined(unix) || defined(__unix__) || defined(__APPLE__)
       #define LANXC_CORE_EXPORT
+      #define LANXC_CORE_HIDDEN
     #else
       #define LANXC_CORE_EXPORT
       #define LANXC_CORE_HIDDEN

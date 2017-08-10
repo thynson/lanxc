@@ -26,8 +26,8 @@
 #include <vector>
 #include <mutex>
 #include <system_error>
-#include <lanxc/core-unix/core-posix.hpp>
-#include <lanxc/core-macos/event_loop.hpp>
+#include <lanxc-unixy/unixy.hpp>
+#include <lanxc-applism/event_loop.hpp>
 #include <arpa/inet.h>
 #include <sys/event.h>
 
@@ -35,11 +35,11 @@ namespace lanxc
 
 {
 
-  namespace macos
+  namespace applism
   {
 
 
-    macos_connection_endpoint::macos_connection_endpoint(lanxc::macos::event_loop &el,
+    macos_connection_endpoint::macos_connection_endpoint(lanxc::applism::event_loop &el,
                                                 int descriptor )
       : readable_event_channel(el, descriptor, EVFILT_READ, EV_ADD | EV_CLEAR,
                                0, 0)
@@ -107,7 +107,7 @@ namespace lanxc
           _stopped = true;
           return;
         }
-        lanxc::posix::throw_system_error(e);
+        lanxc::unixy::throw_system_error(e);
       }
     }
     std::shared_ptr<connection_listener_builder::address_builder>
@@ -128,7 +128,7 @@ namespace lanxc
       int fd = socket(_protocol_family, SOCK_STREAM, 0);
       if (fd == -1)
       {
-        lanxc::posix::throw_system_error();
+        lanxc::unixy::throw_system_error();
       }
       try
       {
@@ -137,22 +137,22 @@ namespace lanxc
                              SOL_SOCKET,
                              SO_REUSEADDR,
                              &value, sizeof(value));
-        if (ret == -1) lanxc::posix::throw_system_error();
+        if (ret == -1) lanxc::unixy::throw_system_error();
         ret = bind(fd,
                    reinterpret_cast<const sockaddr *>(&_address),
                    sizeof(_address));
 
-        if (ret == -1) lanxc::posix::throw_system_error();
+        if (ret == -1) lanxc::unixy::throw_system_error();
 
         ret = fcntl(fd, F_GETFL);
-        if (ret == -1) lanxc::posix::throw_system_error();
+        if (ret == -1) lanxc::unixy::throw_system_error();
 
         ret = fcntl(fd, F_SETFD, ret|O_NONBLOCK);
 
-        if (ret == -1) lanxc::posix::throw_system_error();
+        if (ret == -1) lanxc::unixy::throw_system_error();
 
         ret = ::listen(fd, SOMAXCONN);
-        if (ret == -1) lanxc::posix::throw_system_error();
+        if (ret == -1) lanxc::unixy::throw_system_error();
       }
       catch (...)
       {
