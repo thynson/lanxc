@@ -42,5 +42,27 @@ namespace lanxc
       es.enable_event_channel(EVFILT_EXCEPT, 0, 0, *this);
     }
 
+
+    void
+    readable_event_channel::signal(std::intptr_t data,
+                                   std::uint32_t flags)
+    {
+      on_readable(data, flags);
+    }
+
+    void
+    writable_event_channel::signal(std::intptr_t data,
+                                   std::uint32_t flags)
+    {
+      on_writable(data, flags);
+    }
+
+    void
+    error_event_channel::signal(std::intptr_t data,
+                                std::uint32_t flags)
+    {
+      on_error(data, flags);
+    }
+
   }
 }

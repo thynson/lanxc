@@ -122,7 +122,7 @@ namespace lanxc
 
       private:
 
-        int create_socket_descriptor();
+        unixy::file_descriptor create_socket_descriptor();
 
         lanxc::applism::event_loop &_event_loop;
         struct sockaddr_storage  _address;

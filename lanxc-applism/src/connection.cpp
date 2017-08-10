@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -17,19 +17,20 @@
 
 #include "connection.hpp"
 
-#include <unistd.h>
-#include <netinet/in.h>
-#include <sys/un.h>
+#include <lanxc-applism/event_loop.hpp>
+
+#include <lanxc-unixy/unixy.hpp>
+
+#include <arpa/inet.h>
+#include <sys/event.h>
 #include <sys/fcntl.h>
-#include <cstring>
+#include <sys/un.h>
+#include <netinet/in.h>
+
+#include <system_error>
 #include <array>
 #include <vector>
 #include <mutex>
-#include <system_error>
-#include <lanxc-unixy/unixy.hpp>
-#include <lanxc-applism/event_loop.hpp>
-#include <arpa/inet.h>
-#include <sys/event.h>
 
 namespace lanxc
 
@@ -39,7 +40,7 @@ namespace lanxc
   {
 
 
-    macos_connection_endpoint::macos_connection_endpoint(lanxc::applism::event_loop &el,
+    macos_connection_endpoint::macos_connection_endpoint(event_loop &el,
                                                 int descriptor )
       : concrete_event_source(unixy::file_descriptor(descriptor))
       , readable_event_channel(el)
@@ -117,44 +118,35 @@ namespace lanxc
       return shared_from_this();
     }
 
-    int macos_connection_listener::builder::create_socket_descriptor()
+    unixy::file_descriptor
+    macos_connection_listener::builder::create_socket_descriptor()
     {
 
-      int fd = socket(_protocol_family, SOCK_STREAM, 0);
-      if (fd == -1)
-      {
+      unixy::file_descriptor fd {socket(_protocol_family, SOCK_STREAM, 0)};
+      if (!fd)
         lanxc::unixy::throw_system_error();
-      }
-      try
-      {
-        int value = 1;
-        int ret = setsockopt(fd,
-                             SOL_SOCKET,
-                             SO_REUSEADDR,
-                             &value, sizeof(value));
-        if (ret == -1) lanxc::unixy::throw_system_error();
-        ret = bind(fd,
-                   reinterpret_cast<const sockaddr *>(&_address),
-                   sizeof(_address));
 
-        if (ret == -1) lanxc::unixy::throw_system_error();
+      int value = 1;
+      int ret = setsockopt(fd,
+                           SOL_SOCKET,
+                           SO_REUSEADDR,
+                           &value, sizeof(value));
+      if (ret == -1) lanxc::unixy::throw_system_error();
+      ret = bind(fd,
+                 reinterpret_cast<const sockaddr *>(&_address),
+                 sizeof(_address));
 
-        ret = fcntl(fd, F_GETFL);
-        if (ret == -1) lanxc::unixy::throw_system_error();
+      if (ret == -1) lanxc::unixy::throw_system_error();
 
-        ret = fcntl(fd, F_SETFD, ret|O_NONBLOCK);
+      ret = fcntl(fd, F_GETFL);
+      if (ret == -1) lanxc::unixy::throw_system_error();
 
-        if (ret == -1) lanxc::unixy::throw_system_error();
+      ret = fcntl(fd, F_SETFD, ret|O_NONBLOCK);
 
-        ret = ::listen(fd, SOMAXCONN);
-        if (ret == -1) lanxc::unixy::throw_system_error();
-      }
-      catch (...)
-      {
-        close(fd);
-        throw ;
-      }
+      if (ret == -1) lanxc::unixy::throw_system_error();
 
+      ret = ::listen(fd, SOMAXCONN);
+      if (ret == -1) lanxc::unixy::throw_system_error();
       return fd;
     }
 
@@ -204,27 +196,6 @@ namespace lanxc
       _protocol_family = PF_UNIX;
       strncpy(un->sun_path, path.data(), sizeof(un->sun_path));
       return shared_from_this();
-    }
-
-    void
-    readable_event_channel::signal(std::intptr_t data,
-                                   std::uint32_t flags)
-    {
-      on_readable(data, flags);
-    }
-
-    void
-    writable_event_channel::signal(std::intptr_t data,
-                                   std::uint32_t flags)
-    {
-      on_writable(data, flags);
-    }
-
-    void
-    error_event_channel::signal(std::intptr_t data,
-                                std::uint32_t flags)
-    {
-      on_error(data, flags);
     }
   }
 }
