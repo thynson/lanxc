@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 LAN Xingcan
+ * Copyright (C) 2017 LAN Xingcan
  * All right reserved
  *
  * Permission to use, copy, modify, and/or distribute this software for any
@@ -15,37 +15,21 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
 
+#include <lanxc-applism/event_service.hpp>
 #include <lanxc-applism/event_source.hpp>
-#include <lanxc-applism/config.hpp>
 
-#include <lanxc-unixy/unixy.hpp>
-
-#include <cstdint>
+#include <utility>
 
 namespace lanxc
 {
   namespace applism
   {
+    event_source::~event_source() = default;
 
-
-    class LANXC_APPLISM_EXPORT event_channel : protected virtual event_source
-    {
-      friend class event_service;
-    public:
-
-      event_channel() = default;
-      virtual ~event_channel() = default;
-
-      event_channel(const event_channel &) = delete;
-      event_channel(event_channel &&) = delete;
-      event_channel &operator = (const event_channel &) = delete;
-      event_channel &operator = (event_channel &&) = delete;
-
-      virtual void signal(std::intptr_t data, std::uint32_t flags) = 0;
-    };
+    concrete_event_source::concrete_event_source(unixy::file_descriptor fd) noexcept
+      : _file_descriptor(std::move(fd))
+    { }
 
   }
 }
-

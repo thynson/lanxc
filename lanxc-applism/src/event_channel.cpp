@@ -19,19 +19,28 @@
 #include <lanxc-applism/event_service.hpp>
 
 #include <sys/event.h>
+#include "connection.hpp"
 
 namespace lanxc
 {
   namespace applism
   {
-    event_channel::event_channel(event_service &es,
-                                 int descriptor,
-                                 int16_t event,
-                                 uint16_t operation,
-                                 uint32_t flags,
-                                 intptr_t data)
-    { es.register_event(descriptor, event, operation, flags, data, *this); }
 
-    event_channel::~event_channel() = default;
+
+    readable_event_channel::readable_event_channel(event_service &es)
+    {
+      es.enable_event_channel(EVFILT_READ, 0, 0, *this);
+    }
+
+    writable_event_channel::writable_event_channel(event_service &es)
+    {
+      es.enable_event_channel(EVFILT_READ, 0, 0, *this);
+    }
+
+    error_event_channel::error_event_channel(event_service &es)
+    {
+      es.enable_event_channel(EVFILT_EXCEPT, 0, 0, *this);
+    }
+
   }
 }

@@ -28,12 +28,11 @@ namespace lanxc
     class LANXC_APPLISM_EXPORT event_service
     {
     public:
-      virtual void register_event(int descriptor,
-                                  int16_t event,
-                                  uint16_t operation,
-                                  uint32_t flag,
-                                  std::intptr_t data,
-                                  event_channel &channel) = 0;
+      virtual void enable_event_channel(int16_t event,
+                                        uint32_t flag,
+                                        std::intptr_t data,
+                                        event_channel &channel) = 0;
+
     };
   }
 }

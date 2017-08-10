@@ -41,13 +41,10 @@ namespace lanxc
 
     macos_connection_endpoint::macos_connection_endpoint(lanxc::applism::event_loop &el,
                                                 int descriptor )
-      : readable_event_channel(el, descriptor, EVFILT_READ, EV_ADD | EV_CLEAR,
-                               0, 0)
-      , writable_event_channel(el, descriptor, EVFILT_WRITE, EV_ADD | EV_CLEAR,
-                               0, 0)
-      , error_event_channel(el, descriptor, EVFILT_EXCEPT, EV_ADD | EV_CLEAR,
-                            0, 0)
-      , _descriptor(descriptor)
+      : concrete_event_source(unixy::file_descriptor(descriptor))
+      , readable_event_channel(el)
+      , writable_event_channel(el)
+      , error_event_channel(el)
     {
     }
 
@@ -64,10 +61,8 @@ namespace lanxc
     }
 
     macos_connection_listener::macos_connection_listener(builder &builder)
-        : file_descriptor(builder.create_socket_descriptor())
-        , readable_event_channel(builder._event_loop
-          , this->operator int()
-          , EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0)
+        : concrete_event_source(builder.create_socket_descriptor())
+        , readable_event_channel(builder._event_loop)
         , _event_loop(builder._event_loop)
     {
 
@@ -94,7 +89,7 @@ namespace lanxc
     {
       struct sockaddr_storage storage;
       socklen_t length = sizeof(storage);
-      int ret = ::accept(this->operator int(),
+      int ret = ::accept(get_file_descriptor(),
                        reinterpret_cast<sockaddr*>(&storage),
                        &length);
 
@@ -212,22 +207,22 @@ namespace lanxc
     }
 
     void
-    readable_event_channel::on_activate(std::intptr_t data,
-                                        std::uint32_t flags)
+    readable_event_channel::signal(std::intptr_t data,
+                                   std::uint32_t flags)
     {
       on_readable(data, flags);
     }
 
     void
-    writable_event_channel::on_activate(std::intptr_t data,
-                                        std::uint32_t flags)
+    writable_event_channel::signal(std::intptr_t data,
+                                   std::uint32_t flags)
     {
       on_writable(data, flags);
     }
 
     void
-    error_event_channel::on_activate(std::intptr_t data,
-                                     std::uint32_t flags)
+    error_event_channel::signal(std::intptr_t data,
+                                std::uint32_t flags)
     {
       on_error(data, flags);
     }

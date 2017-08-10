@@ -41,25 +41,24 @@ namespace lanxc
 {
   namespace applism
   {
-    struct event_loop::detail : private event_channel
+    struct event_loop::detail : event_channel
+                              , event_service
+                              , concrete_event_source
     {
-      const int _kqueue_fd;
 
       std::mutex _mutex;
       std::vector<struct kevent> _changed_events_list;
 
+
+    public:
+
       detail()
-        : _kqueue_fd(::create_kqueue())
+        : concrete_event_source(unixy::file_descriptor{create_kqueue()})
       {
       }
 
-      ~detail()
-      {
-        ::close(_kqueue_fd);
-      }
 
-
-      void on_activate(std::intptr_t, std::uint32_t) override
+      void signal(std::intptr_t, std::uint32_t) override
       { /* Just empty */ }
 
       void activate()
@@ -75,7 +74,7 @@ namespace lanxc
                0,
                this);
 
-        int ret = kevent(_kqueue_fd, nullptr, 0, &ke, 1, nullptr);
+        int ret = kevent(get_file_descriptor(), nullptr, 0, &ke, 1, nullptr);
         if (ret == 0) return;
         lanxc::unixy::throw_system_error();
       }
@@ -86,7 +85,7 @@ namespace lanxc
         {
           std::array<struct kevent, 256> events;
 
-          int ret = ::kevent(_kqueue_fd,
+          int ret = ::kevent(get_file_descriptor(),
                              _changed_events_list.data(),
                              static_cast<int>(_changed_events_list.size()),
                              events.data(),
@@ -104,9 +103,25 @@ namespace lanxc
           for (int i = 0; i < ret; i++)
           {
             auto *p = reinterpret_cast<event_channel *>(events[i].udata);
-            p->on_activate(events[i].data, events[i].fflags);
+            p->signal(events[i].data, events[i].fflags);
           }
         }
+      }
+
+      void enable_event_channel(int16_t event, uint32_t flag, std::intptr_t data, event_channel &channel) override
+      {
+        int fd = get_file_descriptor();
+        _changed_events_list.push_back(
+                   {
+                       static_cast<std::uintptr_t>(fd),
+                       event,
+                       EV_ADD | EV_CLEAR,
+                       flag,
+                       data,
+                       &channel
+                   }
+               );
+
       }
 
     };
@@ -139,23 +154,12 @@ namespace lanxc
       return nullptr;
     }
 
-    void event_loop::register_event(int descriptor,
-                                    std::int16_t event,
-                                    std::uint16_t operation,
-                                    uint32_t flag,
-                                    std::intptr_t data,
-                                    event_channel &channel)
+    void event_loop::enable_event_channel(std::int16_t event,
+                                          uint32_t flag,
+                                          std::intptr_t data,
+                                          event_channel &channel)
     {
-      _detail->_changed_events_list.push_back(
-          {
-            static_cast<std::uintptr_t>(descriptor),
-            event,
-            operation,
-            flag,
-            data,
-            &channel
-          }
-      );
+      _detail->enable_event_channel(event, flag, data, channel);
     }
   }
 }

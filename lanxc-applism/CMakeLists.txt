@@ -9,7 +9,7 @@ add_library(lanxc-applism
             src/event_loop.cpp
             src/event_channel.cpp
             src/connection.hpp
-            src/connection.cpp)
+            src/connection.cpp include/lanxc-applism/event_source.hpp src/event_source.cpp)
 target_include_directories(lanxc-applism PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                            $<INSTALL_INTERFACE:include>

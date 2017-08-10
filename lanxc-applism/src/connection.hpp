@@ -30,34 +30,31 @@ namespace lanxc
   {
 
     struct readable_event_channel : public event_channel
-                                  , private virtual unixy::file_descriptor
     {
-      using event_channel::event_channel;
+      readable_event_channel(event_service &es);
 
-      void on_activate(std::intptr_t data, std::uint32_t flags) override;
+      void signal(std::intptr_t data, std::uint32_t flags) override;
       virtual void on_readable(std::intptr_t data, std::uint32_t flags) = 0;
     };
 
     struct writable_event_channel : public event_channel
-                                  , private virtual unixy::file_descriptor
     {
-      using event_channel::event_channel;
+      writable_event_channel(event_service &es);
 
-      void on_activate(std::intptr_t data, std::uint32_t flags) override;
+      void signal(std::intptr_t data, std::uint32_t flags) override;
       virtual void on_writable(std::intptr_t data, std::uint32_t flags) = 0;
     };
 
     struct error_event_channel : public event_channel
-                               , private virtual unixy::file_descriptor
     {
-      using event_channel::event_channel;
+      error_event_channel(event_service &es);
 
-      void on_activate(std::intptr_t data, std::uint32_t flags) override;
+      void signal(std::intptr_t data, std::uint32_t flags) override;
       virtual void on_error(std::intptr_t data, std::uint32_t flags) = 0;
     };
 
     class macos_connection_endpoint
-        : public virtual unixy::file_descriptor
+        : public concrete_event_source
         , public lanxc::connection_endpoint
         , public readable_event_channel
         , public writable_event_channel
@@ -89,7 +86,7 @@ namespace lanxc
     };
 
     class macos_connection_listener
-        : public virtual unixy::file_descriptor
+        : public concrete_event_source
         , public lanxc::connection_listener
         , public lanxc::applism::readable_event_channel
     {

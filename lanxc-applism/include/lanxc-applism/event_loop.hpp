@@ -50,12 +50,10 @@ namespace lanxc
       std::shared_ptr<datagram_endpoint_builder>
       create_datagram_endpoint() override;
 
-      void register_event(int descriptor,
-                          int16_t event,
-                          uint16_t operation,
-                          uint32_t flag,
-                          std::intptr_t data,
-                          event_channel &channel) override;
+      void enable_event_channel(int16_t event,
+                                uint32_t flag,
+                                std::intptr_t data,
+                                event_channel &channel) override;
     private:
       struct detail;
       std::unique_ptr<detail>  _detail;
