@@ -19,7 +19,7 @@ target_include_directories(lanxc-unixy PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                            $<INSTALL_INTERFACE:include>
                            )
-target_link_libraries(lanxc-unixy lanxc-core)
+target_link_libraries(lanxc-unixy lanxc::core pthread)
 
 
 install(DIRECTORY include/lanxc-unixy DESTINATION include/lanxc-unixy)
