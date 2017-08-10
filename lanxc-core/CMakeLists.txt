@@ -63,34 +63,33 @@ include(CMakePackageConfigHelpers)
 
 # Write version file to build dir
 write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
     VERSION 1.0
     COMPATIBILITY SameMajorVersion
-    )
+)
 
 # Install version file
 install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config-version.cmake"
-    DESTINATION lib/cmake/lanxc
-    )
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+        DESTINATION lib/cmake/lanxc/
+        )
 
 # Export targets
-install(TARGETS lanxc-core
-    EXPORT lanxc-core-targets
-    DESTINATION lib)
+install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}-targets
+        DESTINATION lib)
 
-install(EXPORT lanxc-core-targets
-    FILE lanxc-core-targets.cmake
-    NAMESPACE lanxc::
-    DESTINATION lib/cmake/lancx
-    )
-install(DIRECTORY include/lanxc DESTINATION include)
+install(EXPORT ${PROJECT_NAME}-targets
+        FILE ${PROJECT_NAME}-targets.cmake
+        NAMESPACE lanxc::
+        DESTINATION lib/cmake/lanxc
+        )
 
 # Package config file
-configure_file("lanxc-core-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/lanxc-core-config.cmake")
+configure_file("${PROJECT_NAME}-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake")
 
 # Install package config file
-install(FILES lanxc-core-config.cmake
-    DESTINATION lib/cmake/lanxc
-    )
+install(FILES ${PROJECT_NAME}-config.cmake
+        DESTINATION lib/cmake/lanxc
+        )
 
