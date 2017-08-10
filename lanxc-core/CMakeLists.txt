@@ -25,7 +25,7 @@ add_library(lanxc-core
             include/lanxc/core/future.hpp
             include/lanxc/core/buffer.hpp
             src/main.cpp
-            src/network_context.cpp src/task_context.cpp src/buffer.cpp)
+            src/buffer.cpp)
 add_library(lanxc::core ALIAS lanxc-core)
 
 if (BUILD_SHARED_LIBS)

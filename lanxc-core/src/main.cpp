@@ -18,8 +18,30 @@
 
 #include <lanxc/function.hpp>
 #include <lanxc/core/future.hpp>
+#include <lanxc/core/network_context.hpp>
 
 template class lanxc::function<void()>;
 template class lanxc::function<bool()>;
 template class lanxc::future<>;
 template class lanxc::promise<>;
+
+
+lanxc::deferred::~deferred() = default;
+
+lanxc::alarm::~alarm() = default;
+
+lanxc::task_context::~task_context() = default;
+
+lanxc::network_connection_context::~network_connection_context() = default;
+
+lanxc::network_datagram_context::~network_datagram_context() = default;
+
+lanxc::network_context::~network_context() = default;
+
+lanxc::connection_listener::~connection_listener() = default;
+
+lanxc::connection_listener_builder::~connection_listener_builder() = default;
+
+lanxc::connection_listener_builder::address_builder::~address_builder() = default;
+
+lanxc::connection_listener_builder::option_builder::~option_builder() = default;

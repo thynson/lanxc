@@ -105,6 +105,12 @@ namespace lanxc
     virtual ~network_connection_context() = 0;
 
 
+    virtual std::shared_ptr<connection_listener_builder>
+    create_connection_listener() = 0;
+
+    virtual std::shared_ptr<connection_endpoint_builder>
+    create_connection_endpoint() = 0;
+
   };
 
   class LANXC_CORE_EXPORT network_datagram_context
@@ -112,23 +118,17 @@ namespace lanxc
   public:
     virtual ~network_datagram_context() = 0;
 
+    virtual std::shared_ptr<datagram_endpoint_builder>
+    create_datagram_endpoint() = 0;
   };
 
 
-  class LANXC_CORE_EXPORT network_context
+  class LANXC_CORE_EXPORT network_context : public virtual network_connection_context
+                                          , public virtual network_datagram_context
   {
   public:
 
     virtual ~network_context() = 0;
-    
-    virtual std::shared_ptr<connection_listener_builder>
-    create_connection_listener() = 0;
-
-    virtual std::shared_ptr<connection_endpoint_builder>
-    create_connection_endpoint() = 0;
-
-    virtual std::shared_ptr<datagram_endpoint_builder>
-    create_datagram_endpoint() = 0;
 
   };
 }
