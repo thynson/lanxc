@@ -19,6 +19,10 @@
 
 #include <lanxc/type_traits.hpp>
 #include <lanxc-unixy/config.hpp>
+
+#include <utility>
+#include <new>
+
 namespace lanxc
 {
   namespace unixy
@@ -35,7 +39,9 @@ namespace lanxc
     class LANXC_UNIXY_EXPORT file_descriptor
     {
     public:
-      file_descriptor(int fd = -1);
+      constexpr file_descriptor(int fd = -1) noexcept
+          : _fd(fd)
+      {}
       template<typename F, typename ...Arguments>
       file_descriptor(
           typename std::enable_if<
@@ -44,9 +50,27 @@ namespace lanxc
           : file_descriptor(std::forward<F>(func)(std::forward<Arguments>
                                                       (arguments)...))
       {}
+
+      file_descriptor(file_descriptor &&fd) noexcept
+          : _fd(fd._fd)
+      { fd._fd = -1; }
+
+      file_descriptor &operator = (file_descriptor &&fd) noexcept
+      {
+        this->~file_descriptor();
+        new (this) file_descriptor(std::move(fd));
+        return *this;
+      }
+
+      file_descriptor(const file_descriptor &) = delete;
+
+      file_descriptor &operator = (const file_descriptor &) = delete;
+
+
+
       ~file_descriptor();
       operator int () const noexcept { return _fd; }
-      operator bool () const noexcept { return _fd >= 0;}
+      explicit operator bool () const noexcept { return _fd >= 0;}
     private:
       int _fd;
     };

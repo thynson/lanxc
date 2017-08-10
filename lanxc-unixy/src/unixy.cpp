@@ -17,9 +17,10 @@
 
 #include <lanxc-unixy/unixy.hpp>
 #include <errno.h>
-#include <string.h>
-#include <utility>
+#include <unistd.h>
+#include <cstdlib>
 #include <system_error>
+#include <iostream>
 
 void lanxc::unixy::throw_system_error()
 {
@@ -33,10 +34,16 @@ void lanxc::unixy::throw_system_error(int e)
   throw std::system_error(std::error_code(e, std::system_category()));
 }
 
-lanxc::unixy::file_descriptor::file_descriptor(int fd)
-    : _fd(fd)
+lanxc::unixy::file_descriptor::~file_descriptor()
 {
-
+  if (_fd == -1) return;
+  int ret = ::close(_fd);
+  if (ret == -1)
+  {
+    char buff[256];
+    snprintf(buff, sizeof(buff), "[lanxc-unixy: fd@%d]", _fd);
+    std::perror(buff);
+    std::abort();
+  }
+  _fd = -1;
 }
-
-lanxc::unixy::file_descriptor::~file_descriptor() = default;
