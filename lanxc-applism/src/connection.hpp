@@ -109,15 +109,15 @@ namespace lanxc
 
         std::shared_ptr<option_builder> set_option() override;
 
-        std::shared_ptr<lanxc::connection_listener> build() override;
+        std::shared_ptr<connection_listener> build() override;
 
-        std::shared_ptr <lanxc::connection_listener_builder>
+        std::shared_ptr<connection_listener_builder>
         on(std::string address, uint16_t port) override;
 
-        std::shared_ptr <lanxc::connection_listener_builder>
+        std::shared_ptr<connection_listener_builder>
         on(uint16_t port) override;
 
-        std::shared_ptr <lanxc::connection_listener_builder>
+        std::shared_ptr<connection_listener_builder>
         on(std::string path) override;
 
       private:
