@@ -21,6 +21,7 @@
 #include <lanxc/config.hpp>
 
 #include <memory>
+#include <chrono>
 
 namespace lanxc
 {
@@ -36,10 +37,10 @@ namespace lanxc
     virtual void execute() = 0;
   };
 
-  class LANXC_CORE_EXPORT alarm : public deferred
+  class LANXC_CORE_EXPORT alarm : protected virtual deferred
   {
+    friend class task_context;
   public:
-    virtual void schedule() = 0;
     virtual ~alarm() = 0;
   };
 
@@ -53,7 +54,7 @@ namespace lanxc
     defer(function<void()> routine) = 0;
 
     virtual std::shared_ptr<alarm>
-    schedule(std::uint64_t useconds, function<void()> routine) = 0;
+    schedule(std::chrono::milliseconds duration, function<void()> routine) = 0;
 
     virtual void run() = 0;
 

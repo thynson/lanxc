@@ -24,6 +24,7 @@
 #include <lanxc/core/network_context.hpp>
 
 #include <memory>
+#include <chrono>
 
 namespace lanxc
 {
@@ -46,6 +47,12 @@ namespace lanxc
                                 uint32_t flag,
                                 std::intptr_t data,
                                 event_channel &channel) override;
+
+      std::shared_ptr<deferred> defer(function<void()> routine) override;
+
+      std::shared_ptr<alarm> schedule(std::chrono::milliseconds duration,
+                                      function<void()> routine) override;
+
     private:
       struct detail;
       std::shared_ptr<detail>  _detail;

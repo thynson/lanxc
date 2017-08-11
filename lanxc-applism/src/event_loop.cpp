@@ -15,26 +15,100 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <lanxc-applism/event_service.hpp>
-#include <lanxc-applism/event_loop.hpp>
-#include <lanxc-unixy/unixy.hpp>
+
+#include <sys/event.h>
+#include <unistd.h>
 
 #include <system_error>
 #include <mutex>
 #include <vector>
 #include <array>
+#include <chrono>
 
-#include <sys/event.h>
-#include <unistd.h>
+#include <lanxc-unixy/unixy.hpp>
+
+#include <lanxc/link.hpp>
+
+#include <lanxc-applism/event_service.hpp>
+#include <lanxc-applism/event_loop.hpp>
+
+
+namespace lanxc
+{
+  namespace link
+  {
+    template<>
+    struct rbtree_config<applism::event_loop> : rbtree_config<void>
+    {
+      using default_lookup_policy = index_policy::back;
+    };
+
+  }
+}
 
 namespace
 {
+  using namespace lanxc;
   int create_kqueue()
   {
     int ret = ::kqueue();
-    if (ret == -1) lanxc::unixy::throw_system_error();
+    if (ret == -1) unixy::throw_system_error();
     return ret;
   }
+
+  struct event_loop_task
+      : virtual lanxc::deferred
+      , link::list_node<event_loop_task, void>
+  {
+    function<void()> _routine;
+
+    event_loop_task(function<void()> r) noexcept
+        : _routine(std::move(r))
+    { }
+
+    ~event_loop_task() = default;
+
+    void cancel() override
+    {
+      unlink();
+    }
+
+  private:
+    void execute() override
+    {
+      _routine();
+    }
+  };
+
+  using alarm_clock_type = std::chrono::steady_clock::time_point;
+  template<typename Alarm>
+  using event_loop_rbtree_node = link::rbtree_node<alarm_clock_type,
+                                                   Alarm,
+                                                   applism::event_loop>;
+
+
+  struct event_loop_alarm
+      : virtual alarm
+      , event_loop_task
+      , event_loop_rbtree_node<event_loop_alarm>
+  {
+    using rbtree_node = event_loop_rbtree_node<event_loop_alarm>;
+    event_loop_alarm(alarm_clock_type t, function<void()> r) noexcept
+        : event_loop_task {std::move(r)}
+        , rbtree_node {std::move(t)}
+    { }
+
+    void cancel() override
+    {
+      event_loop_task::cancel();
+      rbtree_node::unlink();
+    }
+
+    ~event_loop_alarm() = default;
+
+  private:
+
+  };
 }
 
 namespace lanxc
@@ -48,6 +122,8 @@ namespace lanxc
 
       std::mutex _mutex;
       std::vector<struct kevent> _changed_events_list;
+      link::list<event_loop_task> _deferred_tasks;
+      link::rbtree<alarm_clock_type, event_loop_alarm, event_loop> _scheduled_alarms;
 
 
     public:
@@ -142,6 +218,26 @@ namespace lanxc
                                           event_channel &channel)
     {
       _detail->enable_event_channel(event, flag, data, channel);
+    }
+
+    std::shared_ptr<deferred> event_loop::defer(function<void()> routine)
+    {
+      auto p = std::make_shared<event_loop_task>(std::move(routine));
+      _detail->_deferred_tasks.push_back(*p);
+      return p;
+    }
+
+    std::shared_ptr<alarm>
+    event_loop::schedule(std::chrono::milliseconds duration,
+                         function<void()> routine)
+    {
+      auto t = std::chrono::steady_clock::now() + duration;
+
+
+      auto p = std::make_shared<event_loop_alarm>(std::move(t),
+                                                  std::move(routine));
+      _detail->_scheduled_alarms.insert(*p, lanxc::link::index_policy::back());
+      return p;
     }
   }
 }
