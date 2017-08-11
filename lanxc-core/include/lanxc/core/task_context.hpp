@@ -48,17 +48,17 @@ namespace lanxc
   {
   public:
 
+    using time_point = std::chrono::steady_clock::time_point;
+
     virtual ~task_context() = 0;
 
     virtual std::shared_ptr<deferred>
     defer(function<void()> routine) = 0;
 
     virtual std::shared_ptr<alarm>
-    schedule(std::chrono::milliseconds duration, function<void()> routine) = 0;
+    schedule(time_point t, function<void()> routine) = 0;
 
     virtual void run() = 0;
 
-  protected:
-    virtual std::size_t process_tasks() = 0;
   };
 }

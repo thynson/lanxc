@@ -56,7 +56,7 @@ public:
   }
 
   std::shared_ptr<lanxc::alarm>
-  schedule(std::uint64_t useconds, lanxc::function<void()> routine) override
+  schedule(time_point, lanxc::function<void()> routine) override
   {
     return nullptr;
   }
@@ -64,7 +64,7 @@ public:
   ~mock_executor() override = default;
 
 protected:
-  size_t process_tasks() override
+  size_t process_tasks()
   {
     lanxc::link::list<mock_deferred> l;
     size_t n = 0;

@@ -50,7 +50,7 @@ namespace lanxc
 
       std::shared_ptr<deferred> defer(function<void()> routine) override;
 
-      std::shared_ptr<alarm> schedule(std::chrono::milliseconds duration,
+      std::shared_ptr<alarm> schedule(time_point t,
                                       function<void()> routine) override;
 
     private:

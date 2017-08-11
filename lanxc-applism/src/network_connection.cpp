@@ -24,6 +24,7 @@
 #include <sys/un.h>
 
 #include <cerrno>
+#include <cstring>
 
 #include <lanxc-applism/network_connection.hpp>
 

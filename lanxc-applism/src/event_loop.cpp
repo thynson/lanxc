@@ -31,6 +31,7 @@
 
 #include <lanxc-applism/event_service.hpp>
 #include <lanxc-applism/event_loop.hpp>
+#include <lanxc-applism/event_channel.hpp>
 
 
 namespace lanxc
@@ -73,7 +74,6 @@ namespace
       unlink();
     }
 
-  private:
     void execute() override
     {
       _routine();
@@ -122,6 +122,7 @@ namespace lanxc
 
       std::mutex _mutex;
       std::vector<struct kevent> _changed_events_list;
+      link::list<event_channel> _enabled_event_channels;
       link::list<event_loop_task> _deferred_tasks;
       link::rbtree<alarm_clock_type, event_loop_alarm, event_loop> _scheduled_alarms;
 
@@ -155,10 +156,60 @@ namespace lanxc
         lanxc::unixy::throw_system_error();
       }
 
-      void pool()
+      void process_alarms(const time_point &now)
+      {
+        auto upper_bound = _scheduled_alarms.upper_bound(now);
+        for (auto i = _scheduled_alarms.begin(); i != upper_bound; ++i)
+          _deferred_tasks.push_back(*i);
+
+      }
+
+      void process_tasks()
+      {
+        if (!_deferred_tasks.empty())
+        {
+          auto tasks = std::move(_deferred_tasks);
+          for (auto &t : tasks)
+          {
+            t.execute();
+          }
+        }
+      }
+
+      timespec *decide_waiting_duration(time_point now, timespec &ts)
+      {
+
+        if (!_deferred_tasks.empty())
+        {
+          ts.tv_sec = 0;
+          ts.tv_nsec = 0;
+          return &ts;
+        }
+        else if (!_scheduled_alarms.empty())
+        {
+          auto &t = _scheduled_alarms.front().get_index();
+          auto nanos = std::chrono::duration_cast<std::chrono::nanoseconds>(t - now);
+          auto secs = std::chrono::duration_cast<std::chrono::seconds>(nanos);
+          nanos -= secs;
+          ts.tv_sec = secs.count();
+          ts.tv_nsec = nanos.count();
+          return &ts;
+        }
+        return nullptr;
+      }
+
+      void poll()
       {
         while (true)
         {
+          auto now = std::chrono::steady_clock::now();
+          process_alarms(now);
+          process_tasks();
+          timespec ts;
+          auto pt = decide_waiting_duration(now, ts);
+          if (pt == nullptr && _enabled_event_channels.empty())
+            return ;
+
           std::array<struct kevent, 256> events;
 
           int ret = ::kevent(get_file_descriptor(),
@@ -166,7 +217,7 @@ namespace lanxc
                              static_cast<int>(_changed_events_list.size()),
                              events.data(),
                              static_cast<int>(events.size()),
-                             nullptr);
+                             pt);
 
           if (ret < 0)
             lanxc::unixy::throw_system_error();
@@ -184,7 +235,9 @@ namespace lanxc
         }
       }
 
-      void enable_event_channel(int16_t event, uint32_t flag, std::intptr_t data, event_channel &channel) override
+      void enable_event_channel(int16_t event, uint32_t flag,
+                                std::intptr_t data,
+                                event_channel &channel) override
       {
         int fd = get_file_descriptor();
         _changed_events_list.push_back(
@@ -197,6 +250,7 @@ namespace lanxc
                        &channel
                    }
                );
+        _enabled_event_channels.push_back(channel);
 
       }
 
@@ -209,7 +263,7 @@ namespace lanxc
 
     void event_loop::run()
     {
-      _detail->pool();
+      _detail->poll();
     }
 
     void event_loop::enable_event_channel(std::int16_t event,
@@ -228,16 +282,15 @@ namespace lanxc
     }
 
     std::shared_ptr<alarm>
-    event_loop::schedule(std::chrono::milliseconds duration,
+    event_loop::schedule(time_point t,
                          function<void()> routine)
     {
-      auto t = std::chrono::steady_clock::now() + duration;
-
 
       auto p = std::make_shared<event_loop_alarm>(std::move(t),
                                                   std::move(routine));
-      _detail->_scheduled_alarms.insert(*p, lanxc::link::index_policy::back());
+      _detail->_scheduled_alarms.insert(*p);
       return p;
     }
+
   }
 }

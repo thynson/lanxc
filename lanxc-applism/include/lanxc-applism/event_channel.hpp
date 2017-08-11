@@ -22,6 +22,7 @@
 
 #include <lanxc-unixy/unixy.hpp>
 
+#include <lanxc/link/list.hpp>
 #include <cstdint>
 
 namespace lanxc
@@ -29,8 +30,9 @@ namespace lanxc
   namespace applism
   {
 
-
-    class LANXC_APPLISM_EXPORT event_channel : protected virtual event_source
+    class LANXC_APPLISM_EXPORT event_channel
+        : protected virtual event_source
+        , public link::list_node<event_channel>
     {
       friend class event_service;
     public:
