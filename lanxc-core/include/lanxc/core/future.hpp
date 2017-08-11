@@ -125,7 +125,7 @@ namespace lanxc
      */
     void reject_by_exception_ptr(std::exception_ptr e)
     {
-      _detail->set_exception_ptr(e);
+      _detail->set_exception_ptr(std::move(e));
     }
 
     /**
@@ -154,11 +154,12 @@ namespace lanxc
       function<void()> _delivery;
       std::shared_ptr<deferred> _next;
       task_context *_task_context;
+      std::exception_ptr _exception_ptr = nullptr;
 
       detail(defer_task_type routine) noexcept
           : _routine(std::move(routine))
           , _fulfill{[](Value...) {}}
-          , _reject{[](std::exception_ptr){}}
+          , _reject{[](std::exception_ptr) {  }}
           , _delivery
               {
                   [this]
@@ -174,11 +175,13 @@ namespace lanxc
         _delivery = std::bind([this](Value ...value)
                             { _fulfill(std::move(value)...);},
                             std::move(result)...);
+        _exception_ptr = nullptr;
       }
 
       void set_exception_ptr(std::exception_ptr e)
       {
-        _delivery = [this, e] { _reject(e); };
+        _exception_ptr = e;
+        _delivery = [this] { _reject(std::move(_exception_ptr)); };
       }
 
       void set_fulfill_action(fulfill_type f) noexcept
