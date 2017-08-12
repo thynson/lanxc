@@ -123,12 +123,11 @@ namespace lanxc
 {
   namespace applism
   {
-    struct event_loop::detail : event_channel
-                              , event_service
-                              , concrete_event_source
+    struct event_loop::detail
     {
 
       std::mutex _mutex;
+      unixy::file_descriptor _kqueue_fd;
       std::vector<struct kevent> _changed_events_list;
       link::list<event_channel> _enabled_event_channels;
       link::list<event_loop_task> _deferred_tasks;
@@ -137,18 +136,18 @@ namespace lanxc
 
     public:
 
-      void add_event(readable_event_channel &channel) override
+      void add_event(int fd, readable_event_channel &channel)
       {
-        add_event_channel(EVFILT_READ, 0, 0, channel);
+        add_event_channel(fd, EVFILT_READ, 0, 0, channel);
       }
 
-      void add_event(writable_event_channel &channel) override
+      void add_event(int fd, writable_event_channel &channel)
       {
-        add_event_channel(EVFILT_WRITE, 0, 0, channel);
+        add_event_channel(fd, EVFILT_WRITE, 0, 0, channel);
       }
 
       detail()
-        : concrete_event_source(unixy::file_descriptor{create_kqueue()})
+        : _kqueue_fd(unixy::file_descriptor{create_kqueue()})
       {
       }
 
@@ -165,7 +164,7 @@ namespace lanxc
                0,
                this);
 
-        int ret = kevent(get_file_descriptor(), nullptr, 0, &ke, 1, nullptr);
+        int ret = kevent(_kqueue_fd, nullptr, 0, &ke, 1, nullptr);
         if (ret == 0) return;
         lanxc::unixy::throw_system_error();
       }
@@ -229,7 +228,7 @@ namespace lanxc
 
           std::array<struct kevent, 256> events;
 
-          int ret = ::kevent(get_file_descriptor(),
+          int ret = ::kevent(_kqueue_fd,
                              _changed_events_list.data(),
                              static_cast<int>(_changed_events_list.size()),
                              events.data(),
@@ -302,11 +301,10 @@ namespace lanxc
         }
       }
 
-      void add_event_channel(int16_t event, uint32_t flag,
+      void add_event_channel(int fd, int16_t event, uint32_t flag,
                              std::intptr_t data,
                              event_channel &channel)
       {
-        int fd = get_file_descriptor();
         _changed_events_list.push_back(
                    {
                        static_cast<std::uintptr_t>(fd),
@@ -326,6 +324,7 @@ namespace lanxc
     event_loop::event_loop()
       : _detail { std::make_shared<detail>() }
     {}
+
     event_loop::~event_loop() {}
 
     void event_loop::run()
@@ -333,14 +332,16 @@ namespace lanxc
       _detail->poll();
     }
 
-    void event_loop::add_event(readable_event_channel &channel)
+    void event_loop::add_event(const unixy::file_descriptor &fd,
+                               readable_event_channel &channel)
     {
-      _detail->add_event(channel);
+      _detail->add_event(fd, channel);
     }
 
-    void event_loop::add_event(writable_event_channel &channel)
+    void event_loop::add_event(const unixy::file_descriptor &fd,
+                               writable_event_channel &channel)
     {
-      _detail->add_event(channel);
+      _detail->add_event(fd, channel);
     }
 
     std::shared_ptr<deferred> event_loop::defer(function<void()> routine)

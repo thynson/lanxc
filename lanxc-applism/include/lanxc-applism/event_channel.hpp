@@ -31,8 +31,7 @@ namespace lanxc
   {
 
     class LANXC_APPLISM_EXPORT event_channel
-        : protected virtual event_source
-        , public link::list_node<event_channel>
+        : public link::list_node<event_channel>
     {
       friend class event_service;
     public:
@@ -48,7 +47,7 @@ namespace lanxc
 
     struct LANXC_APPLISM_EXPORT readable_event_channel : public event_channel
     {
-      readable_event_channel(event_service &es);
+      readable_event_channel(const unixy::file_descriptor &fd, event_service &es);
 
       virtual void on_readable(ssize_t total) = 0;
       virtual void on_reading_error(std::uint32_t e) = 0;
@@ -56,7 +55,7 @@ namespace lanxc
 
     struct LANXC_APPLISM_EXPORT writable_event_channel : public event_channel
     {
-      writable_event_channel(event_service &es);
+      writable_event_channel(const unixy::file_descriptor &fd, event_service &es);
 
       virtual void on_writable(ssize_t size) = 0;
       virtual void on_writing_error(std::uint32_t e) = 0;

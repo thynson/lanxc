@@ -26,14 +26,16 @@ namespace lanxc
   {
 
 
-    readable_event_channel::readable_event_channel(event_service &es)
+    readable_event_channel::
+    readable_event_channel(const unixy::file_descriptor &fd, event_service &es)
     {
-      es.add_event(*this);
+      es.add_event(fd, *this);
     }
 
-    writable_event_channel::writable_event_channel(event_service &es)
+    writable_event_channel::
+    writable_event_channel(const unixy::file_descriptor &fd, event_service &es)
     {
-      es.add_event(*this);
+      es.add_event(fd, *this);
     }
 
   }

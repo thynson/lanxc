@@ -199,8 +199,8 @@ namespace
   macos_connection_endpoint::
   macos_connection_endpoint(event_service &el, unixy::file_descriptor fd)
       : concrete_event_source(std::move(fd))
-      , readable_event_channel(el)
-      , writable_event_channel(el)
+      , readable_event_channel(get_file_descriptor(), el)
+      , writable_event_channel(get_file_descriptor(), el)
   {
   }
 
@@ -209,7 +209,7 @@ namespace
   macos_connection_listener(builder &builder,
                             function<void(connection_endpoint::pointer)> r)
       : concrete_event_source(builder.create_socket_descriptor())
-      , readable_event_channel(builder._event_service)
+      , readable_event_channel(get_file_descriptor(), builder._event_service)
       , _event_service(builder._event_service)
       , _callback {std::move(r)}
   { }
