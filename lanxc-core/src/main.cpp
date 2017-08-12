@@ -42,6 +42,3 @@ lanxc::connection_listener::~connection_listener() = default;
 
 lanxc::connection_listener_builder::~connection_listener_builder() = default;
 
-lanxc::connection_listener_builder::address_builder::~address_builder() = default;
-
-lanxc::connection_listener_builder::option_builder::~option_builder() = default;

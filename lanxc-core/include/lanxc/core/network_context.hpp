@@ -57,41 +57,25 @@ namespace lanxc
   class LANXC_CORE_EXPORT connection_listener_builder
   {
   public:
-    class address_builder
-    {
-    public:
-      virtual ~address_builder() = 0;
+    virtual std::shared_ptr<connection_listener_builder>
+    bind(std::string address, std::uint16_t port) = 0;
 
-      virtual std::shared_ptr<connection_listener_builder>
-      on(std::string address, std::uint16_t port) = 0;
+    virtual std::shared_ptr<connection_listener_builder>
+    bind(std::uint16_t port) = 0;
 
-      virtual std::shared_ptr<connection_listener_builder>
-      on(std::uint16_t port) = 0;
+    virtual std::shared_ptr<connection_listener_builder>
+    bind(std::string path) = 0;
 
-      virtual std::shared_ptr<connection_listener_builder>
-      on(std::string path) = 0;
-    };
+    virtual std::shared_ptr<connection_listener_builder>
+    set_reuse_port(bool enabled) = 0;
 
-    class option_builder
-    {
-    public:
-
-      virtual ~option_builder() = 0;
-
-      virtual std::shared_ptr<option_builder>
-      set_reuse_port(bool enabled) = 0;
-
-      virtual std::shared_ptr<option_builder>
-      set_reuse_address(bool enabled) = 0;
-    };
+    virtual std::shared_ptr<connection_listener_builder>
+    set_reuse_address(bool enabled) = 0;
 
     virtual ~connection_listener_builder() = 0;
     
-    virtual std::shared_ptr<address_builder> listen() = 0;
-
-    virtual std::shared_ptr<option_builder> set_option() = 0;
-
-    virtual std::shared_ptr<connection_listener> build() = 0;
+    virtual std::shared_ptr<connection_listener>
+    build(function<void(const connection_endpoint::pointer)> routine) = 0;
   };
 
 
@@ -112,10 +96,10 @@ namespace lanxc
 
 
     virtual std::shared_ptr<connection_listener_builder>
-    create_connection_listener() = 0;
+    build_connection_listener() = 0;
 
     virtual std::shared_ptr<connection_endpoint_builder>
-    create_connection_endpoint() = 0;
+    build_connection_endpoint() = 0;
 
   };
 

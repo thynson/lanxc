@@ -34,10 +34,10 @@ namespace lanxc
       ~network_connection_context() override;
 
       std::shared_ptr<connection_listener_builder>
-      create_connection_listener() override;
+      build_connection_listener() override;
 
       std::shared_ptr<connection_endpoint_builder>
-      create_connection_endpoint() override;
+      build_connection_endpoint() override;
 
     };
   }
