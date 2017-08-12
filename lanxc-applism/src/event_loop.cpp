@@ -69,6 +69,11 @@ namespace
 
     ~event_loop_task() = default;
 
+    event_loop_task(const event_loop_task &) = delete;
+    event_loop_task(event_loop_task &&) = delete;
+    event_loop_task &operator = (const event_loop_task &) = delete;
+    event_loop_task &operator = (event_loop_task &&) = delete;
+
     void cancel() override
     {
       unlink();
@@ -98,6 +103,11 @@ namespace
         , rbtree_node {std::move(t)}
     { }
 
+    event_loop_alarm(const event_loop_alarm &) = delete;
+    event_loop_alarm(event_loop_alarm &&) = delete;
+    event_loop_alarm &operator = (const event_loop_alarm &) = delete;
+    event_loop_alarm &operator = (event_loop_alarm &&) = delete;
+
     void cancel() override
     {
       event_loop_task::cancel();
@@ -105,8 +115,6 @@ namespace
     }
 
     ~event_loop_alarm() = default;
-
-  private:
 
   };
 }
@@ -159,9 +167,12 @@ namespace lanxc
       void process_alarms(const time_point &now)
       {
         auto upper_bound = _scheduled_alarms.upper_bound(now);
-        for (auto i = _scheduled_alarms.begin(); i != upper_bound; ++i)
-          _deferred_tasks.push_back(*i);
-
+        auto i = _scheduled_alarms.begin();
+        while (i != upper_bound)
+        {
+          auto &t = *i++;
+          _deferred_tasks.push_back(t);
+        }
       }
 
       void process_tasks()
