@@ -38,18 +38,27 @@ namespace
         , public lanxc::connection_endpoint
         , public readable_event_channel
         , public writable_event_channel
-        , public error_event_channel
   {
   public:
     class builder;
     macos_connection_endpoint(event_service &es,
                               unixy::file_descriptor descriptor);
 
-    void on_readable(intptr_t data, std::uint32_t flags) override;
 
-    void on_writable(intptr_t data, std::uint32_t flags) override;
+    void on_readable(ssize_t) override
+    {
+    }
 
-    void on_error(intptr_t data, std::uint32_t flags) override;
+    void on_writable(ssize_t) override
+    {
+    }
+    void on_reading_error(std::uint32_t) override
+    {
+    }
+
+    void on_writing_error(std::uint32_t) override
+    {
+    }
 
   private:
   };
@@ -173,7 +182,10 @@ namespace
 
   private:
 
-    void on_readable(std::intptr_t data, std::uint32_t flags) override;
+    void on_readable(ssize_t) override;
+
+    void on_reading_error(std::uint32_t) override
+    { }
 
     void accept();
 
@@ -189,21 +201,9 @@ namespace
       : concrete_event_source(std::move(fd))
       , readable_event_channel(el)
       , writable_event_channel(el)
-      , error_event_channel(el)
   {
   }
 
-  void macos_connection_endpoint::on_readable(intptr_t, std::uint32_t)
-  {
-  }
-
-  void macos_connection_endpoint::on_writable(intptr_t, std::uint32_t)
-  {
-  }
-
-  void macos_connection_endpoint::on_error(intptr_t, std::uint32_t)
-  {
-  }
 
   macos_connection_listener::
   macos_connection_listener(builder &builder,
@@ -224,7 +224,7 @@ namespace
     }
   }
 
-  void macos_connection_listener::on_readable(std::intptr_t, std::uint32_t)
+  void macos_connection_listener::on_readable(ssize_t)
   {
     _stopped = true;
     if (_callback)

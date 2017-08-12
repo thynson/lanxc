@@ -44,32 +44,22 @@ namespace lanxc
       event_channel(event_channel &&) = delete;
       event_channel &operator = (const event_channel &) = delete;
       event_channel &operator = (event_channel &&) = delete;
-
-      virtual void signal(std::intptr_t data, std::uint32_t flags) = 0;
     };
 
     struct LANXC_APPLISM_EXPORT readable_event_channel : public event_channel
     {
       readable_event_channel(event_service &es);
 
-      void signal(std::intptr_t data, std::uint32_t flags) override;
-      virtual void on_readable(std::intptr_t data, std::uint32_t flags) = 0;
+      virtual void on_readable(ssize_t total) = 0;
+      virtual void on_reading_error(std::uint32_t e) = 0;
     };
 
     struct LANXC_APPLISM_EXPORT writable_event_channel : public event_channel
     {
       writable_event_channel(event_service &es);
 
-      void signal(std::intptr_t data, std::uint32_t flags) override;
-      virtual void on_writable(std::intptr_t data, std::uint32_t flags) = 0;
-    };
-
-    struct LANXC_APPLISM_EXPORT error_event_channel : public event_channel
-    {
-      error_event_channel(event_service &es);
-
-      void signal(std::intptr_t data, std::uint32_t flags) override;
-      virtual void on_error(std::intptr_t data, std::uint32_t flags) = 0;
+      virtual void on_writable(ssize_t size) = 0;
+      virtual void on_writing_error(std::uint32_t e) = 0;
     };
   }
 }

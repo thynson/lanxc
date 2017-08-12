@@ -137,14 +137,20 @@ namespace lanxc
 
     public:
 
+      void add_event(readable_event_channel &channel) override
+      {
+        add_event_channel(EVFILT_READ, 0, 0, channel);
+      }
+
+      void add_event(writable_event_channel &channel) override
+      {
+        add_event_channel(EVFILT_WRITE, 0, 0, channel);
+      }
+
       detail()
         : concrete_event_source(unixy::file_descriptor{create_kqueue()})
       {
       }
-
-
-      void signal(std::intptr_t, std::uint32_t) override
-      { /* Just empty */ }
 
       void activate()
       {
@@ -241,14 +247,64 @@ namespace lanxc
           for (int i = 0; i < ret; i++)
           {
             auto *p = reinterpret_cast<event_channel *>(events[i].udata);
-            p->signal(events[i].data, events[i].fflags);
+
+            switch(events[i].filter)
+            {
+            case EVFILT_READ:
+              {
+                auto *rp = static_cast<readable_event_channel*>(p);
+
+                if (events[i].flags & EV_ERROR)
+                {
+                  auto e = static_cast<std::uint32_t>(events[i].data);
+                  rp->on_reading_error(e);
+                }
+                else if (events[i].flags & EV_EOF)
+                {
+                  auto e = events[i].fflags;
+                  rp->on_reading_error(e);
+                }
+                else
+                {
+                  rp->on_readable(ssize_t(events[i].data));
+                }
+              }
+
+              break;
+            case EVFILT_WRITE:
+              {
+                auto *wp = static_cast<writable_event_channel*>(p);
+
+                if (events[i].flags & EV_ERROR)
+                {
+                  auto e = static_cast<std::uint32_t>(events[i].data);
+                  wp->on_writing_error(e);
+                }
+                else if (events[i].flags & EV_EOF)
+                {
+                  auto e = events[i].fflags;
+                  wp->on_writing_error(e);
+                }
+                else
+                {
+                  wp->on_writable(ssize_t(events[i].data));
+                }
+
+              }
+
+              break;
+
+            default:
+              break;
+
+            }
           }
         }
       }
 
-      void enable_event_channel(int16_t event, uint32_t flag,
-                                std::intptr_t data,
-                                event_channel &channel) override
+      void add_event_channel(int16_t event, uint32_t flag,
+                             std::intptr_t data,
+                             event_channel &channel)
       {
         int fd = get_file_descriptor();
         _changed_events_list.push_back(
@@ -277,12 +333,14 @@ namespace lanxc
       _detail->poll();
     }
 
-    void event_loop::enable_event_channel(std::int16_t event,
-                                          uint32_t flag,
-                                          std::intptr_t data,
-                                          event_channel &channel)
+    void event_loop::add_event(readable_event_channel &channel)
     {
-      _detail->enable_event_channel(event, flag, data, channel);
+      _detail->add_event(channel);
+    }
+
+    void event_loop::add_event(writable_event_channel &channel)
+    {
+      _detail->add_event(channel);
     }
 
     std::shared_ptr<deferred> event_loop::defer(function<void()> routine)

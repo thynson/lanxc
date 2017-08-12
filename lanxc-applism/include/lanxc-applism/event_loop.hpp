@@ -42,11 +42,15 @@ namespace lanxc
       ~event_loop();
 
       void run() override;
+//
+//      void enable_event_channel(int16_t event,
+//                                uint32_t flag,
+//                                std::intptr_t data,
+//                                event_channel &channel) override;
 
-      void enable_event_channel(int16_t event,
-                                uint32_t flag,
-                                std::intptr_t data,
-                                event_channel &channel) override;
+      void add_event(readable_event_channel &channel) override;
+
+      void add_event(writable_event_channel &channel) override;
 
       std::shared_ptr<deferred> defer(function<void()> routine) override;
 
